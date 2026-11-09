@@ -27,7 +27,7 @@ test('搜索和状态筛选可组合，缺失坐标站点仍可查询',()=>{
  const rows=stationMap.buildStationMapRows(db)
  assert.deepEqual(stationMap.filterMapStations(rows,'教学','alert').map(s=>s.id),['ST01'])
  assert.equal(stationMap.filterMapStations(rows,'不存在','all').length,0)
- assert.deepEqual(stationMap.filterMapStations(rows,'东区运动','all').map(s=>s.id),['ST05'])
+ assert.deepEqual(stationMap.filterMapStations(rows,'东升园','all').map(s=>s.id),['ST05'])
  assert.equal(rows[4].position,null)
  db.stations[1].enabled=false
  assert.deepEqual(stationMap.filterMapStations(stationMap.buildStationMapRows(db),'','disabled').map(s=>s.id),['ST02'])

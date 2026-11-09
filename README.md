@@ -245,3 +245,7 @@ mvn -B -f server/pom.xml test
 校园参考点位及范围修正记录见 [校园坐标说明](docs/campus-map-location-fix.md)。Vue、Vite、ECharts、Spring Boot 等组件按各自许可证使用；参考项目的许可证不自动适用于本仓库的独立代码。
 
 当前仓库尚未指定开源许可证。需要再分发或商用时，请先联系维护者确认授权。提交问题前请阅读 [贡献说明](CONTRIBUTING.md) 和 [安全说明](SECURITY.md)。
+
+### 楼栋周边站点（2026-11-09）
+
+默认五站已细化为逸夫教学楼南侧、中区四公寓东侧、体育馆南侧、西区八公寓北侧、东升园餐厅南侧。依据官方校园 GIS 核对名称，在高德实际底图目视拾取楼旁室外道路；位置为演示规划估算，非实测设施。点位、来源与迁移说明见 [楼栋周边点位](docs/campus-building-locations.md)。

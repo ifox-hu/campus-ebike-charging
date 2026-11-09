@@ -9,7 +9,7 @@ const query=ref(''),status=ref('all'),selectedId=ref(''),container=ref(null),loa
 const zoom=ref(15),searchOpen=ref(false),searchMessage=ref('')
 const mapReady=computed(()=>mode.value==='map'&&!loading.value)
 const rows=computed(()=>buildStationMapRows(props.source))
-const campusDemo=computed(()=>props.source.stations.length>0&&props.source.stations.every(s=>s.campusLocationRevision===1))
+const campusDemo=computed(()=>props.source.stations.length>0&&props.source.stations.every(s=>s.campusLocationRevision>=1))
 const visible=computed(()=>filterMapStations(rows.value,query.value,status.value))
 const located=computed(()=>visible.value.filter(s=>s.position)),diagram=computed(()=>projectMapStations(visible.value))
 const selected=computed(()=>visible.value.find(s=>s.id===selectedId.value))
@@ -60,7 +60,7 @@ function redraw(){
  if(markers.length){map.remove(markers.map(m=>m.marker));for(const item of markers)item.button.onclick=null}
  markers=located.value.map(s=>{
   const button=document.createElement('button');button.type='button';button.className=`station-marker tone-${s.tone}`
-  button.setAttribute('aria-label',`选择站点 ${s.name}`)
+  button.setAttribute('aria-label',`选择站点 ${s.name}`);button.dataset.stationCode=s.id.replace(/^ST/,'')
   const name=document.createElement('strong');name.textContent=s.name
   const count=document.createElement('span');count.textContent=`空闲 ${s.free} / ${s.socketCount}`
   button.append(name,count);button.onclick=()=>{selectedId.value=s.id}
@@ -114,7 +114,7 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
     <div v-if="mode==='diagram'" class="map-diagram" aria-label="站点坐标分布示意">
      <div class="diagram-grid"/><div class="diagram-water"/><div class="diagram-road road-one"/><div class="diagram-road road-two"/>
      <span class="diagram-area">站点分布示意</span>
-     <button v-for="s in diagram" :key="s.id" type="button" :class="['station-marker',`tone-${s.tone}`,{'is-selected':s.id===selectedId}]" :style="{left:s.x+'%',top:s.y+'%'}" :aria-label="'选择站点 '+s.name" :aria-pressed="s.id===selectedId" @click="selectedId=s.id"><strong>{{s.name}}</strong><span>空闲 {{s.free}} / {{s.socketCount}}</span></button>
+     <button v-for="s in diagram" :key="s.id" type="button" :class="['station-marker',`tone-${s.tone}`,{'is-selected':s.id===selectedId}]" :style="{left:s.x+'%',top:s.y+'%'}" :data-station-code="s.id.replace(/^ST/,'')" :aria-label="'选择站点 '+s.name" :aria-pressed="s.id===selectedId" @click="selectedId=s.id"><strong>{{s.name}}</strong><span>空闲 {{s.free}} / {{s.socketCount}}</span></button>
      <small class="diagram-caption">按已保存坐标绘制 · 非地图底图</small>
     </div>
     <div v-if="loading" class="map-loading" role="status"><span/>正在加载地图…</div>
@@ -149,4 +149,13 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
 </style>
 <style scoped>
 .map-zoom-tools{position:absolute;right:14px;top:14px;z-index:8;display:flex;flex-direction:column;align-items:stretch;border:1px solid #e4e0f3;border-radius:8px;background:#fff;box-shadow:0 3px 12px #5a5a7020;overflow:hidden;width:40px}.map-zoom-tools button{background:white;border:0;color:#6d65c5;font:inherit;font-size:23px;line-height:36px;cursor:pointer}.map-zoom-tools button:hover:not(:disabled){background:#f1eeff}.map-zoom-tools button:disabled{color:#c4c1cc;cursor:default}.map-zoom-tools output{text-align:center;color:#888;font-size:11px;line-height:22px;border-top:1px solid #f0edf7;border-bottom:1px solid #f0edf7}.map-zoom-tools button.map-refocus{font-size:11px;border-top:1px solid #eeebf5;line-height:32px}.map-runtime{font-size:11px;color:#af8751;background:#fff6e8;padding:4px 7px;border-radius:5px;white-space:nowrap}.map-runtime.ready{color:#579a87;background:#eff9f5}.map-search-feedback{font-size:12px;line-height:1.6;padding:.55rem 1.4rem;background:#f7f5ff;color:#8b82bb}.map-search-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;padding:.7rem 1.4rem;border-bottom:1px solid #eeedf6;max-height:180px;overflow:auto;background:#fcfbff}.map-search-results button{display:flex;flex-direction:column;gap:5px;text-align:left;background:white;border:1px solid #e9e5f5;border-radius:7px;padding:10px;font:inherit;cursor:pointer}.map-search-results button:hover{border-color:#aaa0f0;background:#f9f7ff}.map-search-results strong{font-size:12px;font-weight:500;color:#6f65ab}.map-search-results span{font-size:11px;color:#aaa}.map-search-results small{font-size:11px;color:#8a7dce}
+</style>
+
+<style scoped>
+/* Keep each hit area on its actual coordinate. Nearby apartment and teaching
+   sites must not become unclickable beneath a neighbouring wide label. */
+.station-marker,.map-stage :deep(.station-marker){width:36px;height:32px;min-width:36px;max-width:36px;padding:0;align-items:center;justify-content:center;border-radius:9px}
+.station-marker::before,.map-stage :deep(.station-marker::before){content:attr(data-station-code);font-size:12px;font-weight:700}
+.station-marker strong,.station-marker span,.map-stage :deep(.station-marker strong),.map-stage :deep(.station-marker span){display:none;pointer-events:none}
+.station-marker.is-selected strong,.map-stage :deep(.station-marker.is-selected strong){display:block;position:absolute;bottom:42px;left:50%;transform:translateX(-50%);width:max-content;max-width:190px;padding:7px 10px;border-radius:6px;background:#7770ed;color:#fff;box-shadow:0 2px 8px #35305530}
 </style>

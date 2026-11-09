@@ -1,5 +1,5 @@
 import { createService } from './service.js'
-import {CAMPUS_DEMO_LOCATIONS,LEGACY_DEMO_LOCATIONS} from './campusLocations.js'
+import {CAMPUS_DEMO_LOCATIONS,LEGACY_DEMO_LOCATIONS,PREVIOUS_CAMPUS_LOCATIONS} from './campusLocations.js'
 import {DEMO_ROW_LAYOUTS,LEGACY_DEMO_ROW_LAYOUTS} from './demoLayouts.js'
 
 export function migrateDemoLayouts(source){
@@ -34,10 +34,11 @@ export function migrateDemoLayouts(source){
 // stations and manually edited coordinates intact; never reset local storage.
 export function migrateCampusLocations(source){
   const db=JSON.parse(JSON.stringify(source))
-  for(const old of LEGACY_DEMO_LOCATIONS){
+  for(const old of [...LEGACY_DEMO_LOCATIONS,...PREVIOUS_CAMPUS_LOCATIONS]){
     const station=db.stations.find(s=>s.id===old.id)
-    if(!station||station.name!==old.name||station.campusLocationRevision||
-       Number(station.lat)!==old.lat||Number(station.lng)!==old.lng)continue
+    if(!station||station.name!==old.name||Number(station.campusLocationRevision||0)>=3||
+       Number(station.lat)!==old.lat||Number(station.lng)!==old.lng||
+       (old.address&&station.address!==old.address))continue
     Object.assign(station,CAMPUS_DEMO_LOCATIONS.find(s=>s.id===old.id))
   }
   return db

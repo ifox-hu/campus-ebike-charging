@@ -13,7 +13,7 @@ async function main(){
   await page.locator('.login-submit').click()
   await page.locator('.navigation .nav-item').filter({hasText:'设备与插座'}).click()
   await page.locator('.physical-row').first().waitFor()
-  const cases=[['ST01','中区教学区示例站',[12,15,12]],['ST02','中区生活区示例站',[13,15]],['ST03','中区体育馆示例站',[12]],['ST04','西区校园示例站',[9,11,8]],['ST05','东区运动区示例站',[10,12]]]
+  const cases=[['ST01','逸夫教学楼南侧示例站',[12,15,12]],['ST02','中区四公寓东侧示例站',[13,15]],['ST03','体育馆南侧示例站',[12]],['ST04','西区八公寓北侧示例站',[9,11,8]],['ST05','东升园餐厅南侧示例站',[10,12]]]
   const results=[]
   for(const [id,name,counts] of cases){
    await page.getByLabel('筛选站点',{exact:true}).selectOption(id)
@@ -29,7 +29,7 @@ async function main(){
   assert.match(await page.locator('.table-pagination').innerText(),/共 28 条记录/)
   await page.getByLabel('筛选站点',{exact:true}).selectOption('ST03')
   await page.getByRole('button',{name:'现场排布',exact:true}).click()
-  await page.waitForFunction(()=>document.querySelector('.layout-summary strong')?.textContent==='中区体育馆示例站',null,{timeout:3000})
+  await page.waitForFunction(()=>document.querySelector('.layout-summary strong')?.textContent==='体育馆南侧示例站',null,{timeout:3000})
   assert.equal(await page.locator('.physical-row').count(),1)
   assert.deepEqual(errors,[])
   const proof={date:'2026-11-09',base,immediateStationSwitch:true,stationProfiles:results,deviceListAgrees:true,pageErrors:errors}
