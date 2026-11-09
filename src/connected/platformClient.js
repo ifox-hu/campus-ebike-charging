@@ -1,5 +1,5 @@
 export function formatNumber(value,digits=2){return value===null||value===undefined||value===''||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits)}
-const labels={station:{OPERATING:'运营中',CLOSED:'停用',MAINTENANCE:'维护中'},device:{ONLINE:'在线',OFFLINE:'离线',DISABLED:'停用'},socket:{IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用'},order:{STARTING:'启动中',CHARGING:'充电中',COMPLETED:'已结束',FAILED:'启动失败',ABNORMAL:'异常待处理'},payment:{UNPAID:'待支付',PAID:'已模拟支付',NOT_REQUIRED:'无需支付'}}
+const labels={station:{OPERATING:'运营中',CLOSED:'停用',MAINTENANCE:'维护中'},device:{ONLINE:'在线',OFFLINE:'离线',DISABLED:'停用'},socket:{IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用'},order:{STARTING:'启动中',CHARGING:'充电中',COMPLETED:'已结束',START_FAILED:'启动失败',FAILED:'启动失败',ABNORMAL:'异常待处理'},repair:{OPEN:'待处理',PROCESSING:'处理中',RESOLVED:'已处理'},payment:{UNPAID:'待支付',PAID:'已模拟支付',NOT_REQUIRED:'无需支付'}}
 export const statusLabel=(value,kind)=>labels[kind]?.[value]||(value?`未知（${value}）`:'未提供')
 export function relationRows(stations,devices,sockets){
  const siteMap=new Map(stations.map(s=>[s.id,s])),deviceMap=new Map(devices.map(d=>[d.id,d]))
@@ -31,5 +31,7 @@ export function createPlatformClient({fetchImpl=globalThis.fetch,onExpired=()=>{
   users:(page=1,keyword='')=>request(`/auth/users?role=USER&page=${page}&size=20&keyword=${encodeURIComponent(keyword)}`),
   setUserEnabled(value,enabled){const safe=id(value);if(typeof enabled!=='boolean')throw Error('用户状态必须为布尔值。');return request(`/auth/users/${safe}/status?enabled=${enabled}`,{method:'PATCH'})},
   rates:value=>array(`/price-periods?stationId=${id(value)}`),audit:(page=1)=>request(`/audit-logs?page=${page}&size=20`)
+  ,repairs:(status='')=>array('/repairs'+(status?'?status='+encodeURIComponent(status):'')),
+  handleRepair:(value,body)=>request('/repairs/'+id(value),{method:'PATCH',body})
  }
 }
