@@ -34,9 +34,9 @@
 
 演示账号：**`demo` / `Demo@123456`**。支持填入演示账号、显示密码、记住账号及退出登录。
 
-| 在线演示登录 | 运营数据统计 |
+| 在线演示登录 | 运营数据统计与高德地图 |
 | --- | --- |
-| ![管理端登录](docs/screenshots/showcase-admin-login.png) | ![运营数据统计](docs/screenshots/showcase-admin-dashboard.png) |
+| ![管理端登录](docs/screenshots/showcase-admin-login.png) | ![运营数据统计与高德地图](docs/screenshots/showcase-admin-dashboard-amap.png) |
 | **设备排布与 A/B 插座** | **充电订单管理** |
 | ![设备排布](docs/screenshots/showcase-admin-layout.png) | ![充电订单管理](docs/screenshots/showcase-admin-orders.png) |
 
