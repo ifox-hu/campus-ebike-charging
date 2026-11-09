@@ -49,6 +49,7 @@ jobs:
         run: npm run build:pages
         env:
           PAGES_BASE_PATH: /${{ github.event.repository.name }}/
+          PAGES_REQUIRE_AMAP: 'true'
           PAGES_AMAP_KEY: ${{ secrets.AMAP_WEB_KEY }}
           PAGES_AMAP_SECURITY_CODE: ${{ secrets.AMAP_SECURITY_CODE }}
       - uses: actions/configure-pages@v5

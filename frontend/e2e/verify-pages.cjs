@@ -3,6 +3,7 @@ const {chromium}=require('playwright')
 const assert=require('node:assert/strict')
 const fs=require('node:fs'),path=require('node:path')
 const base=process.env.PAGES_QA_URL||'http://127.0.0.1:5207/campus-ebike-charging-admin/'
+const expectAmap=process.env.PAGES_EXPECT_AMAP==='true'
 async function main(){
  const browser=await chromium.launch({channel:'msedge',headless:true})
  try{
@@ -10,6 +11,7 @@ async function main(){
   page.on('pageerror',e=>errors.push(e.message))
   page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))apiRequests.push(r.url())})
   page.on('response',r=>{if(r.status()>=400&&/\.(js|css)(\?|$)/.test(r.url()))failedAssets.push({url:r.url(),status:r.status()})})
+  const mapTile=expectAmap?page.waitForResponse(r=>{const u=new URL(r.url());return /(^|\.)amap\.com$/.test(u.hostname)&&u.pathname.startsWith('/tile/')&&r.status()===200},{timeout:35000}):null
   await page.goto(base+'#/dashboard')
   await page.getByRole('heading',{name:'在线演示登录',exact:true}).waitFor()
   assert.equal(await page.locator('.metric-card').count(),0)
@@ -33,8 +35,17 @@ async function main(){
   await page.locator('.metric-card').first().waitFor()
   assert.equal(await page.locator('.metric-card').count(),7)
   assert.equal(await page.locator('.login-submit').count(),0)
-  await page.locator('.map-diagram').waitFor()
-  assert.equal(await page.locator('.map-diagram .station-marker').count(),5)
+  if(expectAmap){
+   await page.locator('.map-runtime.ready').waitFor({timeout:35000})
+   assert.equal(await page.locator('.map-diagram').count(),0,'在线演示必须显示真实高德底图')
+   assert.equal(await page.locator('.amap-stage .station-marker').count(),5)
+   assert.equal(await page.evaluate(()=>!!window.AMap?.Map),true)
+   await (await mapTile).finished()
+   await page.waitForTimeout(800)
+  }else{
+   await page.locator('.map-diagram').waitFor()
+   assert.equal(await page.locator('.map-diagram .station-marker').count(),5)
+  }
   await page.screenshot({path:path.join(screenshots,'pages-dashboard.png')})
   await page.locator('.navigation .nav-item').filter({hasText:'设备与插座'}).click()
   await page.getByLabel('筛选站点',{exact:true}).selectOption('ST04')
@@ -70,7 +81,7 @@ async function main(){
   assert.deepEqual(apiRequests,[])
   assert.deepEqual(failedAssets,[])
   assert.deepEqual(errors,[])
-  const proof={base,loginRequired:true,invalidCredentialsRejected:true,sessionSurvivesReload:true,logoutSurvivesReload:true,passwordNotStored:true,mobileLoginFits:true,repoSubpathAssets:true,noBackendRequests:true,variedRows:true,preferencesSurviveReload:true,notificationsWork:true,demoReentry:true,pageErrors:errors}
+  const proof={base,mapMode:expectAmap?'amap':'diagram',realMapTileVerified:expectAmap,loginRequired:true,invalidCredentialsRejected:true,sessionSurvivesReload:true,logoutSurvivesReload:true,passwordNotStored:true,mobileLoginFits:true,repoSubpathAssets:true,noBackendRequests:true,variedRows:true,preferencesSurviveReload:true,notificationsWork:true,demoReentry:true,pageErrors:errors}
   fs.writeFileSync(path.join(__dirname,'pages-verification.json'),JSON.stringify(proof,null,2)+'\n')
   console.log(JSON.stringify(proof,null,2))
  }finally{await browser.close()}
