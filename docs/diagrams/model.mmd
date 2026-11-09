@@ -1,0 +1,66 @@
+erDiagram
+  direction LR
+  STATION ||--o{ DEVICE_ROW : "包含设备排"
+  DEVICE_ROW ||--o{ DEVICE : "按排内序号排列"
+  DEVICE ||--|{ SOCKET : "固定两个独立插座"
+  STATION ||--|| RATE : "当前费率"
+  USER ||--o{ CHARGE_ORDER : "创建订单"
+  SOCKET ||--o{ CHARGE_ORDER : "保留历史订单"
+  USER ||--o{ REPAIR : "提交报修"
+  SOCKET ||--o{ REPAIR : "关联报修"
+  STATION {
+    string id PK
+    string name
+    string address
+    float lat
+    float lng
+    boolean enabled
+  }
+  DEVICE_ROW {
+    string id PK
+    string stationId FK
+    string name
+    int index
+  }
+  DEVICE {
+    string id PK
+    string rowId FK
+    string code
+    int position
+    boolean online
+  }
+  SOCKET {
+    string id PK
+    string deviceId FK
+    int number
+    string code
+    boolean fault
+  }
+  RATE {
+    string stationId PK,FK
+    float electricRate
+    float serviceRate
+  }
+  USER {
+    string id PK
+    string account
+    boolean enabled
+  }
+  CHARGE_ORDER {
+    string id PK
+    string userId FK
+    string socketId FK
+    string status
+    string payStatus
+    float electricRate
+    float serviceRate
+    float total
+  }
+  REPAIR {
+    string id PK
+    string userId FK
+    string socketId FK
+    string description
+    string status
+    string resolution
+  }

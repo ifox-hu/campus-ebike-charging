@@ -1,0 +1,19 @@
+flowchart LR
+  Root["校园非机动车充电管理平台"]
+  Root --> Operations["运营总览"]
+  Root --> Resources["充电资源"]
+  Root --> Business["业务处理"]
+  Root --> Tools["账号与工作台"]
+  Operations --> Metrics["七项运营指标 / 图表 / CSV 导出"]
+  Operations --> Map["校园站点地图 / 搜索定位 / 状态筛选"]
+  Resources --> Sites["站点名称 / 校园坐标 / 启停"]
+  Resources --> Layout["多排设备 / A-B 独立插座 / 批量追加"]
+  Business --> Rates["电费与服务费 / 启动费率快照"]
+  Business --> Orders["充电订单 / 启动反馈 / 异常核验 / 模拟支付"]
+  Business --> Repairs["用户管理 / 故障报修 / 处理记录"]
+  Tools --> Login["演示登录 / 本机账号 / 接口账号"]
+  Tools --> Utilities["全局搜索 / 通知已读 / 资料 / 字号与密度"]
+  classDef main fill:#ede9fe,stroke:#8b5cf6,color:#4c1d95
+  classDef branch fill:#f0f9ff,stroke:#7dd3fc,color:#075985
+  class Root main
+  class Operations,Resources,Business,Tools branch

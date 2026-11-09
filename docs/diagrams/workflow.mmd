@@ -1,0 +1,16 @@
+flowchart TB
+  Select["选择站点、设备排、设备与 A/B 插座"] -->|校验用户与插座可用| Request["创建启动中订单 / 保存费率快照"]
+  Request --> Feedback{"模拟设备启动反馈"}
+  Feedback -->|失败| Fail["不计费 / 释放占用"]
+  Feedback -->|成功| Charging["充电中 / 模拟计量"]
+  Request -. "离线或故障" .-> Abnormal["异常待处理 / 保持占用"]
+  Charging -->|离线或故障| Abnormal
+  Charging -->|正常结束| Ended["释放插座 / 电费与服务费结算"]
+  Abnormal --> Verify["核验已停止 / 填写原因"]
+  Verify --> Ended
+  Ended --> Payment["模拟支付 / 零费用无需支付"]
+  Repair["用户报修 / 管理员处理"] -. "独立维护" .-> Maintenance["结案不自动恢复故障插座"]
+  classDef success fill:#ecfdf5,stroke:#34d399,color:#065f46
+  classDef warning fill:#fff7ed,stroke:#fb923c,color:#9a3412
+  class Charging,Ended,Payment success
+  class Abnormal,Verify,Fail warning
