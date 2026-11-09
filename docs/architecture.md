@@ -1,48 +1,33 @@
-# 架构与图表说明
+# 架构说明
 
-本页按当前代码说明模块职责、调用关系与数据保存方式。
+## 模块职责
 
-## 图表与源码对应
-
-| 图表 | 可编辑 Mermaid 源文件 | 代码依据 |
+| 目录 | 职责 | 数据来源 |
 | --- | --- | --- |
-| 系统架构 | [architecture.mmd](diagrams/architecture.mmd) | [main.js](../src/main.js)、[runtime.js](../src/runtime.js)、[accountApi.js](../src/services/accountApi.js)、[store.js](../src/domain/store.js)、[ConnectedApp.vue](../src/connected/ConnectedApp.vue) |
-| 功能结构 | [modules.mmd](diagrams/modules.mmd) | [data.js](../src/data.js)、[App.vue](../src/App.vue)、[components](../src/components/) |
-| 业务流程 | [workflow.mmd](diagrams/workflow.mmd) | [service.js](../src/domain/service.js)、[SocketPanel.vue](../src/components/SocketPanel.vue)、[OrderDetails.vue](../src/components/OrderDetails.vue) |
-| 业务数据关系 | [model.mmd](diagrams/model.mmd) | [seed.js](../src/domain/seed.js)、[service.js](../src/domain/service.js) |
-| 自动发布 | [deployment.mmd](diagrams/deployment.mmd) | [pages.yml](../.github/workflows/pages.yml)、[vite.config.js](../vite.config.js) |
+| `frontend/` | Vue 管理页面、统计、设备排布、高德地图及接口适配 | 离线演示或充电业务 API |
+| `backend/charging-service/` | 用户与管理员鉴权、站点、设备插座、费率、订单、模拟计量支付与报修 | MySQL |
+| `backend/account-service/` | 可选的独立本机管理账号及偏好服务 | H2 文件库 |
+| `uni-app/` | H5／微信小程序共用的找站、选插座、充电、订单与报修页面 | 本地演示或业务 API |
 
-README 默认展示已生成的 SVG 矢量图，便于直接查看和放大；每张图下方附可展开的 Mermaid 图源，`docs/diagrams/` 同时保留 `.mmd` 与 `.svg` 文件。图形使用 Mermaid 12.3.0 逐项解析并渲染验证，不依赖外部收费图片地址。修改图源后应重新生成同名 SVG，并同步 README 折叠图块。
+本仓库包含各模块源码，运行时仍各自构建与部署。管理端静态演示不连接业务数据库；联网入口独立加载服务端适配层，不把网络错误回退为本地成功状态。
 
-## 运行边界
+## 图表与代码
 
-1. **公开 pages**：纯静态管理端。演示账号在浏览器校验，登录标记在 sessionStorage；业务、资料与设置在 localStorage。没有 Java 账号 API 或真实设备通信。
-2. **本机 default**：Vue 管理前端与 Spring Boot 独立账号服务前后端分离。账号服务维护真实本机会话及两张 H2 表，充电业务仍由前端演示领域层维护。
-3. **接口 connected**：独立加载外部业务适配客户端，读取服务端站点、设备、插座、费率、订单等数据。外部后端和用户端不包含在本仓库；接口失败不回退为本地假数据。
+| 图表 | 可编辑图源 | 主要代码 |
+| --- | --- | --- |
+| 系统架构 | [architecture.mmd](diagrams/architecture.mmd) | [frontend/main.js](../frontend/src/main.js)、[业务后端](../backend/charging-service/src/)、[用户端](../uni-app/src/) |
+| 功能结构 | [modules.mmd](diagrams/modules.mmd) | [管理组件](../frontend/src/components/)、[用户页面](../uni-app/src/pages/) |
+| 业务流程 | [workflow.mmd](diagrams/workflow.mmd) | [前端业务规则](../frontend/src/domain/service.js)、[业务服务](../backend/charging-service/src/main/java/com/chargeplatform/) |
+| 演示业务关系 | [model.mmd](diagrams/model.mmd) | [前端示例模型](../frontend/src/domain/seed.js) |
 
-## 业务规则
+ER 图描述管理端演示对象的逻辑关联；真实业务数据库的结构见 [SQL](../backend/charging-service/db/)，独立账号服务结构见 [schema.sql](../backend/account-service/src/main/resources/schema.sql)。
 
-- 站点包含设备排，排内设备保持稳定编号，每台设备固定 A、B 两个独立插座。
-- 启动中的订单即占用插座；启动成功才进入充电，失败不产生费用。
-- 订单保留启动费率、站点名称和设备编号快照，历史费用不随当前费率改变。
-- 正常结束或异常核验完成后释放插座，费用分电费与服务费，只有已结束订单可模拟支付。
-- 故障报修与插座故障状态分别维护，结案不自动恢复设备。
+图源旁保留 SVG，README 可直接显示。修改 `.mmd` 后重新生成同名 SVG 并同步 README 的折叠图块；配色和字体在 [config.json](diagrams/config.json)。
 
-## 账号服务存储
+## 地图与平台差异
 
-[server/schema.sql](../server/src/main/resources/schema.sql)定义两张表：
+管理端直接使用高德 2.0 JS SDK，H5 使用官方 Loader 和安全码代理；微信端使用原生地图组件。三者按已声明坐标系使用站点位置，不把缺失坐标变成零点。没有凭证时，管理端保留示意与筛选，H5 显示配置提示。
 
-- `eb_admin_accounts`：管理员账号、密码哈希、资料与显示偏好。
-- `eb_admin_notice_reads`：账号与通知事件键的已读关联。
+## 业务与历史
 
-README 业务 ER 图描述浏览器演示对象间的逻辑关系，不等同于账号数据库，也不表明本仓库已将充电业务迁移至 MySQL。
-
-## 更新图表
-
-可使用 Mermaid CLI 在已安装可用浏览器的开发环境重新导出，例如：
-
-```bash
-npx --yes --package=@mermaid-js/mermaid-cli -- mmdc -i docs/diagrams/architecture.mmd -o docs/diagrams/architecture.svg -c docs/diagrams/config.json -b white
-```
-
-其余四张图使用相同方法替换输入、输出文件名。特殊浏览器路径可按 Mermaid CLI 的 `--puppeteerConfigFile` 文档配置。导出后检查中文、箭头、分组及标签是否完整，再提交 SVG 与图源；主题及中文字体配置见 [config.json](diagrams/config.json)。图表工具不是管理端运行依赖。
+站点—设备排—设备—A/B 插座保持稳定标识；活动任务占用插座，订单保留启动费率与信息快照。正常结束或核验异常后释放，报修结案与故障恢复分别处理。本地用户端保留既有 1–5 小时及充满自停规则，联网模式以服务端实现为准。

@@ -1,35 +1,35 @@
 # 测试说明
 
-## 自动测试
+## 模块验证
 
 ```bash
-npm ci
-npm test
-npm run build
-npm run build:pages
-npm run build:connected
-mvn -B -f server/pom.xml test
+npm --prefix frontend ci
+npm --prefix frontend test
+npm --prefix frontend run build
+npm --prefix frontend run build:pages
+npm --prefix frontend run build:connected
+npm --prefix uni-app ci
+npm --prefix uni-app test
+npm --prefix uni-app run build:h5
+npm --prefix uni-app run build:mp-weixin
+mvn -B -f backend/pom.xml test
 ```
 
-Node 测试使用独立内存对象，覆盖双插座约束、占用、费率快照、启动反馈、故障与异常、历史保护、校园迁移、差异化排布、通知、接口适配和静态演示账户适配。Java 测试使用独立 H2 内存数据库，不修改本机账号库。
+前端测试使用独立内存对象，后端集成测试使用隔离 H2 内存数据库，不修改本机账号文件或业务库。测试覆盖双插座、占用与费率快照、启动反馈、结算支付、报修、权限、地图坐标以及用户端六种充电方式。
 
-## 可选浏览器验收
+## 浏览器验证
 
-脚本使用 Microsoft Edge 和 Playwright。Playwright 不是项目运行依赖，可在独立 QA 环境安装，或本机临时执行：
+需额外的 Playwright 与 Microsoft Edge，它们不是运行依赖。先启动待测前端，再运行对应脚本：
 
-```bash
-npm install --no-save --package-lock=false playwright
-```
+| 脚本 | 默认目标 |
+| --- | --- |
+| `frontend/e2e/verify-pages.cjs` | 管理端静态子路径预览 5207 |
+| `frontend/e2e/verify-dashboard-map.cjs` | 独立账号模式 5195 |
+| `frontend/e2e/verify-map-interactions.cjs` | 已配置高德的独立账号模式 |
+| `frontend/e2e/verify-station-layouts.cjs` | 独立账号模式设备排布 |
+| `uni-app/e2e/verify-charging-plans.cjs` | 用户端本地 H5 |
+| `uni-app/e2e/verify-map.cjs` | 已配置高德的用户端本地 H5 |
 
-先启动待测模式，再执行对应脚本。默认地址：
+`PAGES_QA_URL`、`ADMIN_MAP_BASE`、`MOBILE_QA_URL` 可指向单独测试端口。生成的截图与 JSON 留在各自 e2e 目录并忽略提交；README 只引用 `docs/screenshots/` 中挑选的展示图片。
 
-| 脚本 | 默认目标 | 前提 |
-| --- | --- | --- |
-| `node qa/verify-pages.cjs` | 5207/campus-ebike-charging-admin/ | Pages 子路径构建与 preview |
-| `node qa/verify-station-layouts.cjs` | 5195 | 本机账号服务 |
-| `node qa/verify-dashboard-map.cjs` | 5195 | 本机账号服务，可回退地图示意 |
-| `node qa/verify-map-interactions.cjs` | 5195 | 本机账号服务和有效高德 Web 配置 |
-
-公网复验可设置 `PAGES_QA_URL=https://ifox-hu.github.io/campus-ebike-charging-admin/` 后运行 Pages 脚本。测试使用独立浏览器上下文，不操作用户日常浏览器的演示数据。
-
-截图与 JSON 结果位于 `qa/`，默认不提交。README 的 `docs/screenshots/` 是经选择的文档配图；本机地图截图和公开 Pages 截图分别标注，避免把有 Key 的本机运行效果当成默认线上能力。
+浏览器测试使用隔离上下文，不操作用户日常浏览器状态。服务端接口失败不会被测试工具替换成成功的假响应。

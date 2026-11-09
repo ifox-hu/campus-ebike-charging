@@ -1,26 +1,26 @@
 flowchart TB
-  Visitor["浏览器访问者 / 管理员"] --> Front["Vue 3 + Vite 管理后台"]
+  Visitor["浏览器访问者 / 管理员"] --> Front["Vue 管理端 / frontend"]
   Front --> Mode{"独立入口 / 适配层"}
   subgraph Pages["公开演示 · pages"]
     Demo["浏览器演示登录"] --> Session[("sessionStorage 会话")]
     Demo --> Local[("localStorage 业务与设置")]
   end
-  subgraph Account["本机账号 · default"]
-    Auth["Spring Boot / Security"] --> H2[("H2 账号与偏好")]
+  subgraph Account["独立账号 · account-service"]
+    Auth["账号服务 / Spring Security"] --> H2[("H2 账号与偏好")]
     Sim["充电业务前端模拟"] --> BusinessStore[("localStorage 业务")]
   end
-  subgraph Connected["外部业务 · connected"]
-    Client["接口请求与数据映射"] --> API["外部充电业务 API"]
-    API --> Database[("外部业务数据库")]
+  subgraph Connected["充电业务 · charging-service"]
+    Client["管理端接口适配"] --> API["充电业务 API"]
+    API --> Database[("MySQL 业务数据库")]
   end
   Mode -->|pages| Demo
   Mode -->|账号请求| Auth
   Mode -->|模拟业务| Sim
   Mode -->|connected| Client
-  Mini["外部 H5 / 微信小程序"] -. "共享独立业务 API" .-> API
+  Mini["H5 / 微信小程序 / uni-app"] -. "共享充电业务 API" .-> API
   classDef frontend fill:#eef2ff,stroke:#818cf8,color:#312e81
   classDef data fill:#ecfdf5,stroke:#34d399,color:#065f46
-  classDef external fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5
   class Front,Demo,Client frontend
   class Local,Session,H2,BusinessStore data
-  class API,Database,Mini external
+  class API,Mini frontend
+  class Database data

@@ -1,0 +1,22 @@
+name: campus-charging
+services:
+  mysql:
+    image: mysql:8.0.30
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-campus_charge}
+      MYSQL_USER: ${MYSQL_USER:-campus_charge}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+    ports:
+      - "127.0.0.1:13307:3306"
+    volumes:
+      - campus-mysql:/var/lib/mysql
+      - ./charging-service/db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+volumes:
+  campus-mysql:

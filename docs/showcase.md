@@ -3,7 +3,7 @@
 ## 来源与范围
 
 - 管理端截图来自本仓库的公开演示构建，页面、组件和操作均为实际运行结果。
-- 小程序用户端截图来自配套 uni-app 用户端的 H5 预览，与小程序共用页面代码；不是微信真机截图，也不表示已通过小程序发布审核。用户端源码不包含在本管理端仓库。
+- 小程序用户端截图来自配套 uni-app 用户端的 H5 预览，与小程序共用页面代码；不是微信真机截图，也不表示已通过小程序发布审核。用户端源码位于仓库 `uni-app/`。
 - 所有截图使用独立浏览器上下文和通用演示数据。具体学校名、楼栋名、地址和坐标不用于公开项目展示；应用默认数据、已登录用户、既有数据库均未修改。
 - 充电及支付为软件模拟。充电中、定时结束及账单截图由模拟时钟构造演示场景，不对应实际电量或收款。
 
@@ -19,8 +19,8 @@
 在独立 QA 环境提供 Playwright 和 Microsoft Edge，先运行对应前端预览，然后执行：
 
 ```bash
-node qa/capture-admin-showcase.cjs
-node qa/capture-user-showcase.cjs
+node frontend/e2e/capture-admin-showcase.cjs
+node frontend/e2e/capture-user-showcase.cjs
 ```
 
 - `ADMIN_SHOWCASE_URL` 可指定管理端静态预览地址。

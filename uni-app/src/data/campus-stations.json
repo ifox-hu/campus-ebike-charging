@@ -1,0 +1,271 @@
+{
+  "source": "2026-11-09 依据官方校园 GIS 核对楼栋及别名，在高德 GCJ-02 实际地理底图目视拾取楼栋旁室外道路。点位为演示规划估算，非实测设施。",
+  "stations": [
+    {
+      "id": "baoan",
+      "legacyNames": [
+        "中心区演示充电站（模拟）",
+        "南阳师范学院校园充电站（模拟）",
+        "南阳师范学院·中区教学区（模拟）",
+        "南阳师范学院·逸夫教学楼南侧（模拟）"
+      ],
+      "name": "南阳师范学院·逸夫教学楼南侧（模拟）",
+      "area": "逸夫教学楼南侧",
+      "prefix": "NYNU-TEACH",
+      "rows": [
+        12,
+        15,
+        12
+      ],
+      "address": "南阳师范学院中区 · 逸夫教学楼南侧室外道路附近",
+      "latitude": 32.975612,
+      "longitude": 112.490464,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "参考南阳师范学院官方校园GIS核对楼栋及别名；高德GCJ-02底图目视拾取楼旁室外道路作为演示规划点，非实测充电设施。",
+      "previousLocation": {
+        "name": "南阳师范学院·中区教学区（模拟）",
+        "address": "河南省南阳市卧龙区卧龙路1638号 · 中区教学区演示站点",
+        "latitude": 32.976223,
+        "longitude": 112.489413
+      },
+      "landmark": {
+        "name": "逸夫教学楼",
+        "source": "https://gis.nynu.edu.cn/#/",
+        "amapName": "南阳师范学院逸夫教学楼",
+        "amapLatitude": 32.976221,
+        "amapLongitude": 112.489705,
+        "checkedAt": "2026-11-09",
+        "selection": "高德底图楼栋周边室外道路目视拾取；非实测设施"
+      },
+      "campusLocationRevision": 3,
+      "previousLocations": [
+        {
+          "name": "南阳师范学院·中区教学区（模拟）",
+          "address": "河南省南阳市卧龙区卧龙路1638号 · 中区教学区演示站点",
+          "latitude": 32.976223,
+          "longitude": 112.489413
+        },
+        {
+          "name": "南阳师范学院·逸夫教学楼南侧（模拟）",
+          "address": "南阳师范学院中区 · 逸夫教学楼南侧室外道路附近",
+          "latitude": 32.97585,
+          "longitude": 112.489705
+        }
+      ]
+    },
+    {
+      "id": "nynu-life",
+      "name": "南阳师范学院·中区四公寓东侧（模拟）",
+      "area": "中区四公寓东侧",
+      "prefix": "NYNU-LIFE",
+      "rows": [
+        13,
+        15
+      ],
+      "address": "南阳师范学院中区 · 第四学生公寓东侧室外道路附近",
+      "latitude": 32.975396,
+      "longitude": 112.489584,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "参考南阳师范学院官方校园GIS核对楼栋及别名；高德GCJ-02底图目视拾取楼旁室外道路作为演示规划点，非实测充电设施。",
+      "previousLocation": {
+        "name": "南阳师范学院·中区生活区（模拟）",
+        "address": "河南省南阳市卧龙区卧龙路1638号 · 中区生活区演示站点",
+        "latitude": 32.973029,
+        "longitude": 112.490904
+      },
+      "legacyNames": [
+        "南阳师范学院·中区生活区（模拟）",
+        "南阳师范学院·中区四公寓北侧（模拟）"
+      ],
+      "landmark": {
+        "name": "第四学生公寓（中区）",
+        "source": "https://gis.nynu.edu.cn/#/",
+        "amapName": "南阳师范学院-中区第四公寓",
+        "amapLatitude": 32.973029,
+        "amapLongitude": 112.490904,
+        "checkedAt": "2026-11-09",
+        "selection": "高德底图楼栋周边室外道路目视拾取；非实测设施"
+      },
+      "campusLocationRevision": 3,
+      "previousLocations": [
+        {
+          "name": "南阳师范学院·中区生活区（模拟）",
+          "address": "河南省南阳市卧龙区卧龙路1638号 · 中区生活区演示站点",
+          "latitude": 32.973029,
+          "longitude": 112.490904
+        },
+        {
+          "name": "南阳师范学院·中区四公寓北侧（模拟）",
+          "address": "南阳师范学院中区 · 第四学生公寓北侧室外道路附近",
+          "latitude": 32.97333,
+          "longitude": 112.490904
+        }
+      ]
+    },
+    {
+      "id": "nynu-gym",
+      "name": "南阳师范学院·体育馆南侧（模拟）",
+      "area": "体育馆南侧",
+      "prefix": "NYNU-GYM",
+      "rows": [
+        12
+      ],
+      "address": "南阳师范学院中区 · 体育馆南侧室外道路附近",
+      "latitude": 32.978431,
+      "longitude": 112.489693,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "参考南阳师范学院官方校园GIS核对楼栋及别名；高德GCJ-02底图目视拾取楼旁室外道路作为演示规划点，非实测充电设施。",
+      "previousLocation": {
+        "name": "南阳师范学院·中区体育馆（模拟）",
+        "address": "河南省南阳市卧龙区卧龙路1638号 · 中区体育馆演示站点",
+        "latitude": 32.978854,
+        "longitude": 112.489532
+      },
+      "legacyNames": [
+        "南阳师范学院·中区体育馆（模拟）",
+        "南阳师范学院·体育馆南侧（模拟）"
+      ],
+      "landmark": {
+        "name": "体育馆",
+        "source": "https://gis.nynu.edu.cn/#/",
+        "amapName": "南阳师范学院体育馆",
+        "amapLatitude": 32.978854,
+        "amapLongitude": 112.489532,
+        "checkedAt": "2026-11-09",
+        "selection": "高德底图楼栋周边室外道路目视拾取；非实测设施"
+      },
+      "campusLocationRevision": 3,
+      "previousLocations": [
+        {
+          "name": "南阳师范学院·中区体育馆（模拟）",
+          "address": "河南省南阳市卧龙区卧龙路1638号 · 中区体育馆演示站点",
+          "latitude": 32.978854,
+          "longitude": 112.489532
+        },
+        {
+          "name": "南阳师范学院·体育馆南侧（模拟）",
+          "address": "南阳师范学院中区 · 体育馆南侧室外道路附近",
+          "latitude": 32.9784,
+          "longitude": 112.489532
+        }
+      ]
+    },
+    {
+      "id": "nynu-west",
+      "name": "南阳师范学院·西区八公寓北侧（模拟）",
+      "area": "西区八公寓北侧",
+      "prefix": "NYNU-WEST",
+      "rows": [
+        9,
+        11,
+        8
+      ],
+      "address": "南阳师范学院西区 · 第八学生公寓北侧室外道路附近",
+      "latitude": 32.974283,
+      "longitude": 112.483707,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "参考南阳师范学院官方校园GIS核对楼栋及别名；高德GCJ-02底图目视拾取楼旁室外道路作为演示规划点，非实测充电设施。",
+      "previousLocation": {
+        "name": "南阳师范学院·西区校园（模拟）",
+        "address": "河南省南阳市卧龙区卧龙路1638号 · 西区校园演示站点",
+        "latitude": 32.975255,
+        "longitude": 112.48266
+      },
+      "legacyNames": [
+        "南阳师范学院·西区校园（模拟）",
+        "南阳师范学院·西区八公寓北侧（模拟）"
+      ],
+      "landmark": {
+        "name": "第八学生公寓（西区）",
+        "source": "https://gis.nynu.edu.cn/#/",
+        "amapName": "南阳师范学院西区学生公寓8幢",
+        "amapLatitude": 32.973761,
+        "amapLongitude": 112.483235,
+        "checkedAt": "2026-11-09",
+        "selection": "高德底图楼栋周边室外道路目视拾取；非实测设施"
+      },
+      "campusLocationRevision": 3,
+      "previousLocations": [
+        {
+          "name": "南阳师范学院·西区校园（模拟）",
+          "address": "河南省南阳市卧龙区卧龙路1638号 · 西区校园演示站点",
+          "latitude": 32.975255,
+          "longitude": 112.48266
+        },
+        {
+          "name": "南阳师范学院·西区八公寓北侧（模拟）",
+          "address": "南阳师范学院西区 · 第八学生公寓北侧室外道路附近",
+          "latitude": 32.97405,
+          "longitude": 112.483235
+        }
+      ]
+    },
+    {
+      "id": "nynu-east",
+      "name": "南阳师范学院·东升园餐厅南侧（模拟）",
+      "area": "东升园餐厅南侧",
+      "prefix": "NYNU-EAST",
+      "rows": [
+        10,
+        12
+      ],
+      "address": "南阳师范学院东区 · 东升园餐厅（东区学生餐厅/教工餐厅）南侧道路附近",
+      "latitude": 32.976604,
+      "longitude": 112.495396,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "参考南阳师范学院官方校园GIS核对楼栋及别名；高德GCJ-02底图目视拾取楼旁室外道路作为演示规划点，非实测充电设施。",
+      "previousLocation": {
+        "name": "南阳师范学院·东区运动区（模拟）",
+        "address": "河南省南阳市卧龙区卧龙路1398号 · 东区运动区演示站点",
+        "latitude": 32.976149,
+        "longitude": 112.493529
+      },
+      "legacyNames": [
+        "南阳师范学院·东区运动区（模拟）",
+        "南阳师范学院·东升园餐厅南侧（模拟）"
+      ],
+      "landmark": {
+        "name": "东区学生餐厅",
+        "source": "https://gis.nynu.edu.cn/#/",
+        "amapName": "南阳师范学院东区教工餐厅",
+        "amapLatitude": 32.976775,
+        "amapLongitude": 112.495375,
+        "checkedAt": "2026-11-09",
+        "selection": "高德底图楼栋周边室外道路目视拾取；非实测设施"
+      },
+      "campusLocationRevision": 3,
+      "previousLocations": [
+        {
+          "name": "南阳师范学院·东区运动区（模拟）",
+          "address": "河南省南阳市卧龙区卧龙路1398号 · 东区运动区演示站点",
+          "latitude": 32.976149,
+          "longitude": 112.493529
+        },
+        {
+          "name": "南阳师范学院·东升园餐厅南侧（模拟）",
+          "address": "南阳师范学院东区 · 东升园餐厅（东区学生餐厅/教工餐厅）南侧道路附近",
+          "latitude": 32.9764,
+          "longitude": 112.495375
+        }
+      ]
+    },
+    {
+      "id": "garden",
+      "legacyNames": [
+        "宝安演示充电站（模拟）"
+      ],
+      "name": "南阳理工学院校园充电站（模拟）",
+      "area": "南阳理工学院",
+      "prefix": "NYIT",
+      "rows": [
+        12,
+        12
+      ],
+      "address": "河南省南阳市宛城区长江路80号 · 毕设演示点位",
+      "latitude": 32.967595,
+      "longitude": 112.553209,
+      "coordinateType": "GCJ02",
+      "coordinateNote": "学校POI参考位置，非充电设施实测位置"
+    }
+  ]
+}

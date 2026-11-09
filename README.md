@@ -1,17 +1,17 @@
-# 校园非机动车充电管理平台
+# 校园非机动车充电平台
 
 [![Deploy](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml/badge.svg)](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml)
 ![Vue](https://img.shields.io/badge/Vue-3.5-42b883)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
 ![Java](https://img.shields.io/badge/Java-17-ed8b00)
 
-面向校园电动自行车集中充电场景的毕业设计管理端，采用 **Vue 3 + Vite + ECharts**。站点按“**站点 → 多排设备 → 每台设备两个独立插座 A/B**”组织。
+面向校园电动自行车集中充电场景的前后端分离项目，包含 **Vue 3 + Vite 管理端、Spring Boot 后端、uni-app 用户端**。站点按“**站点 → 多排设备 → 每台设备两个独立插座 A/B**”组织。
 
 **[在线演示](https://ifox-hu.github.io/campus-ebike-charging-admin/) · [部署说明](docs/deployment.md) · [问题反馈](https://github.com/ifox-hu/campus-ebike-charging-admin/issues)**
 
 > 在线页面是公开静态演示，演示账号 `demo`、密码 `Demo@123456`（仅模拟登录流程，并非真实身份认证）；业务、资料、通知与设置只保存在访问者自己的浏览器，不控制真实充电设备，不发生真实付款。
 >
-> 本仓库包含管理前端及独立的 Spring Boot 管理员账号服务。统一充电业务后端、H5/微信小程序不包含在本仓库；接口适配客户端与本地模拟版分开运行。
+> 项目按 `frontend/`、`backend/`、`uni-app/` 分目录组织。H5 与微信小程序共用源码；管理演示、独立账号模式和统一业务模式分别运行。
 
 ## 目录
 
@@ -22,6 +22,7 @@
 - [业务交互流程](#业务交互流程)
 - [快速开始](#快速开始)
 - [核心数据关系](#核心数据关系)
+- [目录结构](#目录结构)
 - [许可说明](#许可说明)
 
 ## 项目预览
@@ -38,7 +39,7 @@
 
 ### 小程序用户端
 
-配套用户端采用 uni-app，共用页面可构建为 H5 和微信小程序。以下是实际运行的 **H5 预览截图**，并非微信真机截图；用户端源码独立于本管理端仓库。截图使用通用演示数据，不展示具体学校楼栋或坐标。截图来源与复现方式见 [展示说明](docs/showcase.md)。
+配套用户端采用 uni-app，共用页面可构建为 H5 和微信小程序。以下是实际运行的 **H5 预览截图**，并非微信真机截图；用户端源码位于 `uni-app/`。截图使用通用演示数据，不展示具体学校楼栋或坐标。截图来源与复现方式见 [展示说明](docs/showcase.md)。
 
 | 找站与空闲筛选 | 设备排布与插座 |
 | --- | --- |
@@ -125,36 +126,36 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  Visitor["浏览器访问者 / 管理员"] --> Front["Vue 3 + Vite 管理后台"]
+  Visitor["浏览器访问者 / 管理员"] --> Front["Vue 管理端 / frontend"]
   Front --> Mode{"独立入口 / 适配层"}
   subgraph Pages["公开演示 · pages"]
     Demo["浏览器演示登录"] --> Session[("sessionStorage 会话")]
     Demo --> Local[("localStorage 业务与设置")]
   end
-  subgraph Account["本机账号 · default"]
-    Auth["Spring Boot / Security"] --> H2[("H2 账号与偏好")]
+  subgraph Account["独立账号 · account-service"]
+    Auth["账号服务 / Spring Security"] --> H2[("H2 账号与偏好")]
     Sim["充电业务前端模拟"] --> BusinessStore[("localStorage 业务")]
   end
-  subgraph Connected["外部业务 · connected"]
-    Client["接口请求与数据映射"] --> API["外部充电业务 API"]
-    API --> Database[("外部业务数据库")]
+  subgraph Connected["充电业务 · charging-service"]
+    Client["管理端接口适配"] --> API["充电业务 API"]
+    API --> Database[("MySQL 业务数据库")]
   end
   Mode -->|pages| Demo
   Mode -->|账号请求| Auth
   Mode -->|模拟业务| Sim
   Mode -->|connected| Client
-  Mini["外部 H5 / 微信小程序"] -. "共享独立业务 API" .-> API
+  Mini["H5 / 微信小程序 / uni-app"] -. "共享充电业务 API" .-> API
   classDef frontend fill:#eef2ff,stroke:#818cf8,color:#312e81
   classDef data fill:#ecfdf5,stroke:#34d399,color:#065f46
-  classDef external fill:#f8fafc,stroke:#94a3b8,color:#475569,stroke-dasharray:5 5
   class Front,Demo,Client frontend
   class Local,Session,H2,BusinessStore data
-  class API,Database,Mini external
+  class API,Mini frontend
+  class Database data
 ```
 
 </details>
 
-图中实线表示本仓库的实际调用；外部业务 API、数据库及 H5/微信小程序为独立部署部分。三个运行模式通过独立入口与适配层切换，不混用数据。
+管理端位于 `frontend/`，两个后端服务位于 `backend/`，H5／小程序位于 `uni-app/`。代码在同一仓库，运行与存储仍按模式隔离。
 
 “Vue + Vite”是前端技术组合；完整联网业务还需要独立后端。Pages 不运行 Java，也不会代替充电业务服务器。
 
@@ -195,44 +196,44 @@ flowchart TB
 
 ## 快速开始
 
-### 仅体验静态演示
+### 本地管理演示
 
-需要 **Node.js 22 LTS、npm**；无需 Java、数据库或地图 Key。
+需要 Node.js 22：
 
 ```bash
 git clone https://github.com/ifox-hu/campus-ebike-charging-admin.git
-cd campus-ebike-charging-admin
+cd campus-ebike-charging-admin/frontend
 npm ci
 npm run dev:pages
 ```
 
-打开终端显示的地址，默认 `http://127.0.0.1:5207/`，先使用演示账号登录。
+默认端口 5207，演示账号 `demo` / `Demo@123456`。本机账号模式可在仓库根目录运行 `./scripts/dev-admin.ps1`，账号服务与管理端默认端口为 8092 / 5195。
 
-### 运行本机账号服务版
+### H5 与微信小程序
 
-另需 **Java 17、Maven 3.9+**。使用两个终端：
-
-```bash
-# 终端一
-cd server
-mvn spring-boot:run
-```
+一份 uni-app 源码生成两端，不维护重复的 H5 工程：
 
 ```bash
-# 终端二：仓库根目录
+cd uni-app
 npm ci
-npm run dev
+npm run dev:h5
+npm run build:mp-weixin
 ```
 
-前端默认 `http://127.0.0.1:5195/`，账号服务默认仅监听 `127.0.0.1:8092`。
+H5 默认端口 5197。微信开发者工具导入 `uni-app/dist/build/mp-weixin/`，AppID 在 `uni-app/src/manifest.json` 配置。编译通过不代表微信真机或正式发布验收。
 
-首次初始化示例账号为 `admin` / `Admin@123456`。仅用于本机开发；可通过 `EBIKE_ADMIN_USERNAME`、`EBIKE_ADMIN_PASSWORD` 设置初始化值，已有账号不会被重新覆盖。公开 Pages 不使用这组账号。
+### 业务后端与双端联调
 
-Windows 也可在根目录执行 `./启动界面复刻.ps1`，由脚本检查依赖和启动本机服务。账号数据库位于 `server/runtime/`，不纳入版本控制。
+1. 按 [配置说明](docs/configuration.md) 初始化独立开发 MySQL，填写 `backend/.env.local`。
+2. 仓库根目录运行 `./scripts/dev-charging.ps1`，默认业务 API 8081。
+3. 在 `frontend/` 运行 `npm run dev:connected`，默认管理端 5201。
+4. 在 `uni-app/` 运行 `npm run dev:connected`，默认用户端 5198。
+
+显式 `graduation` 模式的新库会创建 `graduation_admin` / `DemoAdmin2027!` 及 `graduation_user` / `DemoUser2027!`。已有站点、账号与密码不被初始化程序覆盖。
 
 ## 核心数据关系
 
-下图描述 `src/domain/seed.js` 与 `service.js` 中的前端演示业务模型。PK/FK 表示逻辑标识与关联，**不是声明这些业务实体已经存入 H2 或 MySQL**。每台设备恰好包含 A、B 两个独立插座；每个插座允许多条历史订单，但同一时间只能存在一笔活动任务。
+下图描述 `frontend/src/domain/seed.js` 与 `frontend/src/domain/service.js` 中的前端演示业务模型。PK/FK 表示逻辑标识与关联，**不是声明这些业务实体已经存入 H2 或 MySQL**。每台设备恰好包含 A、B 两个独立插座；每个插座允许多条历史订单，但同一时间只能存在一笔活动任务。
 
 ![核心数据关系图](docs/diagrams/model.svg)
 
@@ -309,6 +310,34 @@ erDiagram
 ```
 
 </details>
+
+## 目录结构
+
+```text
+.github/workflows/       # 测试、构建与在线管理演示发布
+frontend/                # Vue 管理端
+  src/                   # 页面、地图、领域模型与 API 适配
+  tests/                 # 领域与请求层测试
+  e2e/                   # 浏览器验收与文档截图
+backend/
+  charging-service/      # Spring Boot 充电业务 API
+    src/                 # 账号、站点、设备、插座、费率、订单、报修
+    db/                  # 新库初始化与升级 SQL
+  account-service/       # 可选的独立管理员账号服务
+  compose.yaml           # 独立开发数据库
+  .env.example           # 数据库配置模板
+  pom.xml                # 后端聚合测试入口
+uni-app/                 # H5 / 微信小程序共享工程
+  src/pages/             # 找站、设备、充电、订单、报修、我的
+  src/components/        # 共享组件与高德地图
+  src/data/              # 演示目录数据
+  tests/                 # 用户端领域与 API 测试
+  e2e/                   # 充电方式浏览器验收
+scripts/                 # 启动脚本
+docs/                    # 架构、配置、测试、截图和图源
+```
+
+依赖、构建产物、`.env.local`、运行日志和账号数据库不纳入版本控制。旧过程记录、重复截图及跨工程验收脚手架已移除。
 
 ## 许可说明
 
