@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createDemoState,startSession,refreshSession,stopSession,findSocket,restoreState,estimatePlanCost} from '../src/domain/charging.mjs';
 
-for (const [planId,minutes] of [['HOUR_1',60],['HOUR_2',120],['HOUR_3',180],['HOUR_4',240],['HOUR_5',300]]) {
+for (const [planId,minutes] of [['HOUR_1',60],['HOUR_2',120],['HOUR_3',180],['CUSTOM',300]]) {
   test(`${planId} persists selection and stops exactly at its deadline after a late refresh`,()=>{
     const state=createDemoState();
-    const order=startSession(state,'14500006-01',1000,planId);
+    const order=startSession(state,'14500006-01',1000,planId,minutes);
     assert.equal(order.chargePlan.id,planId);
     assert.equal(order.chargePlan.minutes,minutes);
     const restored=restoreState(JSON.parse(JSON.stringify(state)));
@@ -47,7 +47,7 @@ test('early stop still works and unsupported plans never reserve a socket',()=>{
   stopSession(state,order.id,1000+30*60000);
   assert.equal(order.minutes,30);
   assert.equal(order.endReason,'用户提前结束');
-  assert.equal(order.chargePlan.label,'2小时');
+  assert.equal(order.chargePlan.label,'2h');
 });
 
 test('legacy orders remain readable without adopting a new automatic deadline',()=>{
@@ -61,8 +61,8 @@ test('legacy orders remain readable without adopting a new automatic deadline',(
 
 test('selecting longer charging durations changes the estimate using the station rates',()=>{
   const rates={electricity:60,service:20};
-  for(const [id,total] of [['HOUR_1',24],['HOUR_2',48],['HOUR_3',72],['HOUR_4',96],['HOUR_5',120]]) {
-    assert.equal(estimatePlanCost(rates,id).totalCents,total);
+  for(const [id,total] of [['HOUR_1',24],['HOUR_2',48],['HOUR_3',72],['CUSTOM',120]]) {
+    assert.equal(estimatePlanCost(rates,id,300).totalCents,total);
   }
   assert.equal(estimatePlanCost({electricity:100,service:30},'HOUR_2').totalCents,78);
   assert.equal(estimatePlanCost(rates,'FULL'),null);
@@ -70,12 +70,12 @@ test('selecting longer charging durations changes the estimate using the station
 
 test('the deadline bill matches the upfront estimate while an early stop costs only actual usage',()=>{
   const state=createDemoState();
-  const estimate=estimatePlanCost(state.stations[0].rates,'HOUR_5');
-  const order=startSession(state,'14500006-01',1000,'HOUR_5');
+  const estimate=estimatePlanCost(state.stations[0].rates,'CUSTOM',300);
+  const order=startSession(state,'14500006-01',1000,'CUSTOM',300);
   stopSession(state,order.id,1000+60*60000);
   assert.equal(estimate.totalCents,120);
   assert.equal(order.totalCents,24);
-  const next=startSession(state,'14500006-01',1000,'HOUR_5');
+  const next=startSession(state,'14500006-01',1000,'CUSTOM',300);
   refreshSession(state,next.id,1000+350*60000);
   assert.equal(next.totalCents,estimate.totalCents);
 });

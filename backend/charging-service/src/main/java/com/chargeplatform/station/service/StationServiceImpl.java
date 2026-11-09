@@ -47,6 +47,7 @@ public class StationServiceImpl implements StationService {
         return stations.selectList(new LambdaQueryWrapper<Station>()
             .orderByAsc(Station::getId));
     }
+    @Override public Station changeScene(Long id,String scene){var station=findById(id);if(scene!=null){station.changeScene(scene);stations.updateById(station);}return station;}
 
     @Override
     public Page<Station> findPage(String name, int page, int size) {

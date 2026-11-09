@@ -35,7 +35,7 @@
 <text class="muted">● 故障/离线</text>
 </view>
 </view>
-<view v-if="!isBackend" class="panel">
+<view class="panel">
 <view class="accent-title">充电方式</view>
 <view class="strategy-grid">
 <button v-for="plan in CHARGE_PLANS" :key="plan.id" :class="['strategy',{active:selectedPlan===plan.id}]" :aria-label="'充电方式：'+plan.label" :disabled="starting" @click="selectedPlan=plan.id">
@@ -44,7 +44,10 @@
 <text class="small">{{plan.description}}</text>
 </button>
 </view>
-<text class="block muted small plan-hint">{{selectedPlan==='FULL'?'充满后自动停止，也可提前结束。':'达到所选时长后自动停止，也可提前结束。'}}费用按实际用电量结算。</text>
+<view v-if="selectedPlan==='CUSTOM'" class="custom-duration"><text>自定义时长（分钟）</text><input v-model="customMinutes" type="number" placeholder="15—720" :disabled="starting" aria-label="自定义充电分钟数"/></view>
+<text v-if="planError||quoteError" class="block field-error">{{planError||quoteError}}</text>
+<text v-if="quoteBusy" class="block muted small">正在获取服务端预计费用…</text>
+<text class="block muted small plan-hint">{{selectedPlan==='FULL'?'按模拟电量阈值判断充满，最长12小时；并非真实电池检测。':'达到所选时长后自动停止，也可提前结束。'}}费用按实际用电量结算。</text>
 </view>
 <view v-if="!isBackend" class="panel">
 <view class="accent-title">计费标准 <text class="tag">按电量计费</text>
@@ -83,7 +86,7 @@
 <button class="primary turquoise" @click="go('/pages/home/index')">返回找站</button>
 </view>
 <view class="action-bar">
-<view v-if="!isBackend" class="start-summary">
+<view class="start-summary">
 <text class="muted">{{selectedEstimate?'预计金额':'充满自停'}}</text>
 <text v-if="selectedEstimate" class="price-orange">¥{{yuan(selectedEstimate.totalCents)}}</text>
 <text v-else class="settlement-label">按实际用电结算</text>
@@ -93,27 +96,35 @@
 </view>
 </template>
 <script setup>
-import {ref,computed} from 'vue';import {onLoad,onShow} from '@dcloudio/uni-app';import PageHeader from '../../components/PageHeader.vue';import DemoNotice from '../../components/DemoNotice.vue';import {state,action,go,isBackend,refreshData,loadRates,connection,startBackend} from '../../store.js';import {startSession,yuan,isDeviceAvailable,CHARGE_PLANS,estimatePlanCost} from '../../domain/charging.mjs';
+import {ref,computed,watch} from 'vue';import {onLoad,onShow,onUnload} from '@dcloudio/uni-app';import PageHeader from '../../components/PageHeader.vue';import DemoNotice from '../../components/DemoNotice.vue';import {state,action,go,isBackend,refreshData,loadRates,connection,startBackend,quoteBackend} from '../../store.js';import {startSession,yuan,isDeviceAvailable,CHARGE_PLANS,estimatePlanCost,resolvePlan} from '../../domain/charging.mjs';
 import ConnectionState from '../../components/ConnectionState.vue';import BackendRates from '../../components/BackendRates.vue';import {isCurrentOrder} from '../../domain/order-status.mjs';
 const selectedPlan=ref('FULL');
+const customMinutes=ref('90'),quote=ref(null),quoteBusy=ref(false),quoteError=ref('');let quoteVersion=0,quoteTimer;
+const planError=computed(()=>{try{resolvePlan(selectedPlan.value,customMinutes.value);return '';}catch(e){return e.message;}});
 const stationId=ref(''),deviceId=ref(''),selected=ref(''),starting=ref(false),requestedSocket=ref('');const station=computed(()=>state.stations.find(s=>s.id===stationId.value));const device=computed(()=>station.value?.devices.find(d=>d.id===deviceId.value));
-const selectedEstimate=computed(()=>!isBackend&&station.value?estimatePlanCost(station.value.rates,selectedPlan.value):null);
-const planPrice=id=>{const estimate=station.value?estimatePlanCost(station.value.rates,id):null;return estimate?'约¥'+yuan(estimate.totalCents):'按实际用电结算';};
+const selectedEstimate=computed(()=>{if(planError.value)return null;if(isBackend)return quote.value?.estimatedAmount!=null?{totalCents:Math.round(Number(quote.value.estimatedAmount)*100)}:null;return station.value?estimatePlanCost(station.value.rates,selectedPlan.value,customMinutes.value):null;});
+const planPrice=id=>{if(id==='FULL')return '按实际用电结算';if(isBackend)return id===selectedPlan.value&&selectedEstimate.value?'约¥'+yuan(selectedEstimate.value.totalCents):'选择后预估';try{return station.value?'约¥'+yuan(estimatePlanCost(station.value.rates,id,customMinutes.value).totalCents):'—';}catch{return '请输入时长';}};
+watch(()=>[stationId.value,selected.value,selectedPlan.value,customMinutes.value,connection.user?.username],()=>{
+ const version=++quoteVersion;clearTimeout(quoteTimer);quote.value=null;quoteError.value='';quoteBusy.value=false;
+ if(!isBackend||!station.value||!selected.value||!connection.user||planError.value)return;
+ quoteBusy.value=true;quoteTimer=setTimeout(async()=>{try{const socket=device.value?.sockets.find(p=>p.code===selected.value);if(!socket)throw Error('请选择插座');const result=await quoteBackend({stationId:stationId.value,connectorId:socket.id,planId:selectedPlan.value,...(selectedPlan.value==='CUSTOM'?{customMinutes:Number(customMinutes.value)}:{})});if(version===quoteVersion)quote.value=result;}catch(e){if(version===quoteVersion)quoteError.value=e.message;}finally{if(version===quoteVersion)quoteBusy.value=false;}},250);
+});
+onUnload(()=>{quoteVersion++;clearTimeout(quoteTimer);});
 onLoad(q=>{stationId.value=q.station;deviceId.value=q.device;requestedSocket.value=q.socket||'';if(q.socket&&device.value?.online&&device.value.sockets.some(p=>p.code===q.socket&&p.status==='idle'))selected.value=q.socket;});
 const active=computed(()=>state.orders.find(isCurrentOrder));
-const canStart=computed(()=>(!isBackend||connection.user?.features?.bikeCharging)&&!connection.loading&&!connection.operation&&!active.value&&station.value&&device.value&&isDeviceAvailable(station.value,device.value)&&device.value.sockets.some(p=>p.code===selected.value&&p.status==='idle'));
+const canStart=computed(()=>!planError.value&&(!isBackend||quote.value&&!quoteBusy.value&&!quoteError.value)&&(!isBackend||connection.user?.features?.bikeCharging)&&!connection.loading&&!connection.operation&&!active.value&&station.value&&device.value&&isDeviceAvailable(station.value,device.value)&&device.value.sockets.some(p=>p.code===selected.value&&p.status==='idle'));
 const status=p=>station.value?.enabled===false||device.value?.enabled===false?'停用':!device.value?.online?'离线':({idle:'空闲',charging:'充电中',fault:'故障',disabled:'停用',unknown:'不可用'}[p.status]||'不可用');
 const choose=p=>{if(!isDeviceAvailable(station.value,device.value)||p.status!=='idle')return uni.showToast({title:'该插座'+status(p)+'，请选择空闲插座',icon:'none'});selected.value=p.code;};
 onShow(async()=>{await refreshData();if(isBackend&&station.value){if(!selected.value&&device.value&&isDeviceAvailable(station.value,device.value)&&device.value.sockets.some(p=>p.code===requestedSocket.value&&p.status==='idle'))selected.value=requestedSocket.value;await loadRates(stationId.value);}});
 const start=()=>{
   if(!canStart.value||starting.value)return;
   starting.value=true;
-  uni.showModal({title:'确认开始充电',content:'插座 '+selected.value+(isBackend?'':' · '+CHARGE_PLANS.find(p=>p.id===selectedPlan.value).label+(selectedEstimate.value?'，预计¥'+yuan(selectedEstimate.value.totalCents):'，按实际用电结算'))+'，请确认已连接正确插座。',confirmText:'确认启动',
+  uni.showModal({title:'确认开始充电',content:'插座 '+selected.value+' · '+resolvePlan(selectedPlan.value,customMinutes.value).label+(selectedEstimate.value?'，预计¥'+yuan(selectedEstimate.value.totalCents):'，按实际用电结算')+'，请确认已连接正确插座。',confirmText:'确认启动',
     success:async r=>{
       if(!r.confirm){starting.value=false;return;}
       try{
         const socket=device.value.sockets.find(p=>p.code===selected.value);
-        const order=isBackend?await startBackend(station.value.id,socket.id):action(()=>startSession(state,selected.value,Date.now(),selectedPlan.value));
+        const order=isBackend?await startBackend(station.value.id,socket.id,selectedPlan.value,customMinutes.value):action(()=>startSession(state,selected.value,Date.now(),selectedPlan.value,customMinutes.value));
         if(order)uni.redirectTo({url:'/pages/session/index?id='+order.id});
       }finally{starting.value=false;}
     },fail:()=>{starting.value=false;}
@@ -130,5 +141,6 @@ const start=()=>{
 .plan-price{font-size:13px;font-weight:500;line-height:1.7}
 .settlement-label{font-size:14px;color:#ed9f36;line-height:1.7}
 .plan-hint{margin-top:12px;line-height:1.7}
+.custom-duration{display:flex;align-items:center;gap:12px;margin-top:16px;font-size:14px}.custom-duration input{flex:1;min-width:0;background:#f3f6f7;border:1px solid #d8e4e5;border-radius:6px;padding:10px;height:24px}
 @media(max-width:350px){.strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>

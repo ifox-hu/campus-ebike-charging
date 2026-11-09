@@ -37,9 +37,11 @@ public class StationController {
     }
 
     @PostMapping
+    @org.springframework.transaction.annotation.Transactional
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Station> create(@Valid @RequestBody CreateStationRequest request) {
-        return ApiResponse.created(stationService.create(request.getName(), request.getAddress(), request.getDescription(), request.getLatitude(), request.getLongitude(), request.getCoordinateType()));
+        var station=stationService.create(request.getName(), request.getAddress(), request.getDescription(), request.getLatitude(), request.getLongitude(), request.getCoordinateType());
+        return ApiResponse.created(stationService.changeScene(station.getId(),request.getScene()));
     }
 
     @GetMapping
@@ -58,8 +60,10 @@ public class StationController {
     }
 
     @PutMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional
     public ApiResponse<Station> update(@PathVariable Long id, @Valid @RequestBody UpdateStationRequest request) {
-        return ApiResponse.success(stationService.update(id, request.name(), request.address(), request.description(), request.status(), request.latitude(), request.longitude(), request.coordinateType()));
+        stationService.update(id, request.name(), request.address(), request.description(), request.status(), request.latitude(), request.longitude(), request.coordinateType());
+        return ApiResponse.success(stationService.changeScene(id,request.scene()));
     }
 
     @PutMapping("/{id}/coordinates")

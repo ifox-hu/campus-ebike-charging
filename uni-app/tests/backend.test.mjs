@@ -133,7 +133,7 @@ test('customer start sends only resource IDs and refuses an older backend withou
   assert.equal(await x.service.start('7','31'),null);assert.equal(calls,0);
   x.connection.user.features={bikeCharging:true};
   assert.equal((await x.service.start('7','31')).status,'charging');
-  assert.deepEqual(payload,{stationId:'7',connectorId:'31'});
+  assert.deepEqual(payload,{stationId:'7',connectorId:'31',planId:'FULL'});
 });
 test('uncertain start reconciles by reading instead of sending another POST',async()=>{
   let writes=0;

@@ -60,7 +60,7 @@ function redraw(){
  if(markers.length){map.remove(markers.map(m=>m.marker));for(const item of markers)item.button.onclick=null}
  markers=located.value.map(s=>{
   const button=document.createElement('button');button.type='button';button.className=`station-marker tone-${s.tone}`
-  button.setAttribute('aria-label',`选择站点 ${s.name}`);button.dataset.stationCode=s.id.replace(/^ST/,'')
+  button.setAttribute('aria-label',`选择站点 ${s.name}`);button.dataset.stationCode=String(s.id).replace(/^ST/,'')
   const name=document.createElement('strong');name.textContent=s.name
   const count=document.createElement('span');count.textContent=`空闲 ${s.free} / ${s.socketCount}`
   button.append(name,count);button.onclick=()=>{selectedId.value=s.id}
@@ -96,7 +96,7 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
 
 <template>
  <section class="plot-card station-map-card" aria-label="首页站点分布">
-  <header class="plot-heading map-heading"><div><h2>{{campusDemo?'南阳师范学院校园站点':'站点分布'}}</h2><p>{{campusDemo?'卧龙路校址 · 校内充电演示规划，可查看设备运行与报修情况。':'从站点位置查看设备运行情况，再进入设备排布和报修处理。'}}</p></div><span class="map-source">{{campusDemo?'校园参考 · 演示规划':'本地模拟数据'}}</span></header>
+  <header class="plot-heading map-heading"><div><h2>{{campusDemo?'南阳师范学院校园站点':'站点分布'}}</h2><p>{{campusDemo?'卧龙路校址 · 校内充电演示规划，可查看设备运行与报修情况。':'从站点位置查看设备运行情况，再进入设备排布和报修处理。'}}</p></div><span class="map-source">{{source.reportsLoaded===false?'服务端数据':campusDemo?'校园参考 · 演示规划':'本地模拟数据'}}</span></header>
   <div class="map-toolbar">
    <label class="map-search"><span>查找站点</span><input v-model="query" type="search" placeholder="站点名称、地址或编号" aria-label="地图搜索站点" @keydown.enter.prevent="searchLocate"/></label>
    <button class="soft-button active" type="button" @click="searchLocate">搜索定位</button>
@@ -114,7 +114,7 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
     <div v-if="mode==='diagram'" class="map-diagram" aria-label="站点坐标分布示意">
      <div class="diagram-grid"/><div class="diagram-water"/><div class="diagram-road road-one"/><div class="diagram-road road-two"/>
      <span class="diagram-area">站点分布示意</span>
-     <button v-for="s in diagram" :key="s.id" type="button" :class="['station-marker',`tone-${s.tone}`,{'is-selected':s.id===selectedId}]" :style="{left:s.x+'%',top:s.y+'%'}" :data-station-code="s.id.replace(/^ST/,'')" :aria-label="'选择站点 '+s.name" :aria-pressed="s.id===selectedId" @click="selectedId=s.id"><strong>{{s.name}}</strong><span>空闲 {{s.free}} / {{s.socketCount}}</span></button>
+     <button v-for="s in diagram" :key="s.id" type="button" :class="['station-marker',`tone-${s.tone}`,{'is-selected':s.id===selectedId}]" :style="{left:s.x+'%',top:s.y+'%'}" :data-station-code="String(s.id).replace(/^ST/,'')" :aria-label="'选择站点 '+s.name" :aria-pressed="s.id===selectedId" @click="selectedId=s.id"><strong>{{s.name}}</strong><span>空闲 {{s.free}} / {{s.socketCount}}</span></button>
      <small class="diagram-caption">按已保存坐标绘制 · 非地图底图</small>
     </div>
     <div v-if="loading" class="map-loading" role="status"><span/>正在加载地图…</div>
@@ -127,14 +127,14 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
     <template v-if="selected">
      <div class="selected-station-heading"><span :class="['map-state',selected.tone]">{{stateText(selected)}}</span><h3>{{selected.name}}</h3><p>{{selected.address||'尚未填写地址'}}</p></div>
      <dl class="station-map-numbers"><div><dt>设备总数</dt><dd>{{selected.deviceCount}}<small>台</small></dd></div><div><dt>插座总数</dt><dd>{{selected.socketCount}}<small>个</small></dd></div><div><dt>空闲插座</dt><dd class="free-number">{{selected.free}}<small>个</small></dd></div><div><dt>充电中</dt><dd>{{selected.charging}}<small>个</small></dd></div></dl>
-     <div class="station-attention"><span>启动中 <b>{{selected.starting}}</b></span><span>故障插座 <b>{{selected.fault}}</b></span><span>异常占用 <b>{{selected.abnormal}}</b></span><span>离线设备 <b>{{selected.offlineDevices}}</b></span><span>待处理报修 <b>{{selected.pendingRepairs}}</b></span></div>
+     <div class="station-attention"><span>启动中 <b>{{selected.starting}}</b></span><span>故障插座 <b>{{selected.fault}}</b></span><span>异常占用 <b>{{selected.abnormal}}</b></span><span>离线设备 <b>{{selected.offlineDevices}}</b></span><span v-if="source.reportsLoaded!==false">待处理报修 <b>{{selected.pendingRepairs}}</b></span></div>
      <p class="station-map-position">{{selected.position?'GCJ-02 · '+selected.position[0].toFixed(5)+', '+selected.position[1].toFixed(5):'坐标缺失或坐标系未确认，请在站点管理中核对。'}}</p>
      <div class="station-map-actions"><button class="soft-button active" @click="navigate('devices')">查看设备排布</button><button class="outline-button" @click="navigate('reports')">查看报修 <span v-if="selected.pendingRepairs">({{selected.pendingRepairs}})</span></button></div>
     </template>
     <template v-else>
      <div class="selected-station-heading"><span class="map-state idle">当前筛选范围</span><h3>全部站点概况</h3><p>点击地图标记或选择站点，查看运行情况。</p></div>
      <dl class="station-map-numbers"><div><dt>站点数量</dt><dd>{{visible.length}}<small>个</small></dd></div><div><dt>设备数量</dt><dd>{{total('deviceCount')}}<small>台</small></dd></div><div><dt>空闲插座</dt><dd class="free-number">{{total('free')}}<small>个</small></dd></div><div><dt>充电中</dt><dd>{{total('charging')}}<small>个</small></dd></div></dl>
-     <div class="station-attention"><span>故障插座 <b>{{total('fault')}}</b></span><span>离线设备 <b>{{total('offlineDevices')}}</b></span><span>待处理报修 <b>{{total('pendingRepairs')}}</b></span></div>
+     <div class="station-attention"><span>故障插座 <b>{{total('fault')}}</b></span><span>离线设备 <b>{{total('offlineDevices')}}</b></span><span v-if="source.reportsLoaded!==false">待处理报修 <b>{{total('pendingRepairs')}}</b></span></div>
      <p class="map-selection-help">选中站点后，可直接进入该站点的设备排布和报修记录。</p>
     </template>
    </aside>

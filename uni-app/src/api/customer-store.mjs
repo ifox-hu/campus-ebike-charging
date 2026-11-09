@@ -86,12 +86,12 @@ export function createCustomerStore({api,state,connection,session,saveSession,no
     }catch(error){if(current(version,token))connection.operationError=error.message;return null;}
     finally{if(current(version,token))connection.operation='';}
   }
-  async function start(stationId,connectorId){
+  async function start(stationId,connectorId,planId='FULL',customMinutes){
     if(connection.operation||connection.loading)return null;
     if(!connection.user?.features?.bikeCharging){connection.operationError='当前服务暂未开放启动功能';return null;}
     const version=epoch,token=session.token;revision++;connection.operation='start';connection.error='';connection.operationError='';
     try{
-      const mapped=mapOrder(await api.start({stationId,connectorId}),state.stations);
+      const mapped=mapOrder(await api.start({stationId,connectorId,planId,...(planId==='CUSTOM'?{customMinutes:Number(customMinutes)}:{})}),state.stations);
       if(!current(version,token))return null;
       state.orders=[mapped,...state.orders.filter(o=>o.id!==mapped.id)];return mapped;
     }catch(error){
@@ -132,5 +132,5 @@ export function createCustomerStore({api,state,connection,session,saveSession,no
     }catch(error){if(current(version,token))station.ratesError=error.message;}
     finally{station.ratesLoading=false;}
   }
-  return {clear,refresh,authenticate,order,operate,rates,start,report};
+  return {clear,refresh,authenticate,order,operate,rates,start,report,quote:payload=>api.quote(payload)};
 }

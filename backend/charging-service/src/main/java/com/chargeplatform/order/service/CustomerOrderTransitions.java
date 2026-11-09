@@ -34,11 +34,15 @@ public class CustomerOrderTransitions {
 
     @Transactional
     public Prepared reserve(OrderRequests.CustomerStart request,String username,boolean tcp) {
+        var plan=ChargingPlans.resolve(request.planId(),request.customMinutes());
         var user=users.selectByUsernameForUpdate(username);
         if(user==null||!user.isEnabled()||!"USER".equals(user.getRole()))throw new BusinessException(403,"请使用有效的普通用户账号");
         var active=orders.selectActiveByOwner(username);
         if(active!=null) {
-            if(active.getStationId().equals(request.stationId())&&active.getConnectorId().equals(request.connectorId()))return new Prepared(active,false);
+            if(active.getStationId().equals(request.stationId())&&active.getConnectorId().equals(request.connectorId())){
+                if(active.getPlanId()!=null&&(!active.getPlanId().equals(plan.id())||!java.util.Objects.equals(active.getDurationMinutes(),plan.minutes())))throw new BusinessException(409,"已有活动订单，不能变更方案，请查看当前充电");
+                return new Prepared(active,false);
+            }
             throw new BusinessException(409,"已有订单正在启动或充电，请先查看当前任务");
         }
         var station=stations.selectById(request.stationId());
@@ -56,6 +60,14 @@ public class CustomerOrderTransitions {
         String snapshot=tariffs.snapshot(prices.selectByStationId(request.stationId()));
         var order=new ChargeOrder("BC"+UUID.randomUUID().toString().replace("-",""),request.stationId(),request.connectorId(),null,true);
         order.prepareCustomer(username,tcp?"TCP":"SOFTWARE",tcp?null:meter.powerWatts(),snapshot,station.getName(),connector.getCode());
+        java.math.BigDecimal estimate=null;
+        if(plan.minutes()!=null){
+            var start=LocalDateTime.now().withNano(0);
+            var energy=java.math.BigDecimal.valueOf(meter.powerWatts()).multiply(java.math.BigDecimal.valueOf(plan.minutes())).divide(java.math.BigDecimal.valueOf(60000),9,java.math.RoundingMode.HALF_UP);
+            var bill=new ChargeBillingService().calculate(start,start.plusMinutes(plan.minutes()),energy,tariffs.restore(snapshot));
+            estimate=bill.electricityFee().add(bill.serviceFee());
+        }
+        order.selectPlan(plan.id(),plan.minutes(),estimate);
         connector.changeStatus("CHARGING");connectors.updateById(connector);orders.insert(order);
         return new Prepared(order,true);
     }

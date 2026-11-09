@@ -52,7 +52,8 @@ class ChargeOrderSimulatorTest {
         var stopped = new SimulatorTcpClient.ConnectorSnapshot(2, "IDLE", new BigDecimal("0.004"),
                 BigDecimal.valueOf(7.2), BigDecimal.valueOf(220), BigDecimal.ZERO, Instant.now());
         when(simulator.liveConnector("SIM-PILE-002", 2)).thenReturn(new SimulatorTcpClient.LiveConnector("SIM-PILE-002", charging));
-        when(simulator.sendAndConfirm(eq("SIM-PILE-002"), any(), eq("IDLE"))).thenReturn(stopped);
+        var confirmedAt=new java.util.concurrent.atomic.AtomicReference<LocalDateTime>();
+        when(simulator.sendAndConfirm(eq("SIM-PILE-002"), any(), eq("IDLE"))).thenAnswer(call->{confirmedAt.set(LocalDateTime.now());return stopped;});
 
         var service = new ChargeOrderService(orders, connectors, mock(ChargerMapper.class), mock(StationMapper.class),
                 prices, billing, mock(OrderEventPublisher.class), simulator, bindings);
@@ -60,6 +61,9 @@ class ChargeOrderSimulatorTest {
 
         verify(billing).calculate(any(), any(), eq(new BigDecimal("0.004")), any());
         verify(order).complete(eq(new BigDecimal("0.004")), eq(BigDecimal.ONE), eq(BigDecimal.ONE), any());
+        var settledAt=org.mockito.ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(order).complete(any(),any(),any(),settledAt.capture());
+        org.junit.jupiter.api.Assertions.assertFalse(settledAt.getValue().isBefore(confirmedAt.get()),"账单结束时点不能早于设备停止确认");
         verify(simulator).sendAndConfirm(eq("SIM-PILE-002"), eq(new SimulatorTcpClient.Command("STOP", 2)), eq("IDLE"));
     }
 }

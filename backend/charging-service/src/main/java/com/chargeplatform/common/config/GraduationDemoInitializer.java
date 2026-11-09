@@ -47,6 +47,7 @@ public class GraduationDemoInitializer implements ApplicationRunner {
     private void ensureUser(String name,String password,String display,String role){if(users.selectByUsername(name)==null)users.insert(new SysUser(name,passwords.encode(password),display,role));}
     private void seed(String name,String address,String lat,String lon,String prefix,int... rowCounts){
         var site=stations.create(name,address,"按参考图固定排布；官方校园GIS楼栋参考与高德GCJ-02锚点，楼栋室外道路附近演示规划估算，非实测充电设施",new BigDecimal(lat),new BigDecimal(lon),"GCJ02");
+        stations.changeScene(site.getId(),"校园");
         prices.create(site.getId(),LocalTime.MIDNIGHT,LocalTime.of(23,59,59),new BigDecimal("0.60"),new BigDecimal("0.20"));
         for(int i=0;i<rowCounts.length;i++){
             String letter=String.valueOf((char)('A'+i)),row=letter+"排";

@@ -23,6 +23,11 @@ public class Station {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private String coordinateType;
+    private String scene;
+    public void changeScene(String scene){
+        if(!java.util.List.of("校园","住宅小区","园区","未分类").contains(scene))throw new com.chargeplatform.common.exception.BusinessException(400,"站点场景不正确");
+        this.scene=scene;
+    }
 
     public Station(String name, String address, String description) {
         this(name, address, description, null, null, null);

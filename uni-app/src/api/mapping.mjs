@@ -9,7 +9,7 @@ export const scaledNumber=(value,scale)=>value===null||value===undefined||value=
 export function mapCatalog(stations,chargers,connectors) {
   list(chargers); list(connectors);
   return list(stations).map(s=>({
-    id:identifier(s.id),name:s.name,address:s.address,area:'',enabled:s.status==='OPERATING',
+    id:identifier(s.id),name:s.name,address:s.address,area:'',scene:s.scene||'未分类',enabled:s.status==='OPERATING',
     latitude:s.latitude,longitude:s.longitude,coordinateType:s.coordinateType,rates:null,ratePeriods:null,
     devices:chargers.filter(d=>String(d.stationId)===String(s.id)).map(d=>({
       id:identifier(d.id),code:d.code,name:d.name,online:d.status==='ONLINE',enabled:d.enabled!==false&&['ONLINE','OFFLINE'].includes(d.status),rowName:d.rowName||'',rowId:d.rowName?identifier(s.id)+':'+d.rowName:null,
@@ -40,13 +40,15 @@ export function mapOrder(raw,stations) {
     payment:({UNPAID:'unpaid',PAID:'paid',NOT_REQUIRED:'free'})[raw.paymentStatus]||'unknown',
     energyWh:scaledNumber(raw.energyKwh,1000),electricityCents:scaledNumber(raw.electricityFee,100),
     serviceCents:scaledNumber(raw.serviceFee,100),totalCents:scaledNumber(raw.totalAmount,100),
+    chargePlan:raw.planId?{id:raw.planId,minutes:raw.durationMinutes,label:({HOUR_1:'1h',HOUR_2:'2h',HOUR_3:'3h',FULL:'充满自停',CUSTOM:`自定义 ${raw.durationMinutes}分钟`})[raw.planId]||raw.planId}:null,
+    estimatedCents:scaledNumber(raw.estimatedAmount,100),endReason:raw.endReason||'',
     rates:null,ratePeriods:readSnapshot(raw.priceSnapshot),meteringSource:raw.meteringSource,simulatedPowerWatts:raw.simulatedPowerWatts,failureReason:raw.failureReason||''
   };
 }
 export const mapOrders=(orders,stations)=>list(orders).map(raw=>mapOrder(raw,stations));
 function readSnapshot(value){if(!value)return null;try{const rows=typeof value==='string'?JSON.parse(value):value;return Array.isArray(rows)?rows:null;}catch{return null;}}
 export const mapReport=raw=>({id:identifier(raw.id),socketCode:raw.socketCode||raw.deviceCode,deviceCode:raw.deviceCode,stationName:raw.stationName,description:raw.description,
-    status:({OPEN:'pending',PROCESSING:'processing',RESOLVED:'resolved'})[raw.status]||'unknown',resolution:raw.resolution||'',createdAt:parseServerTime(raw.createdAt),updatedAt:parseServerTime(raw.updatedAt)});
+    status:({OPEN:'pending',PROCESSING:'processing',RESOLVED:'resolved'})[raw.status]||'unknown',resolution:raw.resolution||'',timeline:readSnapshot(raw.progressHistory)||[],createdAt:parseServerTime(raw.createdAt),updatedAt:parseServerTime(raw.updatedAt)});
 export const mapReports=rows=>list(rows).map(mapReport);
 export function resolveBackendSocket(stations,value) {
   let code=String(value||'').trim();

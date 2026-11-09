@@ -24,4 +24,5 @@ public interface StationService {
     Station updateCoordinates(Long id, BigDecimal latitude, BigDecimal longitude, String coordinateType);
 
     void delete(Long id);
+    Station changeScene(Long id,String scene);
 }

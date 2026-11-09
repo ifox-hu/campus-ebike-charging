@@ -11,7 +11,7 @@
 mvn test
 ```
 
-业务使用 MySQL，账号演示服务使用 H2。`charging-service/db/` 的 V1–V8 SQL 仅用于空库初始化或按顺序升级，不能直接重跑到现有业务库。
+业务使用 MySQL，账号演示服务使用 H2。`charging-service/db/` 的 V1–V9 SQL 仅用于空库初始化或按顺序升级，不能直接重跑到现有业务库。
 
 复制 `.env.example` 为 `.env.local` 后，初始化独立开发数据库：
 

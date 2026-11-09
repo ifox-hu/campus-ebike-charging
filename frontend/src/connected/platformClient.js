@@ -25,7 +25,7 @@ export function createPlatformClient({fetchImpl=globalThis.fetch,onExpired=()=>{
  const array=async p=>{const data=await request(p);if(!Array.isArray(data))throw Error('接口列表格式不正确，未使用模拟数据替代。');return data}
  function id(value){if(!/^[1-9]\d*$/.test(String(value)))throw Error('无效记录编号。');return encodeURIComponent(value)}
  return {
-  async login(username,password){token='';const version=++generation;const login=await request('/auth/login',{method:'POST',body:{username,password},anonymous:true,bearer:''});if(!login?.token||login.role!=='ADMIN')throw Error('请使用管理员账号登录，普通用户或运营员不能进入本管理端。');const profile=await request('/auth/me',{bearer:login.token});if(profile?.role!=='ADMIN')throw Error('此账号没有管理员权限。');if(version!==generation)throw Error('登录会话已变化。');token=login.token;return profile},
+  async login(username,password){token='';const version=++generation;const login=await request('/auth/login',{method:'POST',body:{username,password},anonymous:true,bearer:''});if(!login?.token||!['ADMIN','OPERATOR'].includes(login.role))throw Error('请使用管理员或运营员账号登录，普通用户不能进入管理端。');const profile=await request('/auth/me',{bearer:login.token});if(!['ADMIN','OPERATOR'].includes(profile?.role))throw Error('此账号没有管理员权限。');if(version!==generation)throw Error('登录会话已变化。');token=login.token;return profile},
   logout(){token='';generation++},
   stations:()=>array('/stations'),devices:()=>array('/chargers'),sockets:()=>array('/connectors'),orders:()=>array('/orders'),order:value=>request(`/orders/${id(value)}`),
   users:(page=1,keyword='')=>request(`/auth/users?role=USER&page=${page}&size=20&keyword=${encodeURIComponent(keyword)}`),
@@ -33,5 +33,12 @@ export function createPlatformClient({fetchImpl=globalThis.fetch,onExpired=()=>{
   rates:value=>array(`/price-periods?stationId=${id(value)}`),audit:(page=1)=>request(`/audit-logs?page=${page}&size=20`)
   ,repairs:(status='')=>array('/repairs'+(status?'?status='+encodeURIComponent(status):'')),
   handleRepair:(value,body)=>request('/repairs/'+id(value),{method:'PATCH',body})
+  ,saveStation:(value,body)=>request('/stations'+(value?'/'+id(value):''),{method:value?'PUT':'POST',body}),
+  createDevices:body=>request('/bike/devices',{method:'POST',body}),
+  saveDevice:(value,body)=>request('/bike/devices/'+id(value),{method:'PATCH',body}),
+  setSocketStatus:(value,status)=>request('/bike/sockets/'+id(value)+'/status',{method:'PATCH',body:{status}}),
+  saveRate:(value,body)=>request('/price-periods'+(value?'/'+id(value):''),{method:value?'PUT':'POST',body}),
+  deleteRate:value=>request('/price-periods/'+id(value),{method:'DELETE'})
+  ,alertAcks:()=>array('/alert-acknowledgements'),ackAlert:body=>request('/alert-acknowledgements',{method:'POST',body})
  }
 }

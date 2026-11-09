@@ -15,6 +15,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ChargeBillingServiceTest {
 
     private final ChargeBillingService billing = new ChargeBillingService();
+    @Test void fractionalSecondsAcrossMidnightMustNotLoseBillableEnergy(){
+        var start=LocalDateTime.of(2026,11,9,23,30,0,123456000);
+        var rate=new PricePeriod(1L,LocalTime.MIDNIGHT,LocalTime.of(23,59,59),new BigDecimal("0.60"),new BigDecimal("0.20"));
+        var bill=billing.calculate(start,start.plusMinutes(75),new BigDecimal("0.375"),List.of(rate));
+        assertEquals(new BigDecimal("0.23"),bill.electricityFee());assertEquals(new BigDecimal("0.08"),bill.serviceFee());
+    }
 
     @Test
     void splitsEnergyAcrossPricePeriodsByChargingDuration() {

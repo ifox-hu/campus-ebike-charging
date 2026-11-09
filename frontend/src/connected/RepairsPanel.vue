@@ -1,8 +1,9 @@
 <script setup>
 import {ref,onMounted,onBeforeUnmount} from 'vue'
 import {statusLabel} from './platformClient.js'
-const props=defineProps({client:Object,enabled:Boolean})
+const props=defineProps({client:Object,enabled:Boolean,admin:Boolean})
 const rows=ref([]),filter=ref(''),busy=ref(false),saving=ref(false),error=ref(''),message=ref(''),selected=ref(null),nextStatus=ref('PROCESSING'),resolution=ref('')
+const assignee=ref('');function history(row){try{return JSON.parse(row.progressHistory||'[]')}catch{return []}}
 let active=true
 async function reload(){
  if(!props.enabled||busy.value||saving.value)return
@@ -11,12 +12,12 @@ async function reload(){
  catch(e){if(active&&!e.stale)error.value=e.message}
  finally{if(active)busy.value=false}
 }
-function open(row){selected.value=row;nextStatus.value=row.status==='OPEN'?'PROCESSING':'RESOLVED';resolution.value=row.resolution||'';error.value='';message.value=''}
+function open(row){assignee.value=row.assigneeUsername||'';selected.value=row;nextStatus.value=row.status==='OPEN'?'PROCESSING':'RESOLVED';resolution.value=row.resolution||'';error.value='';message.value=''}
 async function save(){
  if(saving.value||!selected.value)return
  if(nextStatus.value==='RESOLVED'&&resolution.value.trim().length<2){error.value='请填写处理结果';return}
  saving.value=true;error.value=''
- try{await props.client.handleRepair(selected.value.id,{status:nextStatus.value,resolution:resolution.value.trim()});if(!active)return;selected.value=null;message.value='处理结果已保存，用户刷新报修记录即可查看'}
+ try{await props.client.handleRepair(selected.value.id,{status:nextStatus.value,resolution:resolution.value.trim(),...(props.admin&&assignee.value.trim()?{assigneeUsername:assignee.value.trim()}:{})});if(!active)return;selected.value=null;message.value='处理结果已保存，用户刷新报修记录即可查看'}
  catch(e){if(active&&!e.stale)error.value=e.message}
  finally{if(active)saving.value=false}
  if(active&&!error.value)await reload()
@@ -38,11 +39,11 @@ defineExpose({reload})
   </template>
   <div v-if="selected" class="modal-shade"><section class="modal-card repair-dialog" role="dialog" aria-modal="true" aria-label="报修处理"><header><h2>报修 #{{selected.id}}</h2><button class="icon-button" :disabled="saving" aria-label="关闭报修" @click="selected=null">×</button></header><div class="remote-detail">
    <p>{{selected.stationName}} · {{selected.socketCode||selected.deviceCode}}</p><p class="repair-description">{{selected.description}}</p>
-   <template v-if="selected.status!=='RESOLVED'"><label class="repair-field">处理状态<select v-model="nextStatus" :disabled="saving"><option value="PROCESSING">处理中</option><option value="RESOLVED">已处理</option></select></label><label class="repair-field">处理反馈<textarea v-model="resolution" maxlength="500" :disabled="saving" placeholder="记录进展；完成时填写处理结果"/></label><p v-if="error" class="remote-error" role="alert">{{error}}</p><button class="soft-button active repair-save" :disabled="saving" @click="save">{{saving?'正在保存…':'保存处理结果'}}</button></template>
+   <p>负责人：{{selected.assigneeUsername||'尚未分派'}}</p><ol class="repair-timeline"><li>用户提交 · {{selected.createdAt}}</li><li v-for="(event,i) in history(selected)" :key="i">{{event.at}} · {{event.status==='RESOLVED'?'已处理':'处理中'}} · {{event.note||'已受理'}}</li></ol><template v-if="selected.status!=='RESOLVED'"><label v-if="admin" class="repair-field">分派给现有管理员 / 运营员账号<input v-model="assignee" maxlength="50" :disabled="saving" placeholder="留空则由当前处理人负责"/></label><label class="repair-field">处理状态<select v-model="nextStatus" :disabled="saving"><option value="PROCESSING">处理中</option><option value="RESOLVED">已处理</option></select></label><label class="repair-field">处理反馈<textarea v-model="resolution" maxlength="500" :disabled="saving" placeholder="记录进展；完成时填写处理结果"/></label><p v-if="error" class="remote-error" role="alert">{{error}}</p><button class="soft-button active repair-save" :disabled="saving" @click="save">{{saving?'正在保存…':'保存处理结果'}}</button></template>
    <template v-else><p>处理人：{{selected.handlerUsername}}</p><p class="repair-description">{{selected.resolution}}</p><p>{{selected.updatedAt?.replace('T',' ').slice(0,19)}}</p></template>
   </div></section></div>
  </section>
 </template>
 <style scoped>
-.repair-description{white-space:pre-wrap;overflow-wrap:anywhere;max-width:28rem;line-height:1.7}.repair-field{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}.repair-field select,.repair-field textarea{border:1px solid #e3dcea;border-radius:.4rem;padding:.7rem;font:inherit;color:inherit;background:#fff}.repair-field textarea{height:9rem;resize:vertical}.repair-dialog{max-height:85vh;overflow:auto}.repair-table{min-width:850px}
+.repair-timeline{padding-left:1.2rem;font-size:.85rem;line-height:1.9}.repair-field input{border:1px solid #e3dcea;border-radius:6px;padding:10px;color:inherit}.repair-description{white-space:pre-wrap;overflow-wrap:anywhere;max-width:28rem;line-height:1.7}.repair-field{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}.repair-field select,.repair-field textarea{border:1px solid #e3dcea;border-radius:.4rem;padding:.7rem;font:inherit;color:inherit;background:#fff}.repair-field textarea{height:9rem;resize:vertical}.repair-dialog{max-height:85vh;overflow:auto}.repair-table{min-width:850px}
 </style>

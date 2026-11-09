@@ -38,6 +38,14 @@ class CustomerOrderStartTest {
     @MockBean SysUserMapper users;
     @MockBean AuditLogMapper audit;
     String token;
+    @Test void customDurationIsTransportedAndFractionalJsonIsRejected()throws Exception{
+        mvc.perform(post("/api/customer/orders/start").header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content("{\"stationId\":7,\"connectorId\":31,\"planId\":\"CUSTOM\",\"customMinutes\":75}")).andExpect(status().isOk());
+        var input=ArgumentCaptor.forClass(OrderRequests.CustomerStart.class);verify(charging).start(input.capture(),eq("student"));
+        org.junit.jupiter.api.Assertions.assertEquals(75,input.getValue().customMinutes());
+        clearInvocations(charging);
+        mvc.perform(post("/api/customer/orders/start").header("Authorization","Bearer "+token).contentType(MediaType.APPLICATION_JSON).content("{\"stationId\":7,\"connectorId\":31,\"planId\":\"CUSTOM\",\"customMinutes\":15.5}")).andExpect(status().isBadRequest());
+        verifyNoInteractions(charging);
+    }
 
     @BeforeEach
     void setUp() {

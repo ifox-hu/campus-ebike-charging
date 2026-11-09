@@ -92,6 +92,9 @@ public class ChargeOrderService {
     @Transactional
     @CacheEvict(cacheNames = "dashboard", key = "'summary'")
     public ChargeOrder stop(Long id,OrderRequests.Stop request){
+        return stopInternal(id,request,null);
+    }
+    private ChargeOrder stopInternal(Long id,OrderRequests.Stop request,String automaticReason){
         ChargeOrder order=orders.selectByIdForUpdate(id);
         if(order == null || Boolean.TRUE.equals(order.getArchived())) throw new BusinessException(404,"订单不存在");
         if(List.of("COMPLETED","START_FAILED").contains(order.getStatus()))return order;
@@ -101,12 +104,17 @@ public class ChargeOrderService {
         List<PricePeriod> periods = order.getPriceSnapshot()==null?prices.selectByStationId(order.getStationId()):tariffs.restore(order.getPriceSnapshot());
         LocalDateTime validationTime = LocalDateTime.now();
         if (!"SOFTWARE".equals(order.getMeteringSource()) && simulator != null && simulator.enabled()) billing.calculate(order.getStartTime(), validationTime, BigDecimal.ONE, periods);
-        BigDecimal energyKwh = settlementEnergy(order, request);
         LocalDateTime endTime = LocalDateTime.now();
+        String dueReason=ChargingPlans.dueReason(order,endTime);
+        if("SOFTWARE".equals(order.getMeteringSource())&&dueReason!=null)endTime=ChargingPlans.deadline(order);
+        BigDecimal energyKwh = "SOFTWARE".equals(order.getMeteringSource())?softwareMeter.reading(order,endTime):settlementEnergy(order, request);
+        // Device energy includes the interval spent waiting for STOP confirmation.
+        if(!"SOFTWARE".equals(order.getMeteringSource()))endTime=LocalDateTime.now();
         var result = energyKwh.signum()==0 && java.time.Duration.between(order.getStartTime(),endTime).getSeconds()==0
             ?new ChargeBillingService.BillingResult(new BigDecimal("0.00"),new BigDecimal("0.00"))
             :billing.calculate(order.getStartTime(), endTime, energyKwh, periods);
         order.complete(energyKwh.setScale(3,RoundingMode.HALF_UP),result.electricityFee(),result.serviceFee(),endTime);
+        order.endedBecause(automaticReason!=null?automaticReason:dueReason!=null?dueReason:"用户提前结束");
         order.waiveZeroPayment();
         connector.changeStatus("IDLE"); connectors.updateById(connector);
         orders.updateById(order);
@@ -154,6 +162,20 @@ public class ChargeOrderService {
         SimulatorTcpClient.LiveConnector live = simulator.liveConnector(binding.deviceId(), binding.localConnectorId());
         SimulatorTcpClient.ConnectorSnapshot snapshot = live.connector();
         return new OrderLiveStatus(order.getId(), binding.deviceId(), binding.localConnectorId(), snapshot.status(), snapshot.energyKwh(), snapshot.powerKw(), snapshot.voltageV(), snapshot.currentA(), snapshot.lastMessageAt());
+    }
+
+    @Transactional
+    public void reconcilePlannedOrders(){
+        for(var order:orders.selectChargingOrders()){
+            try{
+                String reason=ChargingPlans.dueReason(order,LocalDateTime.now());
+                if(reason==null&&"FULL".equals(order.getPlanId())&&"TCP".equals(order.getMeteringSource())&&simulator!=null&&simulator.enabled()){
+                    var live=live(order.getId());
+                    if(live.energyKwh()!=null&&live.energyKwh().compareTo(new BigDecimal("1.200"))>=0)reason="模拟充满自停";
+                }
+                if(reason!=null)stopInternal(order.getId(),null,reason);
+            }catch(RuntimeException e){log.warn("自动停止暂未确认，保留占用并等待重试: orderId={}",order.getId(),e);}
+        }
     }
 
     @Scheduled(fixedDelayString = "${app.simulator.reconcile-interval-ms:5000}")
@@ -209,7 +231,18 @@ public class ChargeOrderService {
     }
     public ChargeOrder get(Long id){ChargeOrder order=orders.selectById(id);if(order==null || Boolean.TRUE.equals(order.getArchived())) throw new BusinessException(404,"订单不存在");return displayReading(order);}
     private ChargeOrder displayReading(ChargeOrder order){
-        if("SOFTWARE".equals(order.getMeteringSource())&&"CHARGING".equals(order.getStatus()))order.updateReading(softwareMeter.reading(order,LocalDateTime.now()));
+        if("SOFTWARE".equals(order.getMeteringSource())&&"CHARGING".equals(order.getStatus())){
+            var now=LocalDateTime.now();var deadline=ChargingPlans.deadline(order);
+            order.updateReading(softwareMeter.reading(order,deadline!=null&&now.isAfter(deadline)?deadline:now));
+        }
+        if("CHARGING".equals(order.getStatus())&&order.getPriceSnapshot()!=null&&order.getEnergyKwh()!=null){
+            var now=LocalDateTime.now();var deadline=ChargingPlans.deadline(order);
+            if("SOFTWARE".equals(order.getMeteringSource())&&deadline!=null&&now.isAfter(deadline))now=deadline;
+            if(now.isAfter(order.getStartTime())){
+                var bill=billing.calculate(order.getStartTime(),now,order.getEnergyKwh(),tariffs.restore(order.getPriceSnapshot()));
+                order.previewFees(bill.electricityFee(),bill.serviceFee());
+            }
+        }
         return order;
     }
     public ChargeOrder customerOrder(Long id, String username) {

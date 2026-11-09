@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,"/api/auth/users").hasAnyRole("ADMIN","OPERATOR")
                 .requestMatchers("/api/auth/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/customer/**").hasRole("USER")
+                .requestMatchers("/api/alert-acknowledgements/**","/api/repairs/**").hasAnyRole("ADMIN","OPERATOR")
                 .requestMatchers(HttpMethod.GET,"/api/auth/me","/api/stations/**","/api/chargers/**","/api/connectors/**","/api/price-periods/**","/api/simulator/status").hasAnyRole("ADMIN","OPERATOR","USER")
                 .requestMatchers(HttpMethod.GET,"/api/**").hasAnyRole("ADMIN","OPERATOR")
                 .requestMatchers(HttpMethod.POST,"/api/orders/**").hasAnyRole("ADMIN","OPERATOR")

@@ -7,4 +7,5 @@ export const navigation = [
  {id:'orders',label:'充电订单',icon:'order'},
  {id:'users',label:'用户管理',icon:'user'},
  {id:'reports',label:'故障报修',icon:'edit'},
+ {id:'operations',label:'运营与告警',icon:'chart'},
 ]

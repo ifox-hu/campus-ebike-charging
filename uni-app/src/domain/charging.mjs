@@ -2,20 +2,26 @@
 import {normalizeDualSocketLayout} from './dual-socket-layout.mjs';
 import campusCatalog from '../data/campus-stations.json' with {type:'json'};
 export const CHARGE_PLANS = Object.freeze([
-  Object.freeze({id:'HOUR_1',label:'1小时',minutes:60,description:'到时自动停止'}),
-  Object.freeze({id:'HOUR_2',label:'2小时',minutes:120,description:'到时自动停止'}),
-  Object.freeze({id:'HOUR_3',label:'3小时',minutes:180,description:'到时自动停止'}),
-  Object.freeze({id:'HOUR_4',label:'4小时',minutes:240,description:'到时自动停止'}),
-  Object.freeze({id:'HOUR_5',label:'5小时',minutes:300,description:'到时自动停止'}),
-  Object.freeze({id:'FULL',label:'充满自停',minutes:null,description:'充满后自动停止'})
+  Object.freeze({id:'HOUR_1',label:'1h',minutes:60,description:'到时自动停止'}),
+  Object.freeze({id:'HOUR_2',label:'2h',minutes:120,description:'到时自动停止'}),
+  Object.freeze({id:'HOUR_3',label:'3h',minutes:180,description:'到时自动停止'}),
+  Object.freeze({id:'FULL',label:'充满自停',minutes:null,description:'模拟充满后停止'}),
+  Object.freeze({id:'CUSTOM',label:'自定义',minutes:null,description:'15—720分钟'})
 ]);
+export function resolvePlan(id,customMinutes){
+  const plan=CHARGE_PLANS.find(p=>p.id===id);
+  if(!plan)throw new Error('请选择有效的充电方式');
+  if(id!=='CUSTOM')return {...plan};
+  const minutes=Number(customMinutes);
+  if(!Number.isInteger(minutes)||minutes<15||minutes>720)throw new Error('自定义时长须为15—720分钟的整数');
+  return {...plan,minutes,label:`自定义 ${minutes}分钟`};
+}
 // Demonstration meter only: 300W, with a 1.2kWh full-charge threshold.
 // These are internal simulation settings, not real battery measurements.
 const SIMULATED_POWER_WATTS=300;
 const SIMULATED_FULL_ENERGY_WH=1200;
-export function estimatePlanCost(rates,planId) {
-  const plan=CHARGE_PLANS.find(p=>p.id===planId);
-  if(!plan)throw new Error('请选择有效的充电方式');
+export function estimatePlanCost(rates,planId,customMinutes) {
+  const plan=resolvePlan(planId,customMinutes);
   if(plan.minutes===null)return null;
   const estimate={energyWh:SIMULATED_POWER_WATTS*plan.minutes/60,rates};
   updateFee(estimate);
@@ -40,7 +46,7 @@ function legacyDemoState() {
 }
 export function createDemoState(){
  const state=legacyDemoState(),legacy=new Map(state.stations.map(s=>[s.id,s]));
- state.stations=campusCatalog.stations.map(site=>({...site,rates:{electricity:60,service:20},devices:legacy.get(site.id)?.devices||[]}));
+ state.stations=campusCatalog.stations.map(site=>({...site,scene:'校园',rates:{electricity:60,service:20},devices:legacy.get(site.id)?.devices||[]}));
  state.orders[0].stationName=state.stations[0].name;
  return normalizeDualSocketLayout(state,{preserveLegacyCodes:false});
 }
@@ -61,9 +67,8 @@ export function parseSocketCode(value) {
   if (match) return match[1];
   throw new Error('请输入有效插座编号，例如 14500006-01');
 }
-export function startSession(state, code, now = Date.now(), planId = 'FULL') {
-  const plan=CHARGE_PLANS.find(p=>p.id===planId);
-  if(!plan)throw new Error('请选择有效的充电方式');
+export function startSession(state, code, now = Date.now(), planId = 'FULL',customMinutes) {
+  const plan=resolvePlan(planId,customMinutes);
   const match = findSocket(state, code);
   if (!match) throw new Error('插座编号不存在，请核对后重试');
   if (!isDeviceAvailable(match.station,match.device)) throw new Error('站点或设备离线、停用，当前不可用');
@@ -71,7 +76,7 @@ export function startSession(state, code, now = Date.now(), planId = 'FULL') {
   if (match.socket.status !== 'idle') throw new Error('插座当前不可用，请选择空闲插座');
   const order = { id: `DEMO-${now}-${state.orders.length + 1}`, stationId: match.station.id, stationName: match.station.name, socketCode: code, startedAt: now, minutes: 0, energyWh: 0, rates: {...match.station.rates}, electricityCents: 0, serviceCents: 0, totalCents: 0, status: 'charging', payment: 'unpaid' };
   order.chargePlan={...plan};
-  order.estimatedCents=estimatePlanCost(order.rates,planId)?.totalCents??null;
+  order.estimatedCents=estimatePlanCost(order.rates,planId,customMinutes)?.totalCents??null;
   if(plan.id==='FULL')order.fullEnergyWh=SIMULATED_FULL_ENERGY_WH;
   state.orders.unshift(order); match.socket.status = 'charging'; return order;
 }
@@ -127,7 +132,9 @@ export function restoreState(value) {
     for(const o of value.orders) if(!o.id || !findSocket(value,o.socketCode) || !['charging','ended'].includes(o.status) || !['unpaid','paid','free'].includes(o.payment) || !Number.isFinite(o.minutes) || o.minutes<0 || !Number.isFinite(o.totalCents) || !Number.isFinite(o.rates?.electricity) || !Number.isFinite(o.rates?.service)) return createDemoState();
     for (const o of value.orders) {
       if(o.chargePlan){
-        const plan=CHARGE_PLANS.find(p=>p.id===o.chargePlan.id);
+        // Retain historical four/five-hour plans, but do not offer them for new orders.
+        const legacy={HOUR_4:{id:'HOUR_4',label:'4小时',minutes:240},HOUR_5:{id:'HOUR_5',label:'5小时',minutes:300}};
+        const plan=legacy[o.chargePlan.id]||resolvePlan(o.chargePlan.id,o.chargePlan.minutes);
         if(!plan||o.chargePlan.minutes!==plan.minutes||
           (plan.id==='FULL'&&(!Number.isSafeInteger(o.fullEnergyWh)||o.fullEnergyWh<=0)))return createDemoState();
         o.chargePlan={...plan};

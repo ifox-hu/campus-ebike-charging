@@ -35,6 +35,12 @@ public class ChargeOrder {
     private String stationNameSnapshot;
     private String socketCodeSnapshot;
     private String failureReason;
+    private String planId;
+    private Integer durationMinutes;
+    private BigDecimal estimatedAmount;
+    private String endReason;
+    public void selectPlan(String id,Integer minutes,BigDecimal estimate){planId=id;durationMinutes=minutes;estimatedAmount=estimate;}
+    public void endedBecause(String reason){endReason=reason;}
     public void prepareCustomer(String username,String source,Integer power,String tariff,String stationName,String socketCode) {
         assignCustomer(username);status="STARTING";meteringSource=source;simulatedPowerWatts=power;
         priceSnapshot=tariff;stationNameSnapshot=stationName;socketCodeSnapshot=socketCode;
@@ -42,6 +48,7 @@ public class ChargeOrder {
     public void activate(LocalDateTime time){status="CHARGING";startTime=time;}
     public void failStart(String reason,LocalDateTime time){status="START_FAILED";failureReason=reason;endTime=time;paymentStatus="NOT_REQUIRED";}
     public void updateReading(BigDecimal energy){energyKwh=energy;}
+    public void previewFees(BigDecimal electric,BigDecimal service){electricityFee=electric;serviceFee=service;totalAmount=electric.add(service);}
     public void waiveZeroPayment(){if(totalAmount!=null&&totalAmount.signum()==0&&ownerUsername!=null)paymentStatus="NOT_REQUIRED";}
     public Long getElapsedSeconds(){
         if(startTime==null)return null;

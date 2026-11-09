@@ -32,7 +32,7 @@
         <view v-if="!state.reports.length" class="empty-state">暂无报修记录<text>遇到插座问题时，可以在这里反馈</text></view>
         <view v-for="report in state.reports" :key="report.id" class="panel report-record">
           <view class="section-row"><text>{{report.socketCode}}</text><text class="tag">{{reportStatus(report.status)}}</text></view>
-          <text class="block report-description">{{report.description}}</text><view v-if="report.resolution" class="report-response"><text class="block teal small">处理反馈</text><text class="block">{{report.resolution}}</text><text class="block muted small">{{formatTime(report.updatedAt)}}</text></view>
+          <text class="block report-description">{{report.description}}</text><view v-for="(event,i) in report.timeline||[]" :key="i" class="report-response"><text class="block muted small">{{event.at?.replace('T',' ')}} · {{event.status==='RESOLVED'?'已处理':'处理中'}}</text><text class="block">{{event.note||'已受理'}}</text></view><view v-if="report.resolution" class="report-response"><text class="block teal small">处理反馈</text><text class="block">{{report.resolution}}</text><text class="block muted small">{{formatTime(report.updatedAt)}}</text></view>
           <text class="block muted small">{{formatTime(report.createdAt)}}</text>
           <text class="block muted small">{{report.id}}</text>
         </view>

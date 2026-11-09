@@ -19,6 +19,35 @@ class OrderLifecycleIntegrationTest {
     @Autowired CustomerChargingService customer;
     @Autowired ChargeOrderService orders;
     @Autowired JdbcTemplate db;
+    @Test void timedPlanStopsOnServerWithoutClientAndNeverBillsPastDeadline(){
+        var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",75),"student");
+        assertEquals(75,order.getDurationMinutes());
+        assertEquals(new BigDecimal("0.31"),order.getEstimatedAmount());
+        var start=LocalDateTime.now().minusMinutes(90);
+        db.update("UPDATE charge_order SET start_time=? WHERE id=?",start,order.getId());
+        orders.reconcilePlannedOrders();
+        var ended=orders.customerOrder(order.getId(),"student");
+        assertEquals("COMPLETED",ended.getStatus());
+        assertEquals(new BigDecimal("0.375"),ended.getEnergyKwh());
+        assertEquals(new BigDecimal("0.31"),ended.getTotalAmount());
+        assertEquals("定时时长已到",ended.getEndReason());
+        assertEquals("IDLE",db.queryForObject("SELECT status FROM connector WHERE id=31",String.class));
+        orders.reconcilePlannedOrders();
+        assertEquals(ended.getEndTime(),orders.get(order.getId()).getEndTime());
+    }
+    @Test void invalidCustomDurationCannotOccupySocket(){
+        for(int duration:new int[]{0,14,721})assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",duration),"student"));
+        assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"HOUR_4",null),"student"));
+        assertEquals(0,db.queryForObject("SELECT COUNT(*) FROM charge_order",Integer.class));
+    }
+    @Test void fullPlanStopsAtSimulatedThreshold(){
+        var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"FULL",null),"student");
+        db.update("UPDATE charge_order SET start_time=? WHERE id=?",LocalDateTime.now().minusHours(5),order.getId());
+        orders.reconcilePlannedOrders();
+        var ended=orders.get(order.getId());
+        assertEquals("COMPLETED",ended.getStatus());assertEquals(new BigDecimal("1.200"),ended.getEnergyKwh());
+        assertEquals("模拟充满自停",ended.getEndReason());
+    }
     @BeforeEach void seed(){
         for(var table:new String[]{"charge_order","price_period","connector","charger","station","sys_user"})db.update("DELETE FROM "+table);
         db.update("INSERT INTO sys_user(username,display_name,password,role,enabled) VALUES('student','测试用户','unused','USER',true),('other','其他用户','unused','USER',true)");

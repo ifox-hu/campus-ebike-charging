@@ -4,5 +4,8 @@ public final class RepairRequests {
     private RepairRequests(){}
     public record Create(Long chargerId,Long connectorId,@NotBlank @Size(min=5,max=300) String description,
                          @Pattern(regexp="[A-Za-z0-9_-]{1,64}") String requestKey) { }
-    public record Handle(@NotBlank @Pattern(regexp="PROCESSING|RESOLVED") String status,@Size(max=500) String resolution) { }
+    public record Handle(@NotBlank @Pattern(regexp="PROCESSING|RESOLVED") String status,@Size(max=500) String resolution,
+                         @Size(max=50) String assigneeUsername) {
+        public Handle(String status,String resolution){this(status,resolution,null);}
+    }
 }

@@ -27,6 +27,22 @@ class RepairIntegrationTest {
         db.update("INSERT INTO connector(id,charger_id,code,name,rated_power,status) VALUES(31,20,'BIKE-A-01','插座1',300,'FAULT')");
     }
     RepairRequests.Create request(String key){return new RepairRequests.Create(null,31L,"插座指示灯不亮，请检查",key);}
+    @Test void assignmentHistoryAndOperatorScopeAreEnforced()throws Exception{
+        db.update("INSERT INTO sys_user(username,display_name,password,role,enabled) VALUES('operator','运营员','unused','OPERATOR',true),('operator2','其他运营员','unused','OPERATOR',true)");
+        var ticket=repairs.create(request("assigned"),"student");
+        assertThrows(BusinessException.class,()->repairs.handle(ticket.getId(),new RepairRequests.Handle("PROCESSING","开始处理"),"operator"));
+        repairs.handle(ticket.getId(),new RepairRequests.Handle("PROCESSING","安排现场检查","operator"),"admin");
+        mvc.perform(get("/api/repairs").header("Authorization","Bearer "+jwt.create("operator2","OPERATOR"))).andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(0));
+        var resolved=repairs.handle(ticket.getId(),new RepairRequests.Handle("RESOLVED","已检查并更换贴纸"),"operator");
+        assertEquals("operator",resolved.getAssigneeUsername());assertTrue(resolved.getProgressHistory().contains("安排现场检查"));assertTrue(resolved.getProgressHistory().contains("已检查并更换贴纸"));
+    }
+    @Test void alertAcknowledgementPersistsWithoutChangingSocketAndRejectsCustomer()throws Exception{
+        var body="{\"alertKey\":\"SOCKET:31:FAULT:0\",\"note\":\"安排检查\"}";
+        mvc.perform(post("/api/alert-acknowledgements").header("Authorization","Bearer "+jwt.create("student","USER")).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/alert-acknowledgements").header("Authorization","Bearer "+jwt.create("admin","ADMIN")).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
+        mvc.perform(get("/api/alert-acknowledgements").header("Authorization","Bearer "+jwt.create("admin","ADMIN"))).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].note").value("安排检查"));
+        assertEquals("FAULT",db.queryForObject("SELECT status FROM connector WHERE id=31",String.class));
+    }
     @Test void offlineSocketCanBeReportedAndReplayDoesNotDuplicate(){
         var created=repairs.create(request("same-request"),"student");
         assertEquals(created.getId(),repairs.create(request("same-request"),"student").getId());

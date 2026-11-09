@@ -47,6 +47,15 @@ public class RepairService {
     }
     @Transactional public RepairTicket handle(Long id,RepairRequests.Handle request,String handler){
         var ticket=tickets.lock(id);if(ticket==null)throw new BusinessException(404,"报修记录不存在");
+        var actor=users.selectByUsername(handler);
+        if(actor==null||!actor.isEnabled()||!List.of("ADMIN","OPERATOR").contains(actor.getRole()))throw new BusinessException(403,"没有报修处理权限");
+        if("OPERATOR".equals(actor.getRole())&&!handler.equals(ticket.getAssigneeUsername()))throw new BusinessException(403,"只能处理分派给本人的报修");
+        String assignee=request.assigneeUsername()==null?ticket.getAssigneeUsername():request.assigneeUsername().trim();
+        if(!"ADMIN".equals(actor.getRole())&&!Objects.equals(assignee,ticket.getAssigneeUsername()))throw new BusinessException(403,"只有管理员可分派报修");
+        if(assignee!=null&&!assignee.isBlank()){
+            var assigned=users.selectByUsername(assignee);
+            if(assigned==null||!assigned.isEnabled()||!List.of("ADMIN","OPERATOR").contains(assigned.getRole()))throw new BusinessException(400,"请选择有效的管理员或运营员");
+        }
         if(!List.of("PROCESSING","RESOLVED").contains(request.status()))throw new BusinessException(400,"处理状态不正确");
         String result=request.resolution()==null?"":request.resolution().trim();
         if(result.length()>500||("RESOLVED".equals(request.status())&&result.length()<2))throw new BusinessException(400,"请填写2—500字的处理结果");
@@ -54,6 +63,7 @@ public class RepairService {
             if(request.status().equals(ticket.getStatus())&&result.equals(ticket.getResolution()))return ticket;
             throw new BusinessException(409,"该报修已处理完成");
         }
-        ticket.handle(request.status(),result,handler);tickets.updateById(ticket);return ticket;
+        ticket.assign(assignee==null||assignee.isBlank()?handler:assignee);
+        ticket.handle(request.status(),result,handler);ticket.addProgress(handler,result);tickets.updateById(ticket);return ticket;
     }
 }

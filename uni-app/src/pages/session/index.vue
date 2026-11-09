@@ -9,7 +9,7 @@
         </view>
         <view class="session-stat">
           <view><text class="stat-value">{{order.minutes===null?'—':order.minutes}}<text>分钟</text></text><text class="muted">充电时长</text></view>
-          <view><text class="stat-value">{{yuan(order.totalCents)}}<text>元</text></text><text class="muted">{{order.status==='charging'?(isBackend?'当前已记账费用':'估算费用'):'订单金额'}}</text></view>
+          <view><text class="stat-value">{{yuan(order.totalCents)}}<text>元</text></text><text class="muted">{{order.status==='charging'?(isBackend?'当前预估费用':'估算费用'):'订单金额'}}</text></view>
         </view>
         <text class="payment-status">{{paymentText}}</text>
         <text v-if="order.failureReason" class="field-error">{{order.failureReason}}</text>

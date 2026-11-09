@@ -29,7 +29,8 @@ export const authenticate=(credentials,register)=>customer.authenticate(credenti
 export const logout=()=>customer.clear();
 export const refreshOrder=id=>customer.order(id);
 export const operateOrder=(id,operation)=>customer.operate(id,operation);
-export const startBackend=(stationId,connectorId)=>customer.start(stationId,connectorId);
+export const startBackend=(stationId,connectorId,planId,customMinutes)=>customer.start(stationId,connectorId,planId,customMinutes);
+export const quoteBackend=payload=>customer.quote(payload);
 export const reportBackend=payload=>customer.report(payload);
 export const loadRates=id=>isBackend?customer.rates(id):Promise.resolve();
 export function persist() {
@@ -70,7 +71,11 @@ export function scan(onCode) {
   // #ifdef MP-WEIXIN
   uni.scanCode({onlyFromCamera:false,success:res=>onCode(res.result),fail:err=>{if(!String(err.errMsg).includes('cancel'))uni.showToast({title:'扫码未成功，可使用输入编号',icon:'none'});}});
   // #endif
-  // #ifndef MP-WEIXIN
-  enterCode(onCode);
+  // #ifdef H5
+  uni.showActionSheet({itemList:['识别二维码图片','使用摄像头扫描','手动输入插座编号'],success:async result=>{
+    if(result.tapIndex===2)return enterCode(onCode);
+    try{const scanner=await import('./services/h5-scanner.mjs');if(result.tapIndex===0)scanner.scanImage(onCode);else await scanner.scanCamera(onCode);}
+    catch{uni.showToast({title:'扫码组件加载失败，可使用输入编号',icon:'none'});}
+  }});
   // #endif
 }

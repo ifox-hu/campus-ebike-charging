@@ -35,6 +35,7 @@ export function createApiClient({request,baseUrl,getToken=()=>null,onUnauthorize
     prices:stationId=>send('/price-periods?stationId='+id(stationId)),
     orders:()=>send('/customer/orders'), order:orderId=>send('/customer/orders/'+id(orderId)),
     start:data=>send('/customer/orders/start',{method:'POST',data}),
+    quote:data=>send('/customer/charging-quote',{method:'POST',data}),
     reports:()=>send('/customer/repairs'),
     report:data=>send('/customer/repairs',{method:'POST',data}),
     stop:orderId=>send('/customer/orders/'+id(orderId)+'/stop',{method:'POST'}),
