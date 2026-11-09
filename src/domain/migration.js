@@ -1,4 +1,47 @@
 import { createService } from './service.js'
+import {CAMPUS_DEMO_LOCATIONS,LEGACY_DEMO_LOCATIONS} from './campusLocations.js'
+import {DEMO_ROW_LAYOUTS,LEGACY_DEMO_ROW_LAYOUTS} from './demoLayouts.js'
+
+export function migrateDemoLayouts(source){
+  const db=JSON.parse(JSON.stringify(source))
+  for(const [stationId,counts] of Object.entries(DEMO_ROW_LAYOUTS)){
+    const station=db.stations.find(s=>s.id===stationId)
+    if(!station||station.demoLayoutRevision)continue
+    const legacy=LEGACY_DEMO_ROW_LAYOUTS[stationId],serial=Number(stationId.slice(2))
+    const rows=db.rows.filter(r=>r.stationId===stationId).sort((a,b)=>a.index-b.index)
+    const devices=db.devices.filter(d=>d.stationId===stationId).sort((a,b)=>
+      rows.findIndex(r=>r.id===a.rowId)-rows.findIndex(r=>r.id===b.rowId)||a.position-b.position)
+    if(rows.length!==legacy.length||devices.length!==legacy.reduce((a,b)=>a+b,0)||
+      rows.some((r,i)=>r.id!==`ROW${serial}-${i+1}`||r.name!==String.fromCharCode(65+i)+'排'||r.index!==i+1||db.devices.filter(d=>d.rowId===r.id).length!==legacy[i]))continue
+    const nextRows=counts.map((_,i)=>({...rows[i],id:`ROW${serial}-${i+1}`,stationId,name:String.fromCharCode(65+i)+'排',index:i+1}))
+    if(nextRows.some(row=>db.rows.some(r=>r.id===row.id&&r.stationId!==stationId)))continue
+    const placements=[];let offset=0
+    for(const [index,count] of counts.entries())for(let position=1;position<=count;position++)placements.push({device:devices[offset++],row:nextRows[index],position})
+    const movedIds=new Set(placements.filter(p=>p.device.rowId!==p.row.id||p.device.position!==p.position).map(p=>p.device.id))
+    // Do not renumber a device with an unfinished charging task.
+    if(db.orders.some(o=>['starting','charging','abnormal'].includes(o.status)&&movedIds.has(o.deviceId)))continue
+    db.rows=db.rows.filter(r=>r.stationId!==stationId).concat(nextRows)
+    for(const {device,row,position} of placements){
+      if(/^[A-Z]排\d+号双插座设备$/.test(device.name))device.name=row.name+String(position).padStart(2,'0')+'号双插座设备'
+      device.rowId=row.id;device.position=position
+    }
+    station.demoLayoutRevision=1
+  }
+  return db
+}
+
+// Correct only the identified stock locations. Keep business data, custom
+// stations and manually edited coordinates intact; never reset local storage.
+export function migrateCampusLocations(source){
+  const db=JSON.parse(JSON.stringify(source))
+  for(const old of LEGACY_DEMO_LOCATIONS){
+    const station=db.stations.find(s=>s.id===old.id)
+    if(!station||station.name!==old.name||station.campusLocationRevision||
+       Number(station.lat)!==old.lat||Number(station.lng)!==old.lng)continue
+    Object.assign(station,CAMPUS_DEMO_LOCATIONS.find(s=>s.id===old.id))
+  }
+  return db
+}
 // Retain the old storage key and historical socket IDs; migrate a separate clone.
 export function migrateV2(source){
   const db=JSON.parse(JSON.stringify(source)),originalDevices=db.devices,originalSockets=db.sockets

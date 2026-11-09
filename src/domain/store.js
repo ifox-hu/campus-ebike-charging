@@ -1,10 +1,11 @@
 import { reactive, watch, computed } from 'vue'
 import { createSeed } from './seed.js'
-import { migrateV2 } from './migration.js'
+import { migrateV2,migrateCampusLocations,migrateDemoLayouts } from './migration.js'
 import { createService, deviceStatus, socketStatus, activeStatuses } from './service.js'
 const STORAGE_KEY='ebike-graduation-admin-demo-v3'
 let initial=createSeed()
 try{const valid=s=>s&&['stations','devices','sockets','users','rates','orders','reports'].every(k=>Array.isArray(s[k]))&&Number.isInteger(s.sequence);const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(valid(stored)&&stored.version===3&&Array.isArray(stored.rows))initial=stored;else{const old=JSON.parse(localStorage.getItem('ebike-graduation-admin-demo-v2')||'null');if(valid(old)&&old.version===2)initial=migrateV2(old)}}catch{}
+initial=migrateDemoLayouts(migrateCampusLocations(initial))
 export const db=reactive(initial)
 export const api=createService(db)
 export const storageWarning=reactive({message:''})

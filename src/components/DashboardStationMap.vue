@@ -9,6 +9,7 @@ const query=ref(''),status=ref('all'),selectedId=ref(''),container=ref(null),loa
 const zoom=ref(15),searchOpen=ref(false),searchMessage=ref('')
 const mapReady=computed(()=>mode.value==='map'&&!loading.value)
 const rows=computed(()=>buildStationMapRows(props.source))
+const campusDemo=computed(()=>props.source.stations.length>0&&props.source.stations.every(s=>s.campusLocationRevision===1))
 const visible=computed(()=>filterMapStations(rows.value,query.value,status.value))
 const located=computed(()=>visible.value.filter(s=>s.position)),diagram=computed(()=>projectMapStations(visible.value))
 const selected=computed(()=>visible.value.find(s=>s.id===selectedId.value))
@@ -95,7 +96,7 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
 
 <template>
  <section class="plot-card station-map-card" aria-label="首页站点分布">
-  <header class="plot-heading map-heading"><div><h2>站点分布</h2><p>从站点位置查看设备运行情况，再进入设备排布和报修处理。</p></div><span class="map-source">本地模拟数据</span></header>
+  <header class="plot-heading map-heading"><div><h2>{{campusDemo?'南阳师范学院校园站点':'站点分布'}}</h2><p>{{campusDemo?'卧龙路校址 · 校内充电演示规划，可查看设备运行与报修情况。':'从站点位置查看设备运行情况，再进入设备排布和报修处理。'}}</p></div><span class="map-source">{{campusDemo?'校园参考 · 演示规划':'本地模拟数据'}}</span></header>
   <div class="map-toolbar">
    <label class="map-search"><span>查找站点</span><input v-model="query" type="search" placeholder="站点名称、地址或编号" aria-label="地图搜索站点" @keydown.enter.prevent="searchLocate"/></label>
    <button class="soft-button active" type="button" @click="searchLocate">搜索定位</button>

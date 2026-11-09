@@ -1,9 +1,14 @@
+import {isStaticDemo} from '../runtime.js'
+import {createStaticAccountRequest} from './staticAccount.js'
+const staticRequest=isStaticDemo?createStaticAccountRequest({storage:localStorage}):null
 let csrfToken = null
 async function timedFetch(url,options){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);try{return await fetch(url,{...options,signal:controller.signal})}catch(e){if(e.name==='AbortError')throw Error('账号服务连接超时，请稍后重试。');throw e}finally{clearTimeout(timer)}}
 export async function refreshCsrf(){
+ if(isStaticDemo)return null
  const r=await timedFetch('/api/auth/csrf',{credentials:'same-origin',cache:'no-store'});if(!r.ok)throw Error('账号服务未连接，请先启动后台服务。');csrfToken=await r.json();return csrfToken
 }
 export async function accountRequest(path,{method='GET',body,form=false,quiet401=false}={}){
+ if(isStaticDemo)return staticRequest(path,{method,body})
  try{
   const headers={Accept:'application/json'}
   if(!['GET','HEAD'].includes(method)){if(!csrfToken)await refreshCsrf();headers[csrfToken.headerName]=csrfToken.token}

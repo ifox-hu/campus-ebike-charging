@@ -1,6 +1,15 @@
 node_modules/
 dist/
 dist-connected/
+dist-pages/
+.env
+.env.*
+!.env.example
+*.log
+/reference/
+/inspect_reference.py
+/*.jpg
+/*.png
 .env*.local
 qa/*classpath*.txt
 qa/*.log

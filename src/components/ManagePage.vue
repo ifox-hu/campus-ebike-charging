@@ -39,7 +39,10 @@ const visible=computed(()=>filtered.value.slice((pageNumber.value-1)*pageSize.va
 watch(filtered,()=>{pageNumber.value=Math.min(pageNumber.value,pages.value)})
 function apply(){filterError.value='';if(draft.start&&draft.end&&draft.start>draft.end){filterError.value='开始日期不能晚于结束日期。';return}query.value={...draft};pageNumber.value=1}
 function reset(){Object.assign(draft,{keyword:'',station:props.page==='devices'?db.stations[0]?.id||'':'',status:'',pay:'',start:'',end:''});apply()}
-function setLayout(value){layout.value=value;if(value&&!query.value.station){draft.station=db.stations[0]?.id||'';apply()}}
+function setLayout(value){layout.value=value;if(value){draft.station=draft.station||query.value.station||db.stations[0]?.id||'';apply()}}
+// The visible site selector and physical layout must always refer to the same
+// station. Text/status searches keep their existing explicit query behavior.
+watch(()=>draft.station,value=>{if(props.page==='devices'&&layout.value){query.value={...query.value,station:value};pageNumber.value=1}})
 watch(()=>[props.page,props.stationScope],()=>{reset();if(props.stationScope){draft.station=props.stationScope;apply()}},{immediate:true})
 function confirmToggle(row,type){emit('confirm',{kind:type,id:row.id,enabled:!row.enabled,title:row.enabled?'确认停用':'确认启用',description:row.enabled?'停用后禁止新建充电任务，保留已有订单和关联信息。存在活动任务的站点或设备不能停用。':'启用后仍需设备在线、插座无故障才能启动充电。'})}
 </script>

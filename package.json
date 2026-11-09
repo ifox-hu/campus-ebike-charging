@@ -1,11 +1,14 @@
 {
-  "name": "huizhi-screenshot-recreation",
+  "name": "campus-ebike-charging-admin",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5195 --strictPort",
     "build": "vite build",
+    "dev:pages": "vite --mode pages --host 127.0.0.1 --port 5207 --strictPort",
+    "build:pages": "vite build --mode pages",
+    "preview:pages": "vite preview --mode pages --host 127.0.0.1 --port 5207 --strictPort",
     "test": "node --test tests/*.test.js",
     "preview": "vite preview --host 127.0.0.1 --port 5195 --strictPort",
     "dev:connected": "vite --mode connected --host 127.0.0.1 --port 5201 --strictPort",

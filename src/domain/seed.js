@@ -1,13 +1,9 @@
+import {CAMPUS_DEMO_LOCATIONS} from './campusLocations.js'
+import {DEMO_ROW_LAYOUTS} from './demoLayouts.js'
 export function createSeed() {
-  const stations = [
-    ['ST01','教学楼东侧示例站','校园','教学区东侧集中停车棚',32.9912,112.5231],
-    ['ST02','食堂北侧示例站','校园','食堂北侧非机动车停车区',32.9931,112.5252],
-    ['ST03','体育馆示例站','校园','体育馆西侧停车棚',32.9896,112.5208],
-    ['ST04','园区通勤示例站','园区','园区南门员工停车区',32.9875,112.5294],
-    ['ST05','住宅小区示例站','住宅小区','小区集中非机动车车棚',32.9953,112.5311],
-  ].map(([id,name,scene,address,lat,lng])=>({id,name,scene,address,lat,lng,enabled:true,note:'模拟站点；GCJ-02 示例坐标，不代表实际部署。'}))
+  const stations = CAMPUS_DEMO_LOCATIONS.map(s=>({...s,enabled:true,demoLayoutRevision:1}))
   const users=Array.from({length:10},(_,i)=>({id:`U${i+1}`,account:`demo${String(i+1).padStart(3,'0')}`,name:`演示用户${String(i+1).padStart(2,'0')}`,enabled:i!==9,createdAt:`2026-11-${String(3+i%7).padStart(2,'0')} 09:00:00`}))
-  const rowCounts=[[12,15,12],[16,12],[12],[14,14],[12,10]]
+  const rowCounts=stations.map(s=>DEMO_ROW_LAYOUTS[s.id])
   const rows=[],devices=[]
   for(const [si,counts] of rowCounts.entries())for(const [ri,count] of counts.entries()){
     const row={id:`ROW${si+1}-${ri+1}`,stationId:stations[si].id,name:`${String.fromCharCode(65+ri)}排`,index:ri+1};rows.push(row)
