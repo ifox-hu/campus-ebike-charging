@@ -16,31 +16,52 @@
 ## 目录
 
 - [项目预览](#项目预览)
+- [项目特点](#项目特点)
 - [功能模块](#功能模块)
 - [技术与架构](#技术与架构)
 - [业务交互流程](#业务交互流程)
 - [快速开始](#快速开始)
 - [运行模式](#运行模式)
-- [GitHub Pages 部署](#github-pages-部署)
-- [校园站点与数据](#校园站点与数据)
+- [核心能力与演示路径](#核心能力与演示路径)
 - [核心数据关系](#核心数据关系)
 - [目录结构](#目录结构)
 - [测试验证](#测试验证)
 - [常见问题](#常见问题)
 - [当前边界](#当前边界)
-- [参考与授权](#参考与授权)
+- [许可说明](#许可说明)
 
 ## 项目预览
 
-演示账号：**`demo` / `Demo@123456`**。登录页支持填入演示账号、显示密码、记住账号与退出登录。
+### 管理端
+
+演示账号：**`demo` / `Demo@123456`**。支持填入演示账号、显示密码、记住账号及退出登录。
 
 | 在线演示登录 | 运营数据统计 |
 | --- | --- |
-| ![在线演示登录](docs/screenshots/pages-login.png) | ![运营数据统计与校园坐标示意](docs/screenshots/pages-dashboard.png) |
-| **设备排布与 A/B 插座** | **本机配置高德后的校园地图** |
-| ![西区八公寓三排设备](docs/screenshots/station-layout.png) | ![楼栋周边站点地图](docs/screenshots/campus-map-local.jpg) |
+| ![管理端登录](docs/screenshots/showcase-admin-login.png) | ![运营数据统计](docs/screenshots/showcase-admin-dashboard.png) |
+| **设备排布与 A/B 插座** | **充电订单管理** |
+| ![设备排布](docs/screenshots/showcase-admin-layout.png) | ![充电订单管理](docs/screenshots/showcase-admin-orders.png) |
 
-未配置地图凭证时，在线演示使用已保存校园坐标绘制示意图，明确标注非真实底图。地图截图为本机配置高德 Web Key 后的效果，不表示在线站点已启用地图服务。
+### 小程序用户端
+
+配套用户端采用 uni-app，共用页面可构建为 H5 和微信小程序。以下是实际运行的 **H5 预览截图**，并非微信真机截图；用户端源码独立于本管理端仓库。截图使用通用演示数据，不展示具体学校楼栋或坐标。截图来源与复现方式见 [展示说明](docs/showcase.md)。
+
+| 找站与空闲筛选 | 设备排布与插座 |
+| --- | --- |
+| ![用户端找站](docs/screenshots/mobile-home.png) | ![用户端设备排布](docs/screenshots/mobile-station.png) |
+| **六种充电方式与预计金额** | **充电中与实时费用** |
+| ![充电方式](docs/screenshots/mobile-start.png) | ![充电中](docs/screenshots/mobile-charging.png) |
+| **结束结算与模拟支付** | **我的充电订单** |
+| ![结束结算](docs/screenshots/mobile-payment.png) | ![充电订单](docs/screenshots/mobile-orders.png) |
+| **故障报修** | **个人中心** |
+| ![故障报修](docs/screenshots/mobile-repair.png) | ![个人中心](docs/screenshots/mobile-mine.png) |
+
+## 项目特点
+
+- **面向两轮充电**：围绕电动自行车站点与独立插座组织页面，避免混用汽车车牌、车型等信息。
+- **按现场排布管理**：站点下配置多排设备，每台设备 A、B 两个插座独立选择与计费。
+- **充电过程可追溯**：展示启动状态、计费快照、充电进度、分项账单与订单记录。
+- **兼顾使用与管理**：配套用户端完成找站、充电和反馈，管理端处理资源维护、运营查看与异常。
 
 ## 功能模块
 
@@ -229,68 +250,26 @@ Windows 也可在根目录执行 `./启动界面复刻.ps1`，由脚本检查依
 
 本仓库的接口模式不包含业务后端部署程序，不会在接口失败后自动切换成演示数据。与统一业务后端的适配记录见 [联调说明](docs/backend-integration.md)。
 
-## GitHub Pages 部署
+## 核心能力与演示路径
 
-### 自动发布流程
+### 用户端
 
-![自动部署流程图](docs/diagrams/deployment.svg)
+| 场景 | 功能体验 |
+| --- | --- |
+| 找站与选设备 | 搜索站点、按空闲数量排序、查看设备排布、选择 A/B 独立插座 |
+| 选择充电方式 | 1、2、3、4、5 小时及充满自停；预计金额随所选时长变化 |
+| 充电与结算 | 查看当前电量、时长、费率与费用；结束后查看分项账单并模拟支付 |
+| 记录与反馈 | 订单分类查询、故障报修、反馈记录、个人中心 |
 
-<details>
-<summary>查看 自动部署流程图 的可编辑图源</summary>
+### 管理端
 
-```mermaid
-flowchart LR
-  Change["本地修改 / 提交代码"] --> Push["推送 GitHub main"]
-  Push --> Test["Actions / Node 领域测试"]
-  Test --> Java["独立账号服务测试 / Java 17"]
-  Java --> Build["Vite pages 构建 / 仓库子路径"]
-  Build --> Artifact["上传 dist-pages 静态产物"]
-  Artifact --> Pages["GitHub Pages"]
-  Pages --> Browser["浏览器演示登录 / 后台体验"]
-  Secret["可选地图 Secrets"] -. "仅构建时注入 Web 凭证" .-> Build
-  Test -->|失败| Stop["停止发布 / 保留上一可用版本"]
-  Java -->|失败| Stop
-  Build -->|失败| Stop
-  classDef success fill:#ecfdf5,stroke:#34d399,color:#065f46
-  classDef warning fill:#fff7ed,stroke:#fb923c,color:#9a3412
-  class Pages,Browser success
-  class Stop warning
-```
+| 场景 | 管理能力 |
+| --- | --- |
+| 资源维护 | 维护站点、设备排、双插座配置、启停状态和收费规则 |
+| 运营查看 | 运营指标、图表、订单查询、设备状态和报修分布 |
+| 异常处理 | 启动反馈、异常占用核验、故障处理记录及用户启停 |
 
-</details>
-
-仓库提供 [自动发布工作流](.github/workflows/pages.yml)。推送 `main` 后自动：
-
-1. 安装 Node.js 22、Java 17 及依赖。
-2. 运行前端领域测试和独立账号服务测试。
-3. 使用 `pages` 模式构建，设置 `/<仓库名>/` 资源前缀。
-4. 上传静态产物并部署到 GitHub Pages。
-
-在仓库 **Settings → Pages → Source** 选择 **GitHub Actions**。可从 Actions 页面手动重新部署。Fork 后仓库名称由工作流自动读取，无需修改业务代码。
-
-可选地图凭证在仓库 Actions Secrets 中设置 `AMAP_WEB_KEY` 和 `AMAP_SECURITY_CODE`；同时按高德控制台要求配置部署域名。未设置时使用校园坐标示意。构建不会自动将本机 `.env.local` 中的地图凭证带入 Pages。
-
-详细步骤、自定义服务器、环境变量和回退方式见 [部署说明](docs/deployment.md)。
-
-## 校园站点与数据
-
-默认五站依据南阳师范学院官方校园 GIS 核对楼栋名称，再在高德实际底图上拾取楼旁室外道路；**点位为毕业设计演示规划，非实测充电设施清单**。点位来源、坐标与旧数据迁移见 [楼栋周边说明](docs/campus-building-locations.md)。
-
-| 站点 | 排数 | 每排设备数 | 设备总数 | 独立插座 |
-| --- | ---: | --- | ---: | ---: |
-| 逸夫教学楼南侧 | 3 | 12、15、12 | 39 | 78 |
-| 中区四公寓东侧 | 2 | 13、15 | 28 | 56 |
-| 体育馆南侧 | 1 | 12 | 12 | 24 |
-| 西区八公寓北侧 | 3 | 9、11、8 | 28 | 56 |
-| 东升园餐厅南侧 | 2 | 10、12 | 22 | 44 |
-
-配置固定保存，不会随刷新重新随机。默认共 129 台双插座设备、258 个插座；当前状态会根据浏览器内的演示操作变化。
-
-- 计费示例：电费 0.60 元/kWh、服务费 0.20 元/kWh；结束后分项结算。
-- 新任务保留启动时费率，修改当前费率不重算历史订单。
-- 启动失败不计费；异常任务需核验处理，不会因设备恢复在线而自动释放。
-- 旧演示数据可迁移校园坐标与排布，保留订单/报修关联；人工编辑的数据不强制覆盖。
-- 业务存储键为 `ebike-graduation-admin-demo-v3`。公开演示修改只影响当前浏览器；不要录入真实人员或敏感业务数据。
+建议体验顺序：**找站 → 查看设备排布 → 选择插座与充电方式 → 充电中 → 结束结算 → 模拟支付 → 查看订单或提交报修**。
 
 ## 核心数据关系
 
@@ -399,7 +378,7 @@ server/
 tests/                  # Node.js 领域规则测试
 qa/                     # 可选的浏览器验收脚本
 docs/
-  diagrams/             # 五张图的 Mermaid 可编辑源文件
+  diagrams/             # 架构、功能与数据关系的可编辑图源
   screenshots/          # 本项目实际页面截图
   architecture.md       # 图表对应的代码与数据边界
   deployment.md         # Pages、本机与外部接口部署
@@ -436,10 +415,6 @@ mvn -B -f server/pom.xml test
 
 默认未将本机地图凭证发布到公网。示意图仍支持站点选择和业务跳转；启用真实底图需配置自己的 Web Key 和对应部署域名。
 
-**为什么选择站点后排布没有改变？**
-
-当前现场排布模式已改为选择后即时更新；如仍显示旧代码，请刷新页面确认部署版本。
-
 **为什么换浏览器后看不到修改？**
 
 演示数据只保存在当前浏览器，不是服务器共享数据库。清除站点存储会丢失本机演示修改。
@@ -455,12 +430,10 @@ mvn -B -f server/pom.xml test
 - 独立账号服务使用 H2；充电演示业务没有迁移到 MySQL。
 - 不把界面上可点击的演示流程当作真实硬件或线上支付验收。
 - 静态模式不是生产鉴权方案；不要将其用于真实运营后台。
-- 用户端、微信小程序、充电业务后端的后续集成独立推进。
+- 配套用户端与充电业务后端在独立项目中开发，本仓库提供管理端及接口适配代码。
 
-## 参考与授权
+## 许可说明
 
-界面与 README 的组织方式参考 [慧知充电平台](https://github.com/roinli/HUIZHI-ChargeOS-cloud) 及其 [项目介绍文章](https://cloud.tencent.com/developer/article/2691703)。本项目为按毕业设计需求独立编写、简化业务的管理端，**不声称拥有上游商业版源码或完整商业能力**，与上游维护方无隶属关系。
+Vue、Vite、ECharts、Spring Boot 等第三方组件遵循各自许可证。
 
-校园楼栋周边点位见 [最新点位说明](docs/campus-building-locations.md)，范围修正历史见 [校园坐标说明](docs/campus-map-location-fix.md)。Vue、Vite、ECharts、Spring Boot 等组件按各自许可证使用；参考项目的许可证不自动适用于本仓库的独立代码。
-
-当前仓库尚未指定开源许可证。需要再分发或商用时，请先联系维护者确认授权。提交问题前请阅读 [贡献说明](CONTRIBUTING.md) 和 [安全说明](SECURITY.md)。
+当前仓库尚未指定开源许可证。再分发或商用前，请联系维护者确认授权。贡献与问题反馈见 [贡献说明](CONTRIBUTING.md)，漏洞报告见 [安全说明](SECURITY.md)。
