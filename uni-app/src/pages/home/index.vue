@@ -1,6 +1,6 @@
 <template>
   <view class="phone home-page" :class="{'has-session':active,'map-mode':mapMode}">
-    <PageHeader :title="mapMode?'校园地图':'校园充电'"/><ConnectionState/>
+    <PageHeader :title="mapMode?'充电站点地图':'电动自行车智能充电'"/><ConnectionState/>
     <view class="searchbar"><text class="city"><text class="location-symbol">●</text>{{isBackend?'校园':'南阳市'}}</text><view class="search-field"><text class="search-icon"/><input v-model="query" placeholder="查找地点/充电站" confirm-type="search" aria-label="搜索充电站"/></view><button class="mode-toggle" :aria-label="mapMode?'切换列表':'切换地图'" @click="mapMode=!mapMode"><image :src="mapMode?'/static/list.png':'/static/navigation.png'"/></button></view>
     <view v-if="!mapMode" class="list-head"><view class="station-heading"><text class="station-heading-title">充电站点</text><text class="station-heading-description">{{isBackend?'校园站点信息以平台数据为准':'电动自行车插座充电'}}</text></view><view class="sorts"><button :class="{chosen:sort==='default'}" @click="sort='default'">全部站点</button><button :class="{chosen:sort==='free'}" @click="sort='free'">空闲较多</button></view></view>
     <StationMap v-if="mapMode" :stations="filtered" @open="openStation"/>
@@ -20,7 +20,6 @@ const filtered=computed(()=>{const found=state.stations.filter(s=>(s.name+s.addr
 const selected=computed(()=>filtered.value.find(s=>s.id===selectedId.value));const active=computed(()=>state.orders.find(isCurrentOrder));
 const openStation=s=>go('/pages/station/index?id='+s.id);
 onShow(()=>refreshData());
-const mapInfo=()=>uni.showModal({title:'地图演示说明',content:'当前地图只用于比对云创的找站交互，不采集定位，也不提供真实距离或导航。真实地图将在后端联调阶段接入。',showCancel:false});
 </script>
 <style scoped>
 .station-layout-summary{margin:7px 0 3px;color:#658183;font-size:12px;line-height:1.7}

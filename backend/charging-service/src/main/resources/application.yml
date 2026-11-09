@@ -73,6 +73,6 @@ management:
 
 info:
   app:
-    name: charge-platform-learning
-    description: Charging station operations learning platform
+    name: Smart E-Bike Charging Management System
+    description: Electric bicycle charging management API for stations, devices, sockets, orders, billing and repairs
     version: 0.1.0

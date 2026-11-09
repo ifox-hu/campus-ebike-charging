@@ -1,5 +1,5 @@
 {
-  "name":"轻充用户端","appid":"","description":"参考云创官方原图的两轮插座充电本地演示","versionName":"0.1.0","versionCode":"100","transformPx":false,"vueVersion":"3",
-  "h5":{"title":"轻充 · 两轮充电","router":{"mode":"hash"}},
+  "name":"电动自行车智能充电管理系统","appid":"","description":"电动自行车智能充电管理系统用户端，提供地图找站、插座选择、充电策略、订单计费与报修功能。","versionName":"0.1.0","versionCode":"100","transformPx":false,"vueVersion":"3",
+  "h5":{"title":"电动自行车智能充电管理系统 · 用户端","router":{"mode":"hash"}},
   "mp-weixin":{"appid":"","setting":{"urlCheck":true},"usingComponents":true}
 }

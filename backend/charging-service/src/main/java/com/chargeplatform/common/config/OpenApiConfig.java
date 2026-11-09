@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
     @Bean OpenAPI chargePlatformOpenApi(){
-        return new OpenAPI().info(new Info().title("Charge Platform Lite API").version("1.0.0").description("轻量级充电桩运营管理平台接口"))
+        return new OpenAPI().info(new Info().title("Smart E-Bike Charging Management System API").version("1.0.0").description("电动自行车智能充电管理系统接口：站点、设备、插座、订单、计费与报修"))
             .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
             .components(new Components().addSecuritySchemes("bearerAuth",new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")));
     }

@@ -1,4 +1,6 @@
-# 校园非机动车充电平台
+# 电动自行车智能充电管理系统
+
+**Smart E-Bike Charging Management System**
 
 [![Deploy](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml/badge.svg)](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml)
 ![Vue](https://img.shields.io/badge/Vue-3.5-42b883)
@@ -69,7 +71,7 @@
 
 ```mermaid
 flowchart LR
-  Root["校园非机动车充电管理平台"]
+  Root["电动自行车智能充电管理系统"]
   Root --> Operations["运营总览"]
   Root --> Resources["充电资源"]
   Root --> Business["业务处理"]

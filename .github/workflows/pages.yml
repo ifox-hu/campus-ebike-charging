@@ -1,4 +1,4 @@
-name: Test and deploy campus charging
+name: Test and deploy Smart E-Bike Charging Management System
 on:
   push:
     branches: [main]

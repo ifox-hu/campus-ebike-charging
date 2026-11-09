@@ -12,7 +12,7 @@ async function login(){error.value='';busy.value=true;try{await signIn(username.
 </script>
 <template>
  <main class="auth-shell">
-  <div class="auth-brand"><span class="auth-logo">ϟ</span><span>非机动车充电管理平台</span></div>
+  <div class="auth-brand"><span class="auth-logo">ϟ</span><span>电动自行车智能充电管理系统</span></div>
   <section class="login-card">
    <div class="login-accent"></div>
    <header><span v-if="isStaticDemo" class="demo-login-badge">ONLINE DEMO</span><h1>{{isStaticDemo?'在线演示登录':'管理员登录'}}</h1><p>{{isStaticDemo?'南阳师范学院校园场景 · 充电站点与设备管理':'登录后管理站点、设备与独立插座'}}</p></header>
@@ -28,7 +28,7 @@ async function login(){error.value='';busy.value=true;try{await signIn(username.
    <div v-if="isStaticDemo" class="login-help demo-login-help"><div class="demo-help-heading"><strong>公开演示账号</strong><button type="button" class="text-button" @click="fillDemo">填入演示账号</button></div><p>账号 <code>{{STATIC_DEMO_ACCOUNT.username}}</code> · 密码 <code>{{STATIC_DEMO_ACCOUNT.password}}</code></p><small>此登录用于展示操作流程，数据仅保存在当前浏览器。</small></div>
    <div v-else class="login-help"><strong>本机首次初始化</strong><p>账号 <code>admin</code> · 初始密码 <code>Admin@123456</code></p><small>仅新建账号时生效，已修改的密码不会被覆盖。</small></div>
   </section>
-  <footer class="login-footer">{{isStaticDemo?'南阳师范学院 · 校园电单车充电':'校园 · 住宅小区 · 园区'}}<br/>{{isStaticDemo?'公开静态演示 · 无真实设备控制与付款':'账号由本机 Spring Boot 服务校验；充电设备与业务数据仍为软件模拟。'}}</footer>
+  <footer class="login-footer">电动自行车智能充电管理系统<br/>{{isStaticDemo?'公开静态演示 · 无真实设备控制与付款':'账号由本机 Spring Boot 服务校验；充电设备与业务数据仍为软件模拟。'}}</footer>
  </main>
 </template>
 <style scoped>

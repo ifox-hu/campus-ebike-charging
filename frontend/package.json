@@ -1,5 +1,5 @@
 {
-  "name": "campus-ebike-charging-admin",
+  "name": "ebike-smart-charging-admin",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -21,5 +21,6 @@
   "devDependencies": {
     "vite": "6.0.5",
     "@vitejs/plugin-vue": "5.2.1"
-  }
+  },
+  "description": "Smart E-Bike Charging Management System - Administration Web Client"
 }

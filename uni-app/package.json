@@ -1,5 +1,5 @@
 {
-  "name": "yun-mobile-graduation",
+  "name": "ebike-smart-charging-client",
   "version": "0.0.0",
   "scripts": {
     "dev:h5": "uni --host 127.0.0.1",
@@ -28,5 +28,6 @@
     "rollup": "4.14.3",
     "vite": "5.2.8"
   },
-  "private": true
+  "private": true,
+  "description": "Smart E-Bike Charging Management System - H5 and WeChat Mini Program"
 }

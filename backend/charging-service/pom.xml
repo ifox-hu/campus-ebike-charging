@@ -14,8 +14,8 @@
     <groupId>com.chargeplatform</groupId>
     <artifactId>charge-platform-learning</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    <name>charge-platform-learning</name>
-    <description>Learning-focused charging station operations platform</description>
+    <name>Smart E-Bike Charging Management System - Charging Service</name>
+    <description>Electric bicycle charging management API for stations, devices, sockets, orders, billing and repairs</description>
 
     <properties>
         <java.version>17</java.version>

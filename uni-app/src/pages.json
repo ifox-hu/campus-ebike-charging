@@ -9,5 +9,5 @@
     {"path":"pages/report/index","style":{"navigationStyle":"custom"}},
     {"path":"pages/account/index","style":{"navigationStyle":"custom"}}
   ],
-  "globalStyle":{"navigationBarTextStyle":"black","navigationBarTitleText":"轻充","navigationBarBackgroundColor":"#ffffff","backgroundColor":"#f7f7fb"}
+  "globalStyle":{"navigationBarTextStyle":"black","navigationBarTitleText":"电动自行车智能充电管理系统","navigationBarBackgroundColor":"#ffffff","backgroundColor":"#f7f7fb"}
 }
