@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import UiIcon from './UiIcon.vue'
 import ChartPanel from './ChartPanel.vue'
 import StatusTag from './StatusTag.vue'
+import DashboardStationMap from './DashboardStationMap.vue'
 import { db, devicesView, stationsView, socketsView, reportsView } from '../domain/store.js'
 import { money, today } from '../domain/service.js'
 import { orderTrend, userTrend, feeTrend, typeChart, siteChart } from '../domain/statistics.js'
@@ -40,6 +41,7 @@ const legend=[['#7677ff','订单数'],['#35bfee','已结束'],['#49c85e','充电
  <section class="dashboard-glass" aria-label="运营统计">
   <div class="scope-toolbar"><div class="scope-buttons"><button :class="{active:scope==='today'}" @click="scope='today'">今日数据</button><button :class="{active:scope==='all'}" @click="scope='all'">全部数据</button></div><button class="soft-button export-button" @click="exportStats">导出</button></div>
   <div class="metric-grid"><article v-for="metric in metricRows" :key="metric.label" class="metric-card"><div class="metric-icon" :class="metric.tone"><UiIcon :name="metric.icon" size="2rem"/></div><div class="metric-copy"><p>{{metric.label}}</p><strong>{{metric.value}}</strong></div></article></div>
+  <DashboardStationMap :source="db" @navigate="emit('navigate',$event)"/>
   <div class="statistics-grid">
    <section class="plot-card sales-card"><div class="plot-heading"><h2>充电订单趋势</h2><div class="sales-legend"><span v-for="[color,name] in legend" :key="name"><i :style="{background:color}"></i>{{name}}</span></div></div><ChartPanel :option="sales" label="充电订单趋势：订单数量与充电状态统计"/></section>
    <section class="plot-card announcements-card"><div class="announcement-heading"><div class="notice-tabs"><button :class="{active:noticeTab==='report'}" @click="noticeTab='report'">报修({{reportCount}})</button><button :class="{active:noticeTab==='alarm'}" @click="noticeTab='alarm'">告警({{alarmRows.length}})</button></div><button class="text-button" @click="openReminders">查看更多</button></div><ul class="announcement-list"><li v-for="(item,i) in notices.slice(0,6)" :key="i"><button @click="emit('navigate',{page:noticeTab==='report'?'reports':'devices',stationId:item.stationId})"><i></i><span>{{item.text}}</span><time>{{item.time}}</time></button></li><li v-if="!notices.length" class="dashboard-empty">暂无待处理{{noticeTab==='report'?'报修':'告警'}}</li></ul></section>
