@@ -1,6 +1,6 @@
 import {isStaticDemo} from '../runtime.js'
 import {createStaticAccountRequest} from './staticAccount.js'
-const staticRequest=isStaticDemo?createStaticAccountRequest({storage:localStorage}):null
+const staticRequest=isStaticDemo?createStaticAccountRequest({storage:localStorage,sessionStorage}):null
 let csrfToken = null
 async function timedFetch(url,options){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);try{return await fetch(url,{...options,signal:controller.signal})}catch(e){if(e.name==='AbortError')throw Error('账号服务连接超时，请稍后重试。');throw e}finally{clearTimeout(timer)}}
 export async function refreshCsrf(){

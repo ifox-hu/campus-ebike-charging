@@ -2,7 +2,7 @@
 
 ## GitHub Pages
 
-`pages` 模式只生成静态前端，不连接 Java 账号服务。访问者直接进入公开演示；资料、通知、字号及业务数据保存在浏览器。
+`pages` 模式只生成静态前端，不连接 Java 账号服务。访问者先使用公开演示账号 `demo` / `Demo@123456` 登录；登录流程仅在浏览器模拟，不能作为真实权限校验。资料、通知、字号及业务数据保存在浏览器。
 
 仓库 Settings → Pages 的发布源设为 GitHub Actions。推送 main 或手动运行 `Test and deploy GitHub Pages` 工作流，测试通过后自动发布。工作流使用仓库名称计算资源前缀，适用于 `https://<账号>.github.io/<仓库>/`。
 
