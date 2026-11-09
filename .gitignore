@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-connected/
+.env*.local
+qa/*classpath*.txt
+qa/*.log
+qa/*verification*.json
+qa/*.jpg
+start*.log
+connected-start*.log
+server/target/
+server/runtime/
+server/*.log

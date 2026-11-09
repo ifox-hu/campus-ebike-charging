@@ -1,0 +1,10 @@
+export const referenceUrl = 'https://cloud.tencent.com/developer/article/2691703'
+export const navigation = [
+ {id:'dashboard',label:'数据统计',icon:'chart'},
+ {id:'stations',label:'站点管理',icon:'system'},
+ {id:'devices',label:'设备与插座',icon:'device'},
+ {id:'rates',label:'收费规则',icon:'rule'},
+ {id:'orders',label:'充电订单',icon:'order'},
+ {id:'users',label:'用户管理',icon:'user'},
+ {id:'reports',label:'故障报修',icon:'edit'},
+]

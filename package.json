@@ -1,0 +1,22 @@
+{
+  "name": "huizhi-screenshot-recreation",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5195 --strictPort",
+    "build": "vite build",
+    "test": "node --test tests/*.test.js",
+    "preview": "vite preview --host 127.0.0.1 --port 5195 --strictPort",
+    "dev:connected": "vite --mode connected --host 127.0.0.1 --port 5199 --strictPort",
+    "build:connected": "vite build --mode connected"
+  },
+  "dependencies": {
+    "vue": "3.5.13",
+    "echarts": "5.6.0"
+  },
+  "devDependencies": {
+    "vite": "6.0.5",
+    "@vitejs/plugin-vue": "5.2.1"
+  }
+}

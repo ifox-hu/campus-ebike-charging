@@ -1,0 +1,37 @@
+<script setup>
+defineProps({ name: String, size: { type: [Number, String], default: '1.15em' } })
+const paths = {
+  menu:'M4 6h16M4 12h16M4 18h16M8 9l-3 3 3 3',
+  chart:'M5 19V10m5 9V5m5 14V8m5 11V3',
+  device:'M7 3h10v18H7zM10 7h4M10 16h4M10 19h4',
+  order:'M7 4h10v17H5V4h2zm1-2h6v5H8zm0 9h6m-6 4h6',
+  card:'m3 9 13-6 6 13-13 6L3 9zm3 1 3-1m3-2 6 12M7 14l3-1',
+  rule:'M4 4h14v16H4zM7 8h8m-8 4h4m3 4 2 2 5-5',
+  user:'M8 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-6 11v-2a6 6 0 0 1 12 0v2m4-16a3 3 0 0 1 0 6m0 3a5 5 0 0 1 4 5v2',
+  team:'M12 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-4 7v-2a4 4 0 0 1 8 0v2M4 20v-5h3m13 5v-5h-3M2 19h4v3H2zm8 0h4v3h-4zm8 0h4v3h-4z',
+  system:'M3 4h18v13H3zm7 13v4m4-4v4m-7 0h10M9 9l3-2 3 2v3l-3 2-3-2z',
+  edit:'m5 16 11-12 4 4L9 20H4zm8-9 4 4M3 22h18',
+  gift:'M4 7h16v14H4zm-2 0V3h20v4M12 3v18M8 3C3 0 6-3 12 3c6-6 9-3 4 0M7 12h10m-10 4h10',
+  money:'M5 3h14v19H5zm3 4h8m-8 4h8m-8 4h3m2 4h3',
+  chevron:'m7 10 5 5 5-5',
+  search:'M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm6-2 7 7',
+  bell:'M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zm4 3a3 3 0 0 0 6 0M12 2v2',
+  fullscreen:'M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6',
+  fullscreenExit:'M9 3v6H3m12-6v6h6M3 15h6v6m6 0v-6h6',
+  font:'M3 4h18M12 4v17',
+  screen:'M3 3h18v14H3zm5 18h8m-4-4v4M6 12l4-4 4 3 4-5',
+  calendar:'M3 5h18v16H3zm0 5h18M7 2v6m10-6v6M7 13h1m3 0h1m3 0h1m-9 4h1m3 0h1m3 0h1',
+  recharge:'M17 19a9 9 0 1 1 4-7M9 5l3 4 3-4m-3 4v10m-4-7h8m-8 3h8m3 2h6m-3-3v6',
+  consume:'M5 2v17m-3-12h7m-7 4h7M3 2l2 3 2-3m3 16L22 7M12 18h9v5h-9zm1-7h8v5m-7 3v2m3-2v2m3-2v2',
+  person:'M10 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 10-6m5-1v8m-4-4h8',
+  receipt:'M7 2H5a2 2 0 0 0-2 2v17a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2M8 2h8M7 8h10M7 12h10M7 16h10',
+  battery:'M8 2h8v3h3v18H5V5h3zm2 6-3 7h5l-2 5 7-8h-5l2-4',
+  refund:'M18 19a10 10 0 1 1 3-8M9 5l3 4 3-4m-3 4v10m-4-7h8m-8 3h8m2 5 3-3-3-3m3 3h-7',
+  refundOrder:'M3 2h18v12M3 2v20h10M6 6h12M6 10h7M6 14h3m-3 4h3M20 16a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 2v4m-2-2h4',
+  wifi:'M2 9a16 16 0 0 1 20 0M5 13a11 11 0 0 1 14 0m-11 4a6 6 0 0 1 8 0m-5 4h2',
+  close:'m5 5 14 14M5 19 19 5',
+  arrow:'m9 5 7 7-7 7',
+  download:'M12 2v14m-5-5 5 5 5-5M3 16v6h18v-6',
+}
+</script>
+<template><svg :width="size" :height="size" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path :d="paths[name] || paths.device" /></svg></template>
