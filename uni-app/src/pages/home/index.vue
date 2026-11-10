@@ -1,6 +1,6 @@
 <template>
   <view class="phone home-page" :class="{'has-session':active,'map-mode':mapMode}">
-    <PageHeader :title="mapMode?'充电站点地图':'电动自行车智能充电'"/><ConnectionState/>
+    <PageHeader :title="mapMode?'充电站点地图':'电动自行车智慧充电'"/><ConnectionState/>
     <view class="searchbar"><text class="city"><text class="location-symbol">●</text>{{'找站'}}</text><view class="search-field"><text class="search-icon"/><input v-model="query" placeholder="查找地点/充电站" confirm-type="search" aria-label="搜索充电站"/></view><button class="mode-toggle" :aria-label="mapMode?'切换列表':'切换地图'" @click="mapMode=!mapMode"><image :src="mapMode?'/static/list.png':'/static/navigation.png'"/></button></view>
     <view v-if="!mapMode" class="list-head"><view class="station-heading"><text class="station-heading-title">充电站点</text><text class="station-heading-description">{{'校园 · 住宅小区 · 园区'}}</text></view><view class="sorts"><button :class="{chosen:sort==='default'}" @click="sort='default'">全部站点</button><button :class="{chosen:sort==='free'}" @click="sort='free'">空闲较多</button></view></view>
     <view class="scene-filters"><button v-for="item in ['','校园','住宅小区','园区']" :key="item" :class="{chosen:scene===item}" @click="scene=item">{{item||'全部场景'}}</button><button :class="{chosen:savedOnly}" @click="savedOnly=!savedOnly;recentOnly=false">收藏</button><button :class="{chosen:recentOnly}" @click="recentOnly=!recentOnly;savedOnly=false">最近</button></view><StationMap v-if="mapMode" :stations="filtered" @open="openStation"/>

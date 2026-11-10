@@ -1,4 +1,4 @@
-# 电动自行车智能充电管理系统
+# 电动自行车智慧充电管理系统
 
 **Smart E-Bike Charging Management System**
 
@@ -84,7 +84,7 @@
 
 ```mermaid
 flowchart LR
-  Root["电动自行车智能充电管理系统"]
+  Root["电动自行车智慧充电管理系统"]
   Root --> Operations["运营总览"]
   Root --> Resources["充电资源"]
   Root --> Business["业务处理"]
