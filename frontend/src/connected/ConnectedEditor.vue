@@ -1,5 +1,6 @@
 <script setup>
 import {computed,reactive,ref} from 'vue'
+import StationLocationPicker from '../components/StationLocationPicker.vue'
 const props=defineProps({client:Object,type:String,record:Object,stations:Array,stationId:[String,Number]})
 const emit=defineEmits(['done','cancel'])
 const fields={
@@ -11,6 +12,7 @@ const fields={
 const form=reactive({name:'',address:'',scene:'未分类',latitude:'',longitude:'',coordinateType:'GCJ02',description:'',status:'OPERATING',stationId:props.stationId||props.stations[0]?.id||'',rowName:'A排',prefix:'',count:1,enabled:true,startTime:'00:00:00',endTime:'23:59:59',electricityPrice:.6,servicePrice:.2,...props.record})
 const busy=ref(false),error=ref(''),schema=computed(()=>fields[props.type]||[])
 const options={scene:[['校园','校园'],['住宅小区','住宅小区'],['园区','园区'],['未分类','未分类']],stationStatus:[['OPERATING','运营中'],['CLOSED','停用']],deviceStatus:[['ONLINE','在线'],['OFFLINE','离线']],enabled:[[true,'启用'],[false,'停用']]}
+function selectLocation(point){form.latitude=point.latitude.toFixed(6);form.longitude=point.longitude.toFixed(6);form.coordinateType=point.coordinateType;if(point.address)form.address=point.address.slice(0,200)}
 async function save(){
  if(busy.value)return;error.value=''
  try{
@@ -38,5 +40,5 @@ async function save(){
  }catch(e){if(!e.stale)error.value=e.message+'；如请求超时，请先刷新核对结果，不要重复提交。'}finally{busy.value=false}
 }
 </script>
-<template><form class="connected-editor" @submit.prevent="save"><label v-for="[key,label,type,max] in schema" :key="key">{{label}}<select v-if="type==='station'" v-model="form[key]" required :disabled="busy||!!record&&key==='stationId'"><option v-for="site in stations" :key="site.id" :value="site.id">{{site.name}}</option></select><select v-else-if="options[type]" v-model="form[key]" :disabled="busy"><option v-for="[value,text] in options[type]" :key="String(value)" :value="value">{{text}}</option></select><input v-else v-model="form[key]" :type="type" :maxlength="max" :step="type==='number'?'any':undefined" :required="key!=='description'" :disabled="busy"/></label><p v-if="type==='rates'" class="form-hint">费率须覆盖全天且不重叠。修改不影响已启动订单保存的历史费率。</p><p v-if="error" class="remote-error" role="alert">{{error}}</p><footer><button type="button" class="outline-button" :disabled="busy" @click="emit('cancel')">取消</button><button class="soft-button active" :disabled="busy">{{busy?'正在保存…':'保存到服务端'}}</button></footer></form></template>
+<template><form class="connected-editor" @submit.prevent="save"><label v-for="[key,label,type,max] in schema" :key="key">{{label}}<select v-if="type==='station'" v-model="form[key]" required :disabled="busy||!!record&&key==='stationId'"><option v-for="site in stations" :key="site.id" :value="site.id">{{site.name}}</option></select><select v-else-if="options[type]" v-model="form[key]" :disabled="busy"><option v-for="[value,text] in options[type]" :key="String(value)" :value="value">{{text}}</option></select><input v-else v-model="form[key]" :type="type" :maxlength="max" :step="type==='number'?'any':undefined" :required="key!=='description'" :disabled="busy"/></label><StationLocationPicker v-if="type==='stations'" :latitude="form.latitude" :longitude="form.longitude" :address="form.address" :coordinate-type="form.coordinateType" :fallback-position="[stations[0]?.longitude,stations[0]?.latitude]" :disabled="busy" @select="selectLocation"/><p v-if="type==='rates'" class="form-hint">费率须覆盖全天且不重叠。修改不影响已启动订单保存的历史费率。</p><p v-if="error" class="remote-error" role="alert">{{error}}</p><footer><button type="button" class="outline-button" :disabled="busy" @click="emit('cancel')">取消</button><button class="soft-button active" :disabled="busy">{{busy?'正在保存…':'保存到服务端'}}</button></footer></form></template>
 <style scoped>.connected-editor{padding:1.5rem;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.connected-editor label{display:flex;flex-direction:column;gap:.6rem;font-size:.9rem}.connected-editor input,.connected-editor select{padding:.7rem;border:1px solid #ddd8e9;border-radius:6px;color:#5c5470;background:white;min-width:0}.connected-editor p,.connected-editor footer{grid-column:1/-1}.connected-editor footer{display:flex;gap:1rem;justify-content:flex-end}@media(max-width:600px){.connected-editor{grid-template-columns:1fr}}</style>
