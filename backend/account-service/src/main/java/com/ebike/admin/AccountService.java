@@ -24,8 +24,8 @@ public class AccountService implements UserDetailsService, ApplicationRunner {
     private final String bootstrapUsername, bootstrapPassword;
     public AccountService(JdbcTemplate jdbc,PasswordEncoder encoder,@Value("${app.bootstrap.username}") String username,@Value("${app.bootstrap.password}") String password){this.jdbc=jdbc;this.encoder=encoder;bootstrapUsername=username;bootstrapPassword=password;}
     public record Preferences(String fontSize,String density){}
-    public record Profile(long id,String username,String displayName,String email,String phone,String bio,String role,Preferences preferences,String createdAt,String updatedAt){}
-    public record ProfileInput(String displayName,String email,String phone,String bio){}
+    public record Profile(long id,String username,String displayName,String email,String phone,String bio,String avatar,String role,Preferences preferences,String createdAt,String updatedAt){}
+    public record ProfileInput(String displayName,String email,String phone,String bio,String avatar){}
     public record PasswordInput(String currentPassword,String newPassword){}
     private record Stored(Profile profile,String hash){}
     @Override public void run(ApplicationArguments args){
@@ -35,7 +35,7 @@ public class AccountService implements UserDetailsService, ApplicationRunner {
         }
     }
     private Stored stored(String username){
-        var rows=jdbc.query("SELECT * FROM eb_admin_accounts WHERE username=?",(rs,n)->new Stored(new Profile(rs.getLong("id"),rs.getString("username"),rs.getString("display_name"),rs.getString("email"),rs.getString("phone"),rs.getString("bio"),"ADMIN",new Preferences(rs.getString("font_size"),rs.getString("density")),rs.getString("created_at"),rs.getString("updated_at")),rs.getString("password_hash")),username);
+        var rows=jdbc.query("SELECT * FROM eb_admin_accounts WHERE username=?",(rs,n)->new Stored(new Profile(rs.getLong("id"),rs.getString("username"),rs.getString("display_name"),rs.getString("email"),rs.getString("phone"),rs.getString("bio"),rs.getString("avatar"),"ADMIN",new Preferences(rs.getString("font_size"),rs.getString("density")),rs.getString("created_at"),rs.getString("updated_at")),rs.getString("password_hash")),username);
         if(rows.isEmpty())throw new UsernameNotFoundException("账号不存在");return rows.get(0);
     }
     @Override public UserDetails loadUserByUsername(String username){Stored s=stored(username);return User.withUsername(s.profile.username()).password(s.hash).roles("ADMIN").build();}
@@ -46,7 +46,8 @@ public class AccountService implements UserDetailsService, ApplicationRunner {
         if(name.isBlank())throw new IllegalArgumentException("显示名称不能为空");
         if(!email.isEmpty()&&!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"))throw new IllegalArgumentException("邮箱格式不正确");
         if(!phone.isEmpty()&&!phone.matches("^[+0-9() -]{7,24}$"))throw new IllegalArgumentException("联系电话格式不正确");
-        jdbc.update("UPDATE eb_admin_accounts SET display_name=?,email=?,phone=?,bio=?,updated_at=? WHERE username=?",name,email,phone,bio,Instant.now().toString(),username);return profile(username);
+        String avatar=input.avatar()==null?profile(username).avatar():AvatarImages.validate(input.avatar());
+        jdbc.update("UPDATE eb_admin_accounts SET display_name=?,email=?,phone=?,bio=?,avatar=?,updated_at=? WHERE username=?",name,email,phone,bio,avatar,Instant.now().toString(),username);return profile(username);
     }
     public void validatePassword(String p){
         if(p==null||p.length()<10||p.length()>64||p.getBytes(StandardCharsets.UTF_8).length>72||!p.matches(".*[a-zA-Z].*")||!p.matches(".*[0-9].*"))throw new IllegalArgumentException("密码须为 10～64 个字符，包含字母和数字，UTF-8 不超过 72 字节");

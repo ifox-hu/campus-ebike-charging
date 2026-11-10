@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS eb_admin_accounts (
  created_at VARCHAR(40) NOT NULL,
  updated_at VARCHAR(40) NOT NULL
 );
+-- Additive and idempotent for existing local account databases.
+ALTER TABLE eb_admin_accounts ADD COLUMN IF NOT EXISTS avatar CLOB DEFAULT '' NOT NULL;
 CREATE TABLE IF NOT EXISTS eb_admin_notice_reads (
  account_id BIGINT NOT NULL,
  event_key VARCHAR(220) NOT NULL,

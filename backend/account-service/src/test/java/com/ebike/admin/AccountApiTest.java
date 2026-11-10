@@ -31,4 +31,21 @@ class AccountApiTest {
  @Test void wrongOldPasswordDoesNotChangeAccount()throws Exception{var s=login(PASSWORD);mvc.perform(post("/api/account/password").session(s).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"currentPassword\":\"wrong\",\"newPassword\":\"ChangedOnly@12345\"}")).andExpect(status().isBadRequest());assertNotNull(login(PASSWORD));}
  @Test void changingPasswordInvalidatesSessionsAndBootstrapDoesNotOverwriteIt()throws Exception{var s=login(PASSWORD);var other=login(PASSWORD);mvc.perform(post("/api/account/password").session(s).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"currentPassword\":\""+PASSWORD+"\",\"newPassword\":\"ChangedOnly@12345\"}")).andExpect(status().isOk());assertTrue(s.isInvalid());mvc.perform(get("/api/auth/me").session(other)).andExpect(status().isUnauthorized());service.run(new DefaultApplicationArguments());mvc.perform(post("/api/auth/login").with(csrf()).param("username","test-admin").param("password",PASSWORD)).andExpect(status().isUnauthorized());assertNotNull(login("ChangedOnly@12345"));}
  @Test void logoutInvalidatesSession()throws Exception{var s=login(PASSWORD);mvc.perform(post("/api/auth/logout").session(s).with(csrf())).andExpect(status().isOk());assertTrue(s.isInvalid());mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());}
+ @Test void avatarIsValidatedStoredAndCanBeReset()throws Exception{
+  var output=new java.io.ByteArrayOutputStream();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(16,16,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",output);
+  String avatar="data:image/png;base64,"+java.util.Base64.getEncoder().encodeToString(output.toByteArray());
+  var session=login(PASSWORD);
+  mvc.perform(put("/api/account/profile").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"displayName\":\"管理员\",\"avatar\":\""+avatar+"\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.data.avatar").value(avatar));
+  new org.springframework.jdbc.datasource.init.ResourceDatabasePopulator(new org.springframework.core.io.ClassPathResource("schema.sql")).execute(jdbc.getDataSource());
+  mvc.perform(get("/api/auth/me").session(login(PASSWORD))).andExpect(jsonPath("$.data.avatar").value(avatar));
+  mvc.perform(put("/api/account/profile").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"displayName\":\"管理员\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.data.avatar").value(avatar));
+  for(String bad:java.util.List.of("https://example.test/avatar.png","data:image/svg+xml;base64,PHN2Zy8+","data:image/png;base64,bm90LWFuLWltYWdl","data:image/png;base64,"+"A".repeat(180001))){
+   mvc.perform(put("/api/account/profile").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"displayName\":\"管理员\",\"avatar\":\""+bad+"\"}")).andExpect(status().isBadRequest());
+  }
+  output.reset();javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(600,1,java.awt.image.BufferedImage.TYPE_INT_RGB),"png",output);
+  String oversized="data:image/png;base64,"+java.util.Base64.getEncoder().encodeToString(output.toByteArray());
+  mvc.perform(put("/api/account/profile").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"displayName\":\"管理员\",\"avatar\":\""+oversized+"\"}")).andExpect(status().isBadRequest());
+  mvc.perform(get("/api/auth/me").session(session)).andExpect(jsonPath("$.data.avatar").value(avatar));
+  mvc.perform(put("/api/account/profile").session(session).with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{\"displayName\":\"管理员\",\"avatar\":\"\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.data.avatar").value(""));
+ }
 }

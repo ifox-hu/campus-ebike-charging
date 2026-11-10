@@ -3,6 +3,24 @@ import assert from 'node:assert/strict'
 import {createStaticAccountRequest} from '../src/services/staticAccount.js'
 const memory=()=>{const data=new Map();return {getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k),dump:()=>JSON.stringify([...data])}}
 const login=request=>request('/auth/login',{method:'POST',body:{username:'demo',password:'Demo@123456'}})
+const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='
+
+test('avatar persists through restore, survives omitted updates and can be reset',async()=>{
+ const storage=memory(),sessionStorage=memory(),request=createStaticAccountRequest({storage,sessionStorage});await login(request)
+ const save=body=>request('/account/profile',{method:'PUT',body:{displayName:'演示管理员',...body}})
+ await save({avatar:image});assert.equal((await createStaticAccountRequest({storage,sessionStorage})('/auth/me')).data.avatar,image)
+ await save({bio:'更新说明'});assert.equal((await request('/auth/me')).data.avatar,image)
+ for(const avatar of ['https://example.test/avatar.png','data:image/svg+xml;base64,PHN2Zy8+','data:image/png;base64,not-an-image','data:image/png;base64,'+'A'.repeat(180001)])await assert.rejects(()=>save({avatar}),/头像/)
+ assert.equal((await request('/auth/me')).data.avatar,image)
+ await save({avatar:''});assert.equal((await createStaticAccountRequest({storage,sessionStorage})('/auth/me')).data.avatar,'')
+})
+
+test('failed browser persistence never reports or keeps an unsaved avatar',async()=>{
+ const storage=memory(),sessionStorage=memory(),request=createStaticAccountRequest({storage,sessionStorage});await login(request)
+ storage.setItem=()=>{throw Error('quota exceeded')}
+ await assert.rejects(()=>request('/account/profile',{method:'PUT',body:{displayName:'未保存',avatar:image}}),/保存失败/)
+ const {data}=await request('/auth/me');assert.equal(data.avatar,'');assert.equal(data.displayName,'演示管理员')
+})
 
 test('static Pages requires explicit demo login and rejects incorrect credentials',async()=>{
  const request=createStaticAccountRequest({storage:memory(),sessionStorage:memory()})
