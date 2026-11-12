@@ -2,14 +2,14 @@
 
 **Smart E-Bike Charging Management System**
 
-[![Deploy](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml/badge.svg)](https://github.com/ifox-hu/campus-ebike-charging-admin/actions/workflows/pages.yml)
+[![Deploy](https://github.com/ifox-hu/campus-ebike-charging/actions/workflows/pages.yml/badge.svg)](https://github.com/ifox-hu/campus-ebike-charging/actions/workflows/pages.yml)
 ![Vue](https://img.shields.io/badge/Vue-3.5-42b883)
 ![Vite](https://img.shields.io/badge/Vite-6-646cff)
 ![Java](https://img.shields.io/badge/Java-17-ed8b00)
 
 面向**校园、住宅小区、园区**等电动自行车集中充电场景的前后端分离项目，包含 **Vue 3 + Vite 管理端、Spring Boot 后端、uni-app 用户端**。站点按“**站点 → 多排设备 → 每台设备两个独立插座 A/B**”组织。
 
-**[在线演示](https://ifox-hu.github.io/campus-ebike-charging-admin/) · [部署说明](docs/deployment.md) · [问题反馈](https://github.com/ifox-hu/campus-ebike-charging-admin/issues)**
+**[在线演示](https://ifox-hu.github.io/campus-ebike-charging/) · [部署说明](docs/deployment.md) · [问题反馈](https://github.com/ifox-hu/campus-ebike-charging/issues)**
 
 > 在线页面是公开静态演示，演示账号 `demo`、密码 `Demo@123456`（仅模拟登录流程，并非真实身份认证）；业务、资料、通知与设置只保存在访问者自己的浏览器，不控制真实充电设备，不发生真实付款。
 >
@@ -218,8 +218,8 @@ flowchart TB
 需要 Node.js 22：
 
 ```bash
-git clone https://github.com/ifox-hu/campus-ebike-charging-admin.git
-cd campus-ebike-charging-admin/frontend
+git clone https://github.com/ifox-hu/campus-ebike-charging.git
+cd campus-ebike-charging/frontend
 npm ci
 npm run dev:pages
 ```

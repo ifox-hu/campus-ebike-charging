@@ -2,7 +2,7 @@
 const {chromium}=require('playwright')
 const assert=require('node:assert/strict')
 const fs=require('node:fs'),path=require('node:path')
-const base=process.env.PAGES_QA_URL||'http://127.0.0.1:5207/campus-ebike-charging-admin/'
+const base=process.env.PAGES_QA_URL||'http://127.0.0.1:5207/campus-ebike-charging/'
 const expectAmap=process.env.PAGES_EXPECT_AMAP==='true'
 async function main(){
  const browser=await chromium.launch({channel:'msedge',headless:true})
