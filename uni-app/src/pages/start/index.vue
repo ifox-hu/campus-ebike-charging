@@ -47,7 +47,7 @@
 <view v-if="selectedPlan==='CUSTOM'" class="custom-duration"><text>自定义时长（分钟）</text><input v-model="customMinutes" type="number" placeholder="15—720" :disabled="starting" aria-label="自定义充电分钟数"/></view>
 <text v-if="planError||quoteError" class="block field-error">{{planError||quoteError}}</text>
 <text v-if="quoteBusy" class="block muted small">正在获取服务端预计费用…</text>
-<text class="block muted small plan-hint">{{selectedPlan==='FULL'?'按模拟电量阈值判断充满，最长12小时；并非真实电池检测。':'达到所选时长后自动停止，也可提前结束。'}}费用按实际用电量结算。</text>
+<text class="block muted small plan-hint">{{selectedPlan==='FULL'?'按插座功率持续降低判断结束（模拟），最长12小时；不检测电池剩余电量。':'达到所选时长后自动停止，也可提前结束。'}}费用按本次模拟计量结算。</text>
 </view>
 <view v-if="!isBackend" class="panel">
 <view class="accent-title">计费标准 <text class="tag">按电量计费</text>

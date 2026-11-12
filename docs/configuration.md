@@ -43,7 +43,7 @@ Web Key 用于加载浏览器 SDK；安全码由 Vite 的 `/_AMapService` 代理
 docker compose --env-file .env.local up -d mysql
 ```
 
-Compose 使用独立项目名与数据卷，端口为 `127.0.0.1:13307`。`charging-service/db/` 初始化空库的 V1–V9 SQL，不会导入本机已有订单、用户或设备数据。已有库必须先备份，按已执行版本升级，不能重新执行空库初始化。
+Compose 使用独立项目名与数据卷，端口为 `127.0.0.1:13307`。`charging-service/db/` 初始化空库的 V1–V10 SQL，不会导入本机已有订单、用户或设备数据。已有库必须先备份，按已执行版本升级，不能重新执行空库初始化。
 
 在仓库根目录运行：
 

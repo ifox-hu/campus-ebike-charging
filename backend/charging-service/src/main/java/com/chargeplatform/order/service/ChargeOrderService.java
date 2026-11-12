@@ -106,13 +106,17 @@ public class ChargeOrderService {
         if (!"SOFTWARE".equals(order.getMeteringSource()) && simulator != null && simulator.enabled()) billing.calculate(order.getStartTime(), validationTime, BigDecimal.ONE, periods);
         LocalDateTime endTime = LocalDateTime.now();
         String dueReason=ChargingPlans.dueReason(order,endTime);
-        if("SOFTWARE".equals(order.getMeteringSource())&&dueReason!=null)endTime=ChargingPlans.deadline(order);
+        if("SOFTWARE".equals(order.getMeteringSource())){
+            var completion=softwareMeter.completionAt(order);
+            if(completion!=null&&!endTime.isBefore(completion))dueReason="低功率持续，模拟充电结束";
+            endTime=softwareMeter.effectiveEnd(order,endTime);
+        }
         BigDecimal energyKwh = "SOFTWARE".equals(order.getMeteringSource())?softwareMeter.reading(order,endTime):settlementEnergy(order, request);
         // Device energy includes the interval spent waiting for STOP confirmation.
         if(!"SOFTWARE".equals(order.getMeteringSource()))endTime=LocalDateTime.now();
         var result = energyKwh.signum()==0 && java.time.Duration.between(order.getStartTime(),endTime).getSeconds()==0
             ?new ChargeBillingService.BillingResult(new BigDecimal("0.00"),new BigDecimal("0.00"))
-            :billing.calculate(order.getStartTime(), endTime, energyKwh, periods);
+            :calculateBill(order,endTime,energyKwh,periods);
         order.complete(energyKwh.setScale(3,RoundingMode.HALF_UP),result.electricityFee(),result.serviceFee(),endTime);
         order.endedBecause(automaticReason!=null?automaticReason:dueReason!=null?dueReason:"用户提前结束");
         order.waiveZeroPayment();
@@ -120,6 +124,11 @@ public class ChargeOrderService {
         orders.updateById(order);
         events.orderCompleted(new OrderCompletedEvent(order.getId(), order.getStationId(), order.getTotalAmount()));
         return order;
+    }
+    private ChargeBillingService.BillingResult calculateBill(ChargeOrder order,LocalDateTime end,BigDecimal energy,List<PricePeriod> periods){
+        if("SOFTWARE".equals(order.getMeteringSource())&&softwareMeter.tapered(order))
+            return billing.calculateMetered(order.getStartTime(),end,periods,(from,to)->softwareMeter.exactReading(order,to).subtract(softwareMeter.exactReading(order,from)));
+        return billing.calculate(order.getStartTime(),end,energy,periods);
     }
     private BigDecimal settlementEnergy(ChargeOrder order, OrderRequests.Stop request) {
         if("SOFTWARE".equals(order.getMeteringSource()))return softwareMeter.reading(order,LocalDateTime.now());
@@ -156,7 +165,7 @@ public class ChargeOrderService {
     }
     public OrderLiveStatus live(Long id) {
         ChargeOrder order = get(id);
-        if("SOFTWARE".equals(order.getMeteringSource()))return new OrderLiveStatus(order.getId(),"SERVER-SIMULATION",null,order.getStatus(),order.getEnergyKwh(),BigDecimal.valueOf(order.getSimulatedPowerWatts()).movePointLeft(3),null,null,java.time.Instant.now());
+        if("SOFTWARE".equals(order.getMeteringSource()))return new OrderLiveStatus(order.getId(),"SERVER-SIMULATION",null,order.getStatus(),order.getEnergyKwh(),"CHARGING".equals(order.getStatus())?softwareMeter.powerWatts(order,LocalDateTime.now()).movePointLeft(3):BigDecimal.ZERO,null,null,java.time.Instant.now());
         if (simulator == null || !simulator.enabled()) throw new BusinessException(409,"模拟桩适配器未启用");
         SimulatorBindingResolver.Binding binding = requireBinding(order.getConnectorId());
         SimulatorTcpClient.LiveConnector live = simulator.liveConnector(binding.deviceId(), binding.localConnectorId());
@@ -166,12 +175,30 @@ public class ChargeOrderService {
 
     @Transactional
     public void reconcilePlannedOrders(){
-        for(var order:orders.selectChargingOrders()){
+        for(var candidate:orders.selectChargingOrders()){
+            var order=orders.selectByIdForUpdate(candidate.getId());
+            if(order==null||!"CHARGING".equals(order.getStatus()))continue;
             try{
-                String reason=ChargingPlans.dueReason(order,LocalDateTime.now());
-                if(reason==null&&"FULL".equals(order.getPlanId())&&"TCP".equals(order.getMeteringSource())&&simulator!=null&&simulator.enabled()){
-                    var live=live(order.getId());
-                    if(live.energyKwh()!=null&&live.energyKwh().compareTo(new BigDecimal("1.200"))>=0)reason="模拟充满自停";
+                var now=LocalDateTime.now();
+                String reason=ChargingPlans.dueReason(order,now);
+                if("POWER_V1".equals(order.getCompletionPolicy())){
+                    if("SOFTWARE".equals(order.getMeteringSource())){
+                        var complete=softwareMeter.completionAt(order);
+                        if(complete!=null&&!now.isBefore(complete))reason="低功率持续，模拟充电结束";
+                    }else if(order.getPowerCompletionRequestedAt()!=null){
+                        reason="低功率持续，模拟充电结束";
+                    }else if(reason==null&&"TCP".equals(order.getMeteringSource())){
+                        var detector=new PowerCompletionDetector();
+                        try{
+                            var live=live(order.getId());
+                            var stamp=live.lastMessageAt()==null?null:LocalDateTime.ofInstant(live.lastMessageAt(),java.time.ZoneId.systemDefault()).truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+                            if(detector.observe(order,"CHARGING".equals(live.status())&&live.powerKw()!=null?live.powerKw().movePointRight(3):null,stamp,LocalDateTime.now())){
+                                order.requestPowerCompletion(stamp);
+                                reason="低功率持续，模拟充电结束";
+                            }
+                        }catch(RuntimeException unavailable){order.powerEvidence(false,null,null);}
+                        orders.updatePowerEvidence(order);
+                    }
                 }
                 if(reason!=null)stopInternal(order.getId(),null,reason);
             }catch(RuntimeException e){log.warn("自动停止暂未确认，保留占用并等待重试: orderId={}",order.getId(),e);}
@@ -233,13 +260,14 @@ public class ChargeOrderService {
     private ChargeOrder displayReading(ChargeOrder order){
         if("SOFTWARE".equals(order.getMeteringSource())&&"CHARGING".equals(order.getStatus())){
             var now=LocalDateTime.now();var deadline=ChargingPlans.deadline(order);
-            order.updateReading(softwareMeter.reading(order,deadline!=null&&now.isAfter(deadline)?deadline:now));
+            order.updateReading(softwareMeter.reading(order,softwareMeter.effectiveEnd(order,now)));
+            order.showPower(softwareMeter.powerWatts(order,now));
         }
         if("CHARGING".equals(order.getStatus())&&order.getPriceSnapshot()!=null&&order.getEnergyKwh()!=null){
             var now=LocalDateTime.now();var deadline=ChargingPlans.deadline(order);
-            if("SOFTWARE".equals(order.getMeteringSource())&&deadline!=null&&now.isAfter(deadline))now=deadline;
+            if("SOFTWARE".equals(order.getMeteringSource()))now=softwareMeter.effectiveEnd(order,now);
             if(now.isAfter(order.getStartTime())){
-                var bill=billing.calculate(order.getStartTime(),now,order.getEnergyKwh(),tariffs.restore(order.getPriceSnapshot()));
+                var bill=calculateBill(order,now,order.getEnergyKwh(),tariffs.restore(order.getPriceSnapshot()));
                 order.previewFees(bill.electricityFee(),bill.serviceFee());
             }
         }

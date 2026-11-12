@@ -16,6 +16,13 @@ public class ChargeBillingService {
 
     public BillingResult calculate(LocalDateTime start, LocalDateTime end, BigDecimal energyKwh,
                                    List<PricePeriod> periods) {
+        long nanos=Duration.between(start,end).toNanos();
+        return calculateMetered(start,end,periods,(from,to)->energyKwh.multiply(BigDecimal.valueOf(Duration.between(from,to).toNanos()))
+            .divide(BigDecimal.valueOf(nanos),12,RoundingMode.HALF_UP));
+    }
+
+    public BillingResult calculateMetered(LocalDateTime start,LocalDateTime end,List<PricePeriod> periods,
+                                   java.util.function.BiFunction<LocalDateTime,LocalDateTime,BigDecimal> segmentMeter){
         long totalNanos = Duration.between(start, end).toNanos();
         if (totalNanos <= 0) throw new BusinessException(400, "充电结束时间必须晚于开始时间");
         if (periods.isEmpty()) throw new BusinessException(400, "该站点尚未配置分时电价");
@@ -32,9 +39,7 @@ public class ChargeBillingService {
             if (LocalTime.of(23, 59, 59).equals(period.getEndTime())) boundary = boundary.plusSeconds(1);
             if (!boundary.isAfter(cursor)) boundary = boundary.plusDays(1);
             LocalDateTime segmentEnd = boundary.isBefore(end) ? boundary : end;
-            long segmentNanos = Duration.between(cursor, segmentEnd).toNanos();
-            BigDecimal segmentEnergy = energyKwh.multiply(BigDecimal.valueOf(segmentNanos))
-                    .divide(BigDecimal.valueOf(totalNanos), 12, RoundingMode.HALF_UP);
+            BigDecimal segmentEnergy = segmentMeter.apply(cursor,segmentEnd);
             electricityFee = electricityFee.add(segmentEnergy.multiply(period.getElectricityPrice()));
             serviceFee = serviceFee.add(segmentEnergy.multiply(period.getServicePrice()));
             cursor = segmentEnd;

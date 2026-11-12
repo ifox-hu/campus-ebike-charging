@@ -5,7 +5,7 @@ export const CHARGE_PLANS = Object.freeze([
   Object.freeze({id:'HOUR_1',label:'1h',minutes:60,description:'到时自动停止'}),
   Object.freeze({id:'HOUR_2',label:'2h',minutes:120,description:'到时自动停止'}),
   Object.freeze({id:'HOUR_3',label:'3h',minutes:180,description:'到时自动停止'}),
-  Object.freeze({id:'FULL',label:'充满自停',minutes:null,description:'模拟充满后停止'}),
+  Object.freeze({id:'FULL',label:'充满自停',minutes:null,description:'持续低功率后停止（模拟）'}),
   Object.freeze({id:'CUSTOM',label:'自定义',minutes:null,description:'15—720分钟'})
 ]);
 export function resolvePlan(id,customMinutes){
@@ -16,10 +16,15 @@ export function resolvePlan(id,customMinutes){
   if(!Number.isInteger(minutes)||minutes<15||minutes>720)throw new Error('自定义时长须为15—720分钟的整数');
   return {...plan,minutes,label:`自定义 ${minutes}分钟`};
 }
-// Demonstration meter only: 300W, with a 1.2kWh full-charge threshold.
+// Demonstration profile only: 180 min rated, 30 min taper, 5 min low power.
 // These are internal simulation settings, not real battery measurements.
 const SIMULATED_POWER_WATTS=300;
-const SIMULATED_FULL_ENERGY_WH=1200;
+export function simulatedPowerProfile(elapsedMs){
+  const seconds=Math.max(0,elapsedMs/1000),ramp=Math.min(1800,Math.max(0,seconds-10800));
+  const watts=seconds<=10800?300:seconds>=12600?5:300-295*ramp/1800;
+  const energyWh=(300*Math.min(seconds,10800)+300*ramp-295*ramp*ramp/3600+5*Math.max(0,seconds-12600))/3600;
+  return {watts:Math.round(watts*1000)/1000,energyWh:Math.round(energyWh)};
+}
 export function estimatePlanCost(rates,planId,customMinutes) {
   const plan=resolvePlan(planId,customMinutes);
   if(plan.minutes===null)return null;
@@ -77,7 +82,9 @@ export function startSession(state, code, now = Date.now(), planId = 'FULL',cust
   const order = { id: `DEMO-${now}-${state.orders.length + 1}`, stationId: match.station.id, stationName: match.station.name, socketCode: code, startedAt: now, minutes: 0, energyWh: 0, rates: {...match.station.rates}, electricityCents: 0, serviceCents: 0, totalCents: 0, status: 'charging', payment: 'unpaid' };
   order.chargePlan={...plan};
   order.estimatedCents=estimatePlanCost(order.rates,planId,customMinutes)?.totalCents??null;
-  if(plan.id==='FULL')order.fullEnergyWh=SIMULATED_FULL_ENERGY_WH;
+  if(plan.id==='FULL')order.completionPolicy='POWER_V1';
+  order.meteringSource='SOFTWARE';order.simulatedPowerWatts=SIMULATED_POWER_WATTS;
+  order.currentPowerWatts=SIMULATED_POWER_WATTS;
   state.orders.unshift(order); match.socket.status = 'charging'; return order;
 }
 function getOrder(state, id) { const o = state.orders.find(x => x.id === id); if (!o) throw new Error('订单不存在'); return o; }
@@ -90,17 +97,19 @@ export function refreshSession(state, id, now = Date.now()) {
   const o = getOrder(state,id);
   if (o.status !== 'charging') return o;
   if (!Number.isFinite(now) || now < o.startedAt) throw new Error('模拟计量时间无效');
+  const tapered=o.chargePlan?.id==='FULL'&&o.completionPolicy==='POWER_V1';
   const stopAfterMs=o.chargePlan?.minutes>0?o.chargePlan.minutes*60000:
-    o.chargePlan?.id==='FULL'?o.fullEnergyWh*3600000/SIMULATED_POWER_WATTS:Infinity;
+    o.chargePlan?.id==='FULL'?(tapered?215:720)*60000:Infinity;
   const elapsed = Math.min(now - o.startedAt,stopAfterMs);
   o.minutes = Math.floor(elapsed / 60000);
-  o.energyWh = Math.round(elapsed * SIMULATED_POWER_WATTS / 3600000);
+  o.energyWh = tapered?simulatedPowerProfile(elapsed).energyWh:Math.round(elapsed * SIMULATED_POWER_WATTS / 3600000);
+  o.currentPowerWatts=tapered?simulatedPowerProfile(elapsed).watts:SIMULATED_POWER_WATTS;
   updateFee(o);
-  if(elapsed>=stopAfterMs)finishSession(state,o,o.startedAt+stopAfterMs,o.chargePlan.id==='FULL'?'电量已充满':'定时时长已到');
+  if(elapsed>=stopAfterMs)finishSession(state,o,o.startedAt+stopAfterMs,o.chargePlan.id==='FULL'?(tapered?'低功率持续，模拟充电结束':'最长充电时限已到'):'定时时长已到');
   return o;
 }
 function finishSession(state,o,now,reason) {
-  o.status='ended';o.endedAt=now;o.endReason=reason;
+  o.status='ended';o.endedAt=now;o.endReason=reason;o.currentPowerWatts=0;
   o.payment=o.totalCents===0?'free':'unpaid';
   const match=findSocket(state,o.socketCode);if(match)match.socket.status='idle';
   return o;
@@ -136,7 +145,7 @@ export function restoreState(value) {
         const legacy={HOUR_4:{id:'HOUR_4',label:'4小时',minutes:240},HOUR_5:{id:'HOUR_5',label:'5小时',minutes:300}};
         const plan=legacy[o.chargePlan.id]||resolvePlan(o.chargePlan.id,o.chargePlan.minutes);
         if(!plan||o.chargePlan.minutes!==plan.minutes||
-          (plan.id==='FULL'&&(!Number.isSafeInteger(o.fullEnergyWh)||o.fullEnergyWh<=0)))return createDemoState();
+          (plan.id==='FULL'&&o.completionPolicy!=='POWER_V1'&&(!Number.isSafeInteger(o.fullEnergyWh)||o.fullEnergyWh<=0)))return createDemoState();
         o.chargePlan={...plan};
       }
       if (!Number.isFinite(o.startedAt) || typeof o.stationName !== 'string' ||

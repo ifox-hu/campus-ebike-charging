@@ -32,6 +32,7 @@ mvn -B -f backend/pom.xml test
 | `frontend/e2e/verify-station-layouts.cjs` | 独立账号模式设备排布 |
 | `frontend/e2e/verify-operations.cjs` | 隔离 H2 后端 18081、联网管理端 5221、联网用户端 5227 |
 | `uni-app/e2e/verify-charging-plans.cjs` | 用户端本地 H5 |
+| `uni-app/e2e/verify-power-completion.cjs` | 隔离用户端 H5 开发预览 5297；验证低功率显示、刷新恢复和自停结算 |
 | `uni-app/e2e/verify-map.cjs` | 已配置高德的用户端本地 H5 |
 
 `PAGES_QA_URL`、`ADMIN_MAP_BASE`、`MOBILE_QA_URL` 可指向单独测试端口。生成的截图与 JSON 留在各自 e2e 目录并忽略提交；README 只引用 `docs/screenshots/` 中挑选的展示图片。
@@ -45,3 +46,5 @@ mvn -B -f backend/pom.xml test
 站点选址脚本通过真实高德地图验证点击、标记拖动、地点搜索、取消、确认、保存后重读和窄屏布局，并用网络中断验证手工填写仍可用。设置 `STATION_PICKER_CONNECTED=true` 并指定 `STATION_PICKER_URL` 可对隔离测试后端验证联网保存；此模式会修改测试站点坐标，不能指向日常业务库。
 
 `verify-operations.cjs` 必须使用临时隔离数据库及 graduation 测试账号运行，会创建示例站点、设备、费率、订单和报修；不得指向生产或日常演示数据库。它从管理端下载二维码，在用户端识别图片并启动自定义75分钟方案，核对两端订单、消息已读、报修时间线，以及故障恢复后再次告警。摄像头真机权限与真实微信支付不属于该自动测试范围。
+
+功率自停测试覆盖先高后低、持续低功率窗口、短暂波动、零功率、样本重复/过期/间断、曲线积分及延迟结算。软件300 W FULL曲线在215分钟结束，约0.977 kWh；这不是实测电池容量。

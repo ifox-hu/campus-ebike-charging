@@ -20,6 +20,8 @@
         <view class="kv"><text>插座编号</text><text>{{order.socketCode}}</text></view>
         <view v-if="order.chargePlan" class="kv"><text>充电方式</text><text>{{order.chargePlan.label}}</text></view>
         <view v-if="order.estimatedCents!=null" class="kv"><text>启动时预计金额</text><text>¥{{yuan(order.estimatedCents)}}</text></view>
+        <view class="kv"><text>当前功率</text><text>{{order.status==='ended'?'0':order.currentPowerWatts==null?'—':order.currentPowerWatts}} W</text></view>
+        <text v-if="order.chargePlan?.id==='FULL'" class="block muted small">根据插座侧功率推断充电结束（模拟），不显示电池剩余电量。{{order.completionPolicy==='POWER_V1'?'':'此旧订单仅按原计量模型及最长时限结束。'}}</text>
         <view v-if="order.endReason" class="kv"><text>结束原因</text><text>{{order.endReason}}</text></view>
         <view class="kv"><text>开始时间</text><text>{{isBackend?serverTime(order.startTimeText):date(order.startedAt)}}</text></view>
         <view v-if="order.status==='ended'" class="kv"><text>结束时间</text><text>{{isBackend?serverTime(order.endTimeText):date(order.endedAt)}}</text></view>
@@ -27,7 +29,7 @@
         <view class="kv"><text>电费{{order.rates?'（'+yuan(order.rates.electricity)+' 元/度）':''}}</text><text>¥{{yuan(order.electricityCents)}}</text></view>
         <view class="kv"><text>服务费{{order.rates?'（'+yuan(order.rates.service)+' 元/度）':''}}</text><text>¥{{yuan(order.serviceCents)}}</text></view>
         <view class="kv total"><text>合计</text><text class="teal">¥{{yuan(order.totalCents)}}</text></view>
-        <text v-if="isBackend" class="block muted small">费用由平台结算；历史订单不使用当前站点费率重新计算。</text><text v-if="order.meteringSource" class="block muted small">{{order.meteringSource==='SOFTWARE'?'平台软件模拟计量 · '+order.simulatedPowerWatts+'W':'设备模拟器计量'}}</text>
+        <text v-if="isBackend" class="block muted small">费用由平台结算；历史订单不使用当前站点费率重新计算。</text><text v-if="order.meteringSource" class="block muted small">{{order.meteringSource==='SOFTWARE'?'平台软件模拟计量 · 额定 '+order.simulatedPowerWatts+'W':'设备模拟器计量'}}</text>
       </view>
       <view v-if="order.ratePeriods?.length" class="panel"><text class="section-title">本次费率（启动时保存）</text><view v-for="(period,index) in order.ratePeriods" :key="index" class="rate-period"><text class="block">{{period.startTime}}—{{period.endTime}}</text><text class="muted small">电费 {{period.electricityPrice}} 元/度 · 服务费 {{period.servicePrice}} 元/度</text></view></view>
       <DemoNotice/>

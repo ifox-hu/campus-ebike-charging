@@ -26,9 +26,7 @@ public final class ChargingPlans {
         if(order.getStartTime()==null||order.getPlanId()==null)return null;
         if(order.getDurationMinutes()!=null)return order.getStartTime().plusMinutes(order.getDurationMinutes());
         if("FULL".equals(order.getPlanId())){
-            long seconds="SOFTWARE".equals(order.getMeteringSource())&&order.getSimulatedPowerWatts()!=null
-                ?Math.min(43200,(long)Math.ceil(1200d*3600/order.getSimulatedPowerWatts())):43200;
-            return order.getStartTime().plusSeconds(seconds);
+            return order.getStartTime().plusHours(12);
         }
         return null;
     }
@@ -36,6 +34,6 @@ public final class ChargingPlans {
         var deadline=deadline(order);
         if(deadline==null||now.isBefore(deadline))return null;
         if(!"FULL".equals(order.getPlanId()))return "定时时长已到";
-        return "SOFTWARE".equals(order.getMeteringSource())&&order.getSimulatedPowerWatts()!=null&&order.getSimulatedPowerWatts()>=100?"模拟充满自停":"最长充电时限已到";
+        return "最长充电时限已到";
     }
 }

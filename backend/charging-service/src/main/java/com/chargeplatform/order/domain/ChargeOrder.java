@@ -39,7 +39,17 @@ public class ChargeOrder {
     private Integer durationMinutes;
     private BigDecimal estimatedAmount;
     private String endReason;
-    public void selectPlan(String id,Integer minutes,BigDecimal estimate){planId=id;durationMinutes=minutes;estimatedAmount=estimate;}
+    private String completionPolicy;
+    private Boolean chargingPowerSeen;
+    private LocalDateTime lowPowerSince;
+    private LocalDateTime lastPowerSampleAt;
+    private LocalDateTime powerCompletionRequestedAt;
+    @com.baomidou.mybatisplus.annotation.TableField(exist=false)
+    private BigDecimal currentPowerWatts;
+    public void showPower(BigDecimal watts){currentPowerWatts=watts;}
+    public void requestPowerCompletion(LocalDateTime time){if(powerCompletionRequestedAt==null)powerCompletionRequestedAt=time;}
+    public void powerEvidence(boolean seen,LocalDateTime lowSince,LocalDateTime sampleAt){chargingPowerSeen=seen;lowPowerSince=lowSince;lastPowerSampleAt=sampleAt;}
+    public void selectPlan(String id,Integer minutes,BigDecimal estimate){planId=id;durationMinutes=minutes;estimatedAmount=estimate;completionPolicy="FULL".equals(id)?"POWER_V1":null;}
     public void endedBecause(String reason){endReason=reason;}
     public void prepareCustomer(String username,String source,Integer power,String tariff,String stationName,String socketCode) {
         assignCustomer(username);status="STARTING";meteringSource=source;simulatedPowerWatts=power;

@@ -12,7 +12,16 @@ services:
       - "127.0.0.1:13307:3306"
     volumes:
       - campus-mysql:/var/lib/mysql
-      - ./charging-service/db:/docker-entrypoint-initdb.d:ro
+      - ./charging-service/db/V1__baseline_schema.sql:/docker-entrypoint-initdb.d/001-V1__baseline_schema.sql:ro
+      - ./charging-service/db/V2__station_coordinates.sql:/docker-entrypoint-initdb.d/002-V2__station_coordinates.sql:ro
+      - ./charging-service/db/V3__order_test_and_archive.sql:/docker-entrypoint-initdb.d/003-V3__order_test_and_archive.sql:ro
+      - ./charging-service/db/V4__audit_log.sql:/docker-entrypoint-initdb.d/004-V4__audit_log.sql:ro
+      - ./charging-service/db/V5__customer_mock_payment.sql:/docker-entrypoint-initdb.d/005-V5__customer_mock_payment.sql:ro
+      - ./charging-service/db/V6__bike_order_lifecycle.sql:/docker-entrypoint-initdb.d/006-V6__bike_order_lifecycle.sql:ro
+      - ./charging-service/db/V7__repair_tickets.sql:/docker-entrypoint-initdb.d/007-V7__repair_tickets.sql:ro
+      - ./charging-service/db/V8__bike_device_rows.sql:/docker-entrypoint-initdb.d/008-V8__bike_device_rows.sql:ro
+      - ./charging-service/db/V9__charging_plans_and_operations.sql:/docker-entrypoint-initdb.d/009-V9__charging_plans_and_operations.sql:ro
+      - ./charging-service/db/V10__socket_power_completion.sql:/docker-entrypoint-initdb.d/010-V10__socket_power_completion.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s

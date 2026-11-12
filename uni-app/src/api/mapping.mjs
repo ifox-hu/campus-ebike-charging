@@ -41,6 +41,7 @@ export function mapOrder(raw,stations) {
     energyWh:scaledNumber(raw.energyKwh,1000),electricityCents:scaledNumber(raw.electricityFee,100),
     serviceCents:scaledNumber(raw.serviceFee,100),totalCents:scaledNumber(raw.totalAmount,100),
     chargePlan:raw.planId?{id:raw.planId,minutes:raw.durationMinutes,label:({HOUR_1:'1h',HOUR_2:'2h',HOUR_3:'3h',FULL:'充满自停',CUSTOM:`自定义 ${raw.durationMinutes}分钟`})[raw.planId]||raw.planId}:null,
+    completionPolicy:raw.completionPolicy,currentPowerWatts:raw.currentPowerWatts==null?null:Number(raw.currentPowerWatts),
     estimatedCents:scaledNumber(raw.estimatedAmount,100),endReason:raw.endReason||'',
     rates:null,ratePeriods:readSnapshot(raw.priceSnapshot),meteringSource:raw.meteringSource,simulatedPowerWatts:raw.simulatedPowerWatts,failureReason:raw.failureReason||''
   };

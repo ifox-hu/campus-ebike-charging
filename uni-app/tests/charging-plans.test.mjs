@@ -25,18 +25,42 @@ for (const [planId,minutes] of [['HOUR_1',60],['HOUR_2',120],['HOUR_3',180],['CU
   });
 }
 
-test('full-charge plan ends on the internal simulated full reading, with no extra billing after refresh',()=>{
+test('full-charge plan ends after the tapered low-power window, with no extra billing after refresh',()=>{
   const state=createDemoState();
   const order=startSession(state,'14500006-01',1000,'FULL');
   assert.equal(order.chargePlan.label,'充满自停');
-  refreshSession(state,order.id,1000+239*60000);
+  refreshSession(state,order.id,1000+214*60000);
   assert.equal(order.status,'charging');
   refreshSession(state,order.id,1000+300*60000);
   assert.equal(order.status,'ended');
-  assert.equal(order.endReason,'电量已充满');
-  assert.equal(order.energyWh,1200);
-  assert.equal(order.endedAt,1000+240*60000);
+  assert.equal(order.endReason,'低功率持续，模拟充电结束');
+  assert.equal(order.energyWh,977);
+  assert.equal(order.endedAt,1000+215*60000);
   assert.equal(findSocket(state,order.socketCode).socket.status,'idle');
+});
+
+test('full plan restores its policy, tapered power and energy before an early stop',()=>{
+  const state=createDemoState(),order=startSession(state,'14500006-01',1000,'FULL');
+  const restored=restoreState(JSON.parse(JSON.stringify(state)));
+  const active=refreshSession(restored,order.id,1000+195*60000);
+  assert.equal(active.completionPolicy,'POWER_V1');
+  assert.equal(active.currentPowerWatts,152.5);
+  assert.equal(active.energyWh,957);
+  stopSession(restored,order.id,1000+212*60000);
+  assert.equal(active.energyWh,976);
+  assert.equal(active.currentPowerWatts,0);
+  assert.equal(active.endReason,'用户提前结束');
+});
+
+test('legacy full orders keep constant energy and stop only at the maximum duration',()=>{
+  const state=createDemoState(),order=startSession(state,'14500006-01',1000,'FULL');
+  delete order.completionPolicy;order.fullEnergyWh=1200;
+  const restored=restoreState(JSON.parse(JSON.stringify(state)));
+  const active=refreshSession(restored,order.id,1000+300*60000);
+  assert.equal(active.status,'charging');assert.equal(active.energyWh,1500);
+  refreshSession(restored,order.id,1000+800*60000);
+  assert.equal(active.endedAt,1000+720*60000);
+  assert.equal(active.endReason,'最长充电时限已到');
 });
 
 test('early stop still works and unsupported plans never reserve a socket',()=>{

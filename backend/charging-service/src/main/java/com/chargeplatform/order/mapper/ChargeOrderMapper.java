@@ -13,6 +13,8 @@ import java.util.List;
 
 @Mapper
 public interface ChargeOrderMapper extends BaseMapper<ChargeOrder> {
+    @Update("UPDATE charge_order SET charging_power_seen=#{chargingPowerSeen}, low_power_since=#{lowPowerSince}, last_power_sample_at=#{lastPowerSampleAt}, power_completion_requested_at=#{powerCompletionRequestedAt} WHERE id=#{id} AND status='CHARGING'")
+    int updatePowerEvidence(ChargeOrder order);
     @Select("SELECT * FROM charge_order WHERE owner_username = #{username} AND status IN ('STARTING','CHARGING') AND archived = 0 ORDER BY id DESC LIMIT 1")
     ChargeOrder selectActiveByOwner(@Param("username") String username);
 

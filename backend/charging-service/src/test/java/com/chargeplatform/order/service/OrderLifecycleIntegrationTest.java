@@ -19,6 +19,7 @@ class OrderLifecycleIntegrationTest {
     @Autowired CustomerChargingService customer;
     @Autowired ChargeOrderService orders;
     @Autowired JdbcTemplate db;
+    @Autowired com.chargeplatform.order.mapper.ChargeOrderMapper repository;
     @Test void timedPlanStopsOnServerWithoutClientAndNeverBillsPastDeadline(){
         var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",75),"student");
         assertEquals(75,order.getDurationMinutes());
@@ -40,13 +41,22 @@ class OrderLifecycleIntegrationTest {
         assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"HOUR_4",null),"student"));
         assertEquals(0,db.queryForObject("SELECT COUNT(*) FROM charge_order",Integer.class));
     }
-    @Test void fullPlanStopsAtSimulatedThreshold(){
+    @Test void fullPlanStopsAfterTaperAndLowPowerWindow(){
         var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"FULL",null),"student");
         db.update("UPDATE charge_order SET start_time=? WHERE id=?",LocalDateTime.now().minusHours(5),order.getId());
         orders.reconcilePlannedOrders();
         var ended=orders.get(order.getId());
-        assertEquals("COMPLETED",ended.getStatus());assertEquals(new BigDecimal("1.200"),ended.getEnergyKwh());
-        assertEquals("模拟充满自停",ended.getEndReason());
+        assertEquals("COMPLETED",ended.getStatus());assertEquals(new BigDecimal("0.977"),ended.getEnergyKwh());
+        assertEquals("低功率持续，模拟充电结束",ended.getEndReason());
+    }
+    @Test void delayedRecoveryUsesEarlierPowerCompletionRatherThanTwelveHourLimit(){
+        var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"FULL",null),"student");
+        var start=LocalDateTime.now().minusHours(20).withNano(0);
+        db.update("UPDATE charge_order SET start_time=? WHERE id=?",start,order.getId());
+        orders.reconcilePlannedOrders();
+        var ended=orders.get(order.getId());
+        assertEquals(start.plusMinutes(215),ended.getEndTime());
+        assertEquals("低功率持续，模拟充电结束",ended.getEndReason());
     }
     @BeforeEach void seed(){
         for(var table:new String[]{"charge_order","price_period","connector","charger","station","sys_user"})db.update("DELETE FROM "+table);
@@ -55,6 +65,25 @@ class OrderLifecycleIntegrationTest {
         db.update("INSERT INTO charger(id,station_id,code,name,status) VALUES(20,7,'BIKE-A','设备','ONLINE')");
         db.update("INSERT INTO connector(id,charger_id,code,name,rated_power,status) VALUES(31,20,'BIKE-A-01','插座1',300,'IDLE'),(32,20,'BIKE-A-02','插座2',300,'IDLE')");
         db.update("INSERT INTO price_period(station_id,start_time,end_time,electricity_price,service_price) VALUES(7,'00:00:00','23:59:59',0.60,0.20)");
+    }
+    @Test void resetPowerEvidenceIsPersistedAndLegacyFullOrdersKeepConstantMeter(){
+        var created=customer.start(new OrderRequests.CustomerStart(7L,31L,"FULL",null),"student");
+        var mapper=org.springframework.test.util.ReflectionTestUtils.getField(orders,"orders");
+        // Use the real mapper to prove nullable evidence is cleared in the database.
+        var repository=(com.chargeplatform.order.mapper.ChargeOrderMapper)mapper;
+        var fresh=repository.selectById(created.getId());
+        fresh.powerEvidence(true,LocalDateTime.now().minusMinutes(5),LocalDateTime.now());
+        repository.updatePowerEvidence(fresh);
+        assertNotNull(repository.selectById(fresh.getId()).getLowPowerSince());
+        fresh.requestPowerCompletion(LocalDateTime.now().withNano(0));
+        fresh.powerEvidence(false,null,null);repository.updatePowerEvidence(fresh);
+        assertNull(repository.selectById(fresh.getId()).getLowPowerSince());
+        assertEquals(fresh.getPowerCompletionRequestedAt(),repository.selectById(fresh.getId()).getPowerCompletionRequestedAt());
+        db.update("UPDATE charge_order SET completion_policy=NULL,power_completion_requested_at=NULL,start_time=? WHERE id=?",LocalDateTime.now().minusHours(5),fresh.getId());
+        orders.reconcilePlannedOrders();
+        assertEquals("CHARGING",orders.get(fresh.getId()).getStatus());
+        assertNull(orders.get(fresh.getId()).getCompletionPolicy());
+        assertTrue(orders.get(fresh.getId()).getEnergyKwh().compareTo(new BigDecimal("1.499"))>0);
     }
     @Test void softwareStopsWithServerEnergyAndFrozenTariff(){
         var order=customer.start(new OrderRequests.CustomerStart(7L,31L),"student");
