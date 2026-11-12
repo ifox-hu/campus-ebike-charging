@@ -2,6 +2,14 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {createPlatformClient,formatNumber,statusLabel,relationRows} from '../src/connected/platformClient.js'
 const response=(data,status=200)=>({ok:status>=200&&status<300,status,json:async()=>({code:status,data,message:status>=400?'接口拒绝':'成功'})})
+
+test('插座功率保存使用统一业务后端连接器接口',async()=>{
+ const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b')
+ const body={code:'BIKE-01',name:'A插座',ratedPower:120,powerWatts:450}
+ await client.saveSocket(3,body)
+ assert.equal(f.calls.at(-1).path,'/api/connectors/3');assert.equal(f.calls.at(-1).options.method,'PUT')
+ assert.deepEqual(JSON.parse(f.calls.at(-1).options.body),body)
+})
 function fake(){const calls=[];let role='ADMIN',fail=false;return {calls,setRole:r=>role=r,setFail:()=>fail=true,fetch:async(path,options)=>{calls.push({path,options});if(fail)return response(null,401);if(path.endsWith('/auth/login'))return response({token:'test-memory-token',role,username:'test-admin'});if(path.endsWith('/auth/me'))return response({role,username:'test-admin'});return response([])}}}
 test('管理员登录验证身份，登录令牌仅用于请求头',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await assert.rejects(()=>client.stations(),/登录/);const user=await client.login('test-admin','not-a-real-password');assert.equal(user.role,'ADMIN');await client.stations();assert.equal(f.calls.at(-1).options.headers.Authorization,'Bearer test-memory-token');assert.equal(Object.hasOwn(client,'token'),false)})
 test('普通用户不能进入管理端，401 后凭证清空',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});f.setRole('USER');await assert.rejects(()=>client.login('u','p'),/管理员/);await assert.rejects(()=>client.stations(),/登录/);f.setRole('ADMIN');await client.login('a','b');f.setFail();await assert.rejects(()=>client.stations(),/登录|接口拒绝/);await assert.rejects(()=>client.stations(),/登录/)})

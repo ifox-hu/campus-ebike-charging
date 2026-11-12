@@ -36,6 +36,7 @@ export function createPlatformClient({fetchImpl=globalThis.fetch,onExpired=()=>{
   ,saveStation:(value,body)=>request('/stations'+(value?'/'+id(value):''),{method:value?'PUT':'POST',body}),
   createDevices:body=>request('/bike/devices',{method:'POST',body}),
   saveDevice:(value,body)=>request('/bike/devices/'+id(value),{method:'PATCH',body}),
+  saveSocket:(value,body)=>request('/connectors/'+id(value),{method:'PUT',body}),
   setSocketStatus:(value,status)=>request('/bike/sockets/'+id(value)+'/status',{method:'PATCH',body:{status}}),
   saveRate:(value,body)=>request('/price-periods'+(value?'/'+id(value):''),{method:value?'PUT':'POST',body}),
   deleteRate:value=>request('/price-periods/'+id(value),{method:'DELETE'})
