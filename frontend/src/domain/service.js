@@ -10,7 +10,13 @@ export const today = () => stamp().slice(0,10)
 export function socketStatus(db,socket) {
   const d=db.devices.find(d=>d.id===socket.deviceId),s=db.stations.find(s=>s.id===d?.stationId)
   const active=db.orders.find(o=>o.socketId===socket.id&&activeStatuses.includes(o.status))
-  if(socket.businessStatus)return ({IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用',STARTING:'启动中'})[socket.businessStatus]||'异常占用'
+  if(socket.businessStatus){
+    if(['STARTING','CHARGING','ABNORMAL'].includes(socket.businessStatus))return ({STARTING:'启动中',CHARGING:'充电中',ABNORMAL:'异常占用'})[socket.businessStatus]
+    if(!s?.enabled||!d?.enabled||!socket.enabled)return '停用'
+    if(!d.online)return '离线'
+    if(socket.fault)return '故障'
+    return ({IDLE:'空闲',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用'})[socket.businessStatus]||'异常占用'
+  }
   if(active?.status==='abnormal')return '异常占用'
   if(active?.status==='starting')return '启动中'
   if(active)return '充电中'
@@ -29,7 +35,7 @@ export function createService(db){
   const get=(list,id)=>{const item=db[list].find(i=>i.id===id);if(!item)throw Error('关联记录不存在，请刷新页面。');return item}
   const uid=prefix=>`${prefix}${++db.sequence}`
   const text=(s,label)=>{if(!String(s??'').trim())throw Error(`请填写${label}。`);return String(s).trim()}
-  const occupied=ids=>db.orders.some(o=>ids.includes(o.socketId)&&activeStatuses.includes(o.status))
+  const occupied=ids=>ids.some(id=>{const s=db.sockets.find(p=>p.id===id);return s?.businessId?['STARTING','CHARGING','ABNORMAL'].includes(s.businessStatus):db.orders.some(o=>o.socketId===id&&activeStatuses.includes(o.status))})
   const idsForDevice=id=>db.sockets.filter(s=>s.deviceId===id).map(s=>s.id)
   function recalc(o){o.energy=Math.round(o.energy*1000)/1000;o.electricFee=Math.round(o.energy*o.electricRate*100)/100;o.serviceFee=Math.round(o.energy*o.serviceRate*100)/100;o.total=Math.round((o.electricFee+o.serviceFee)*100)/100}
   function record(o,type,description){(o.events??=[]).push({type,description,at:stamp(),source:'软件模拟'})}
@@ -91,6 +97,7 @@ export function createService(db){
       const rate=db.rates.find(r=>r.stationId===stationId);Object.assign(rate,{electricRate:a,serviceRate:b,updatedAt:stamp()});return rate
     },
     requestStartSimulation(socketId,userId,requestKey){
+      if(get('sockets',socketId).businessId)throw Error('此插座已接入业务库，请从 H5 或小程序发起充电。')
       if(requestKey){requestKey=text(requestKey,'启动请求标识');const previous=db.orders.find(o=>o.requestKey===requestKey);if(previous){if(previous.socketId!==socketId||previous.userId!==userId)throw Error('该启动请求已用于其他用户或插座。');return previous}}
       const socket=get('sockets',socketId),device=get('devices',socket.deviceId),station=get('stations',device.stationId),user=get('users',userId)
       if(!user.enabled)throw Error('用户已停用，禁止新建充电任务。')
