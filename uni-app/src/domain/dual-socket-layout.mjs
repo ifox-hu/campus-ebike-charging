@@ -1,6 +1,7 @@
 // Local demonstration migration only. Never apply this to server catalog IDs.
 import campusCatalog from '../data/campus-stations.json' with {type:'json'};
-const stockRows={campus:[12,12],...Object.fromEntries(campusCatalog.stations.map(s=>[s.id,s.rows]))}
+import scenarioCatalog from '../data/scenario-stations.json' with {type:'json'};
+const stockRows={campus:[12,12],...Object.fromEntries([...campusCatalog.stations,...scenarioCatalog].map(s=>[s.id,s.rows]))}
 export function normalizeDualSocketLayout(input,{preserveLegacyCodes=true}={}){
  const state=JSON.parse(JSON.stringify(input))
  if(state.version===2)return state

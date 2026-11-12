@@ -25,7 +25,7 @@ public class Station {
     private String coordinateType;
     private String scene;
     public void changeScene(String scene){
-        if(!java.util.List.of("校园","住宅小区","园区","未分类").contains(scene))throw new com.chargeplatform.common.exception.BusinessException(400,"站点场景不正确");
+        if(!java.util.List.of("校园","住宅小区","医院","产业园区","办公区","商业配套","园区","未分类").contains(scene))throw new com.chargeplatform.common.exception.BusinessException(400,"站点场景不正确");
         this.scene=scene;
     }
 

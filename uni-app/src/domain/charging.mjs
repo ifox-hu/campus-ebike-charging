@@ -1,6 +1,7 @@
 // Local demonstration only. Monetary inputs and outputs use integer cents.
 import {normalizeDualSocketLayout} from './dual-socket-layout.mjs';
 import campusCatalog from '../data/campus-stations.json' with {type:'json'};
+import scenarioCatalog from '../data/scenario-stations.json' with {type:'json'};
 export const CHARGE_PLANS = Object.freeze([
   Object.freeze({id:'HOUR_1',label:'1h',minutes:60,description:'到时自动停止'}),
   Object.freeze({id:'HOUR_2',label:'2h',minutes:120,description:'到时自动停止'}),
@@ -51,7 +52,7 @@ function legacyDemoState() {
 }
 export function createDemoState(){
  const state=legacyDemoState(),legacy=new Map(state.stations.map(s=>[s.id,s]));
- state.stations=campusCatalog.stations.map(site=>({...site,scene:'校园',rates:{electricity:60,service:20},devices:legacy.get(site.id)?.devices||[]}));
+ state.stations=[...campusCatalog.stations.map(site=>({...site,scene:'校园'})),...scenarioCatalog].map(site=>({...site,coordinateNote:site.coordinateNote||site.note,rates:{electricity:60,service:20},devices:legacy.get(site.id)?.devices||[]}));
  state.orders[0].stationName=state.stations[0].name;
  return normalizeDualSocketLayout(state,{preserveLegacyCodes:false});
 }
@@ -160,10 +161,22 @@ export function restoreState(value) {
           typeof r.description!=='string' || r.description.trim().length<5 || r.description.length>300 ||
           r.status!=='pending' || !Number.isFinite(r.createdAt)) return createDemoState();
     }
-    return migrateCampusMetadata(normalizeDualSocketLayout(value));
+    return expandDemoScenarios(migrateCampusMetadata(normalizeDualSocketLayout(value)));
   } catch { return createDemoState(); }
 }
 export const yuan = cents => typeof cents==='number'&&Number.isFinite(cents)?(cents / 100).toFixed(2):'—';
+
+export function expandDemoScenarios(input){
+ const state=JSON.parse(JSON.stringify(input));
+ if(state.scenarioCatalogRevision>=1||!state.stations.some(s=>['baoan','garden'].includes(s.id)))return state;
+ const ids=new Set(state.stations.flatMap(s=>s.devices.map(d=>String(d.id)))),codes=new Set(state.stations.flatMap(s=>s.devices.flatMap(d=>d.sockets.map(p=>p.code))));let serial=28000000;
+ for(const site of createDemoState().stations.filter(s=>s.id.startsWith('SC'))){
+  if(state.stations.some(s=>s.id===site.id))continue;
+  for(const d of site.devices){let id=String(d.id);while(ids.has(id)||codes.has(id+'-01')||codes.has(id+'-02'))id=String(++serial);ids.add(id);d.id=id;d.code=id;for(const [i,p] of d.sockets.entries()){p.code=`${id}-0${i+1}`;codes.add(p.code)}}
+  state.stations.push(site);
+ }
+ state.scenarioCatalogRevision=1;return state;
+}
 export const energy = wh => typeof wh==='number'&&Number.isFinite(wh)?(wh / 1000).toFixed(3):'—';
 
 export function migrateCampusMetadata(input){

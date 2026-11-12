@@ -4,6 +4,7 @@
  <view v-if="station" class="station-content"><ConnectionState/>
   <view class="panel station-info"><button class="text-button" @click="toggleFavorite(station.id)">{{preferences.favorites.includes(station.id)?'★ 已收藏':'☆ 收藏站点'}}</button><view class="station-name">{{station.name}}</view><view class="station-address">{{station.address}}</view><view class="station-small-meta"><text>{{isBackend?(station.enabled?'站点正常运营':'站点已停用'):'站点信息 · 测试数据'}}</text><text class="teal">{{station.area}} ◉</text></view></view>
   <StationMap v-if="isBackend" :stations="[station]" compact/>
+  <view v-if="station.coordinateNote||station.note" class="layout-note">{{station.coordinateNote||station.note}}</view>
   <view class="panel device-panel">
    <view class="socket-summary"><text class="teal-badge">插座</text><text>空闲<text class="summary-number">{{availableCount(station)}}</text>/{{totalCount(station)}} 个插座</text></view>
    <view class="section-row"><text class="section-title">设备排布</text><text class="muted">{{hasRows?rows.length+' 排 · ':''}}共 {{station.devices.length}} 台</text></view>

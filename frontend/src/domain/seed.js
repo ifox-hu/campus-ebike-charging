@@ -1,9 +1,10 @@
 import {CAMPUS_DEMO_LOCATIONS} from './campusLocations.js'
 import {DEMO_ROW_LAYOUTS} from './demoLayouts.js'
+import {EXTRA_DEMO_LOCATIONS} from './scenarioCatalog.js'
 export function createSeed() {
-  const stations = CAMPUS_DEMO_LOCATIONS.map(s=>({...s,enabled:true,demoLayoutRevision:1}))
+  const stations = [...CAMPUS_DEMO_LOCATIONS,...EXTRA_DEMO_LOCATIONS].map(s=>({...s,enabled:true,demoLayoutRevision:1}))
   const users=Array.from({length:10},(_,i)=>({id:`U${i+1}`,account:`demo${String(i+1).padStart(3,'0')}`,name:`演示用户${String(i+1).padStart(2,'0')}`,enabled:i!==9,createdAt:`2026-11-${String(3+i%7).padStart(2,'0')} 09:00:00`}))
-  const rowCounts=stations.map(s=>DEMO_ROW_LAYOUTS[s.id])
+  const rowCounts=stations.map(s=>DEMO_ROW_LAYOUTS[s.id]||s.layout)
   const rows=[],devices=[]
   for(const [si,counts] of rowCounts.entries())for(const [ri,count] of counts.entries()){
     const row={id:`ROW${si+1}-${ri+1}`,stationId:stations[si].id,name:`${String.fromCharCode(65+ri)}排`,index:ri+1};rows.push(row)

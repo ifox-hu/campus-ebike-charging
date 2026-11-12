@@ -1,0 +1,170 @@
+[
+  {
+    "id": "SC01",
+    "adminId": "ST07",
+    "scene": "医院",
+    "name": "医院职工停车区一号示例站",
+    "area": "职工停车棚",
+    "prefix": "HOSPITAL-STAFF",
+    "latitude": 32.9905,
+    "longitude": 112.502,
+    "rows": [
+      12,
+      12
+    ],
+    "address": "医院场景 · 职工停车棚（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC02",
+    "adminId": "ST08",
+    "scene": "医院",
+    "name": "医院门诊配套停车区示例站",
+    "area": "门诊配套非机动车停车区",
+    "prefix": "HOSPITAL-VISITOR",
+    "latitude": 32.9912,
+    "longitude": 112.503,
+    "rows": [
+      10,
+      12
+    ],
+    "address": "医院场景 · 门诊配套非机动车停车区（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC03",
+    "adminId": "ST09",
+    "scene": "住宅小区",
+    "name": "社区东门停车棚示例站",
+    "area": "小区东门集中停车棚",
+    "prefix": "COMMUNITY-EAST",
+    "latitude": 32.987,
+    "longitude": 112.511,
+    "rows": [
+      12,
+      15
+    ],
+    "address": "住宅小区场景 · 小区东门集中停车棚（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC04",
+    "adminId": "ST10",
+    "scene": "住宅小区",
+    "name": "社区便民服务区示例站",
+    "area": "社区服务中心非机动车停车区",
+    "prefix": "COMMUNITY-SERVICE",
+    "latitude": 32.985,
+    "longitude": 112.508,
+    "rows": [
+      10,
+      12
+    ],
+    "address": "住宅小区场景 · 社区服务中心非机动车停车区（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC05",
+    "adminId": "ST11",
+    "scene": "产业园区",
+    "name": "产业园员工停车区示例站",
+    "area": "园区员工通勤停车棚",
+    "prefix": "INDUSTRIAL-STAFF",
+    "latitude": 32.997,
+    "longitude": 112.523,
+    "rows": [
+      12
+    ],
+    "address": "产业园区场景 · 园区员工通勤停车棚（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC06",
+    "adminId": "ST12",
+    "scene": "产业园区",
+    "name": "厂区换班停车区示例站",
+    "area": "厂区入口非机动车集中停车区",
+    "prefix": "FACTORY-SHIFT",
+    "latitude": 32.999,
+    "longitude": 112.525,
+    "rows": [
+      12,
+      12
+    ],
+    "address": "产业园区场景 · 厂区入口非机动车集中停车区（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC07",
+    "adminId": "ST13",
+    "scene": "办公区",
+    "name": "办公园区通勤示例站",
+    "area": "办公楼配套非机动车停车棚",
+    "prefix": "OFFICE-COMMUTE",
+    "latitude": 32.983,
+    "longitude": 112.52,
+    "rows": [
+      10,
+      10
+    ],
+    "address": "办公区场景 · 办公楼配套非机动车停车棚（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC08",
+    "adminId": "ST14",
+    "scene": "办公区",
+    "name": "企事业单位职工示例站",
+    "area": "单位职工集中停车充电区",
+    "prefix": "OFFICE-STAFF",
+    "latitude": 32.981,
+    "longitude": 112.517,
+    "rows": [
+      12,
+      15
+    ],
+    "address": "办公区场景 · 单位职工集中停车充电区（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC09",
+    "adminId": "ST15",
+    "scene": "商业配套",
+    "name": "商场员工停车区示例站",
+    "area": "商业配套员工非机动车停车棚",
+    "prefix": "RETAIL-STAFF",
+    "latitude": 32.993,
+    "longitude": 112.515,
+    "rows": [
+      10,
+      12
+    ],
+    "address": "商业配套场景 · 商业配套员工非机动车停车棚（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  },
+  {
+    "id": "SC10",
+    "adminId": "ST16",
+    "scene": "商业配套",
+    "name": "商业街商户停车区示例站",
+    "area": "商户配套非机动车集中停车区",
+    "prefix": "RETAIL-MERCHANT",
+    "latitude": 32.995,
+    "longitude": 112.517,
+    "rows": [
+      12
+    ],
+    "address": "商业配套场景 · 商户配套非机动车集中停车区（虚构演示位置）",
+    "coordinateType": "GCJ02",
+    "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
+  }
+]

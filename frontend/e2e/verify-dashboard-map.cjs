@@ -25,7 +25,7 @@ async function main(){
   // create a second store without the timestamp used by the application.
   const runtimeStoreUrl=await page.evaluate(()=>performance.getEntriesByType('resource').map(e=>e.name).find(url=>new URL(url).pathname==='/src/domain/store.js'))
   assert.ok(runtimeStoreUrl)
-  const campusPositions=await page.evaluate(async url=>{const {db}=await import(url);return db.stations.map(s=>({id:s.id,lat:s.lat,lng:s.lng,address:s.address}))},runtimeStoreUrl)
+  const campusPositions=await page.evaluate(async url=>{const {db}=await import(url);return db.stations.slice(0,5).map(s=>({id:s.id,lat:s.lat,lng:s.lng,address:s.address}))},runtimeStoreUrl)
   assert.equal(campusPositions.length,5)
   assert.ok(campusPositions.every(s=>s.lng>112.475&&s.lng<112.5&&s.lat>32.973&&s.lat<32.982&&s.address.includes('南阳师范学院')),'所有默认示例点应位于南阳师范学院校址范围')
   await page.locator('.station-map-card').screenshot({path:path.join(__dirname,'dashboard-campus-map.jpg')})

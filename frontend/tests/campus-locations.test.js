@@ -5,8 +5,8 @@ import * as migrations from '../src/domain/migration.js'
 
 test('all five demonstration sites use the Nanyang Normal University campus area rather than the old city coordinates',()=>{
   const state=createSeed()
-  assert.equal(state.stations.length,5)
-  for(const s of state.stations){
+  assert.equal(state.stations.length,16)
+  for(const s of state.stations.slice(0,5)){
     assert.equal(s.scene,'校园')
     assert.match(s.address,/南阳师范学院/)
     assert.ok(s.lng>112.475&&s.lng<112.5,`${s.id} longitude outside campus vicinity: ${s.lng}`)

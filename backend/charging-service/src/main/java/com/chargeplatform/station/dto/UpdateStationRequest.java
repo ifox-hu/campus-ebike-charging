@@ -16,6 +16,6 @@ public record UpdateStationRequest(
     @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0") BigDecimal latitude,
     @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0") BigDecimal longitude,
     @Size(max = 16) String coordinateType,
-    @Pattern(regexp="校园|住宅小区|园区|未分类") String scene
+    @Pattern(regexp="校园|住宅小区|医院|产业园区|办公区|商业配套|园区|未分类") String scene
 ) {
 }

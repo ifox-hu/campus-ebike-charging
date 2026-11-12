@@ -1,6 +1,30 @@
 import { createService } from './service.js'
 import {CAMPUS_DEMO_LOCATIONS,LEGACY_DEMO_LOCATIONS,PREVIOUS_CAMPUS_LOCATIONS} from './campusLocations.js'
 import {DEMO_ROW_LAYOUTS,LEGACY_DEMO_ROW_LAYOUTS} from './demoLayouts.js'
+import {createSeed} from './seed.js'
+
+// Append only to the identified local demonstration catalog; preserve edits and links.
+export function expandDemoScenarios(source){
+ const db=JSON.parse(JSON.stringify(source))
+ if(db.scenarioCatalogRevision>=1||!db.stations.some(s=>/^ST0[1-5]$/.test(s.id)))return db
+ const seed=createSeed(),used=new Set([...db.stations,...db.rows,...db.devices,...db.sockets].map(x=>x.id)),codes=new Set([...db.devices,...db.sockets].map(x=>x.code))
+ let serial=Math.max(1000,db.sequence||0)
+ const unique=(base)=>{let id=base;while(used.has(id))id=`${base}-SC${++serial}`;used.add(id);return id}
+ for(const site of seed.stations.slice(5)){
+  if(db.stations.some(s=>site.scenarioSampleId?s.scenarioSampleId===site.scenarioSampleId:s.id===site.id&&s.name===site.name))continue
+  const stationId=unique(site.id),rowIds=new Map(),deviceIds=new Map()
+  db.stations.push({...site,id:stationId})
+  for(const row of seed.rows.filter(r=>r.stationId===site.id)){const id=unique(row.id);rowIds.set(row.id,id);db.rows.push({...row,id,stationId})}
+  for(const d of seed.devices.filter(d=>d.stationId===site.id)){
+   const id=unique(d.id);let code=d.code;while(codes.has(code)||codes.has(code+'-A')||codes.has(code+'-B'))code=`EB-SC${++serial}`;codes.add(code)
+   deviceIds.set(d.id,{id,code});db.devices.push({...d,id,code,stationId,rowId:rowIds.get(d.rowId)})
+  }
+  for(const socket of seed.sockets.filter(p=>deviceIds.has(p.deviceId))){const d=deviceIds.get(socket.deviceId),code=d.code+(socket.number===1?'-A':'-B');codes.add(code);db.sockets.push({...socket,id:unique(socket.id),deviceId:d.id,code})}
+  db.rates.push({...seed.rates.find(r=>r.stationId===site.id),stationId})
+ }
+ db.sequence=serial;db.scenarioCatalogRevision=1
+ return db
+}
 
 export function migrateDemoLayouts(source){
   const db=JSON.parse(JSON.stringify(source))

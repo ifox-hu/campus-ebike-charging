@@ -128,6 +128,7 @@ onBeforeUnmount(()=>{disposed=true;version++;destroyMap()})
      <div class="selected-station-heading"><span :class="['map-state',selected.tone]">{{stateText(selected)}}</span><h3>{{selected.name}}</h3><p>{{selected.address||'尚未填写地址'}}</p></div>
      <dl class="station-map-numbers"><div><dt>设备总数</dt><dd>{{selected.deviceCount}}<small>台</small></dd></div><div><dt>插座总数</dt><dd>{{selected.socketCount}}<small>个</small></dd></div><div><dt>空闲插座</dt><dd class="free-number">{{selected.free}}<small>个</small></dd></div><div><dt>充电中</dt><dd>{{selected.charging}}<small>个</small></dd></div></dl>
      <div class="station-attention"><span>启动中 <b>{{selected.starting}}</b></span><span>故障插座 <b>{{selected.fault}}</b></span><span>异常占用 <b>{{selected.abnormal}}</b></span><span>离线设备 <b>{{selected.offlineDevices}}</b></span><span v-if="source.reportsLoaded!==false">待处理报修 <b>{{selected.pendingRepairs}}</b></span></div>
+     <p v-if="selected.note||selected.description" class="station-map-position">{{selected.note||selected.description}}</p>
      <p class="station-map-position">{{selected.position?'GCJ-02 · '+selected.position[0].toFixed(5)+', '+selected.position[1].toFixed(5):'坐标缺失或坐标系未确认，请在站点管理中核对。'}}</p>
      <div class="station-map-actions"><button class="soft-button active" @click="navigate('devices')">查看设备排布</button><button class="outline-button" @click="navigate('reports')">查看报修 <span v-if="selected.pendingRepairs">({{selected.pendingRepairs}})</span></button></div>
     </template>

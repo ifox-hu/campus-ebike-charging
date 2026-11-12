@@ -62,7 +62,7 @@ test('valid persisted state retains active session, malformed data resets', () =
   const restored = restoreState(JSON.parse(JSON.stringify(s)));
   assert.equal(restored.orders[0].minutes, 15);
   assert.equal(restored.orders[0].status, 'charging');
-  assert.equal(restoreState({version: 1, stations: []}).stations.length, 6);
+  assert.equal(restoreState({version: 1, stations: []}).stations.length, 16);
   assert.equal(restoreState(null).orders.filter(x => x.status === 'charging').length, 0);
 });
 

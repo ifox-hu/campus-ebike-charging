@@ -18,7 +18,7 @@ import {createSeed} from '../src/domain/seed.js'
 import {migrateCampusLocations} from '../src/domain/migration.js'
 import {PREVIOUS_CAMPUS_LOCATIONS} from '../src/domain/campusLocations.js'
 test('revision 1 migration preserves business data and custom coordinates or addresses',()=>{
- const source=createSeed();source.stations=source.stations.map((s,i)=>({...s,...PREVIOUS_CAMPUS_LOCATIONS[i],campusLocationRevision:1}));
+ const source=createSeed();source.stations=source.stations.map((s,i)=>(i<5?{...s,...PREVIOUS_CAMPUS_LOCATIONS[i],campusLocationRevision:1}:s));
  source.stations[1].address='人工校对地址';source.stations[2].lat=32.9787;
  const result=migrateCampusLocations(source);assert.equal(result.stations[0].campusLocationRevision,3);assert.deepEqual(result.stations[1],source.stations[1]);assert.deepEqual(result.stations[2],source.stations[2]);
  for(const key of ['devices','sockets','rows','orders','reports','rates'])assert.deepEqual(result[key],source[key]);

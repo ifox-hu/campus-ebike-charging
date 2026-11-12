@@ -8,7 +8,7 @@ import jakarta.validation.constraints.DecimalMin;
 import java.math.BigDecimal;
 
 public class CreateStationRequest {
-    @jakarta.validation.constraints.Pattern(regexp="校园|住宅小区|园区|未分类")
+    @jakarta.validation.constraints.Pattern(regexp="校园|住宅小区|医院|产业园区|办公区|商业配套|园区|未分类")
     private String scene;
     public String getScene(){return scene;}
     public void setScene(String scene){this.scene=scene;}

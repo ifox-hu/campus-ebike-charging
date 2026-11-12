@@ -9,7 +9,7 @@ export const scaledNumber=(value,scale)=>value===null||value===undefined||value=
 export function mapCatalog(stations,chargers,connectors) {
   list(chargers); list(connectors);
   return list(stations).map(s=>({
-    id:identifier(s.id),name:s.name,address:s.address,area:'',scene:s.scene||'未分类',enabled:s.status==='OPERATING',
+    id:identifier(s.id),name:s.name,address:s.address,area:'',scene:s.scene||'未分类',note:s.description||'',enabled:s.status==='OPERATING',
     latitude:s.latitude,longitude:s.longitude,coordinateType:s.coordinateType,rates:null,ratePeriods:null,
     devices:chargers.filter(d=>String(d.stationId)===String(s.id)).map(d=>({
       id:identifier(d.id),code:d.code,name:d.name,online:d.status==='ONLINE',enabled:d.enabled!==false&&['ONLINE','OFFLINE'].includes(d.status),rowName:d.rowName||'',rowId:d.rowName?identifier(s.id)+':'+d.rowName:null,

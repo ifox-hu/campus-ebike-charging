@@ -15,7 +15,7 @@ async function login(){error.value='';busy.value=true;try{await signIn(username.
   <div class="auth-brand"><span class="auth-logo">ϟ</span><span>电动自行车智慧充电管理系统</span></div>
   <section class="login-card">
    <div class="login-accent"></div>
-   <header><span v-if="isStaticDemo" class="demo-login-badge">ONLINE DEMO</span><h1>{{isStaticDemo?'在线演示登录':'管理员登录'}}</h1><p>{{isStaticDemo?'校园 · 住宅小区 · 园区集中充电':'登录后管理站点、设备与独立插座'}}</p></header>
+   <header><span v-if="isStaticDemo" class="demo-login-badge">ONLINE DEMO</span><h1>{{isStaticDemo?'在线演示登录':'管理员登录'}}</h1><p>{{isStaticDemo?'校园 · 医院 · 小区 · 园区 · 办公区集中充电':'登录后管理站点、设备与独立插座'}}</p></header>
    <p v-if="account.loginMessage" class="login-info" role="status">{{account.loginMessage}}</p>
    <p v-if="error||account.error" class="form-error" role="alert">{{error||account.error}}</p>
    <form @submit.prevent="login">

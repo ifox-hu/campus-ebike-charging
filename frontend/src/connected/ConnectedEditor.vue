@@ -11,7 +11,7 @@ const fields={
 }
 const form=reactive({name:'',address:'',scene:'未分类',latitude:'',longitude:'',coordinateType:'GCJ02',description:'',status:'OPERATING',stationId:props.stationId||props.stations[0]?.id||'',rowName:'A排',prefix:'',count:1,enabled:true,startTime:'00:00:00',endTime:'23:59:59',electricityPrice:.6,servicePrice:.2,...props.record})
 const busy=ref(false),error=ref(''),schema=computed(()=>fields[props.type]||[])
-const options={scene:[['校园','校园'],['住宅小区','住宅小区'],['园区','园区'],['未分类','未分类']],stationStatus:[['OPERATING','运营中'],['CLOSED','停用']],deviceStatus:[['ONLINE','在线'],['OFFLINE','离线']],enabled:[[true,'启用'],[false,'停用']]}
+const options={scene:[['校园','校园'],['住宅小区','住宅小区'],['医院','医院'],['产业园区','产业园区'],['办公区','办公区'],['商业配套','商业配套'],['园区','园区'],['未分类','未分类']],stationStatus:[['OPERATING','运营中'],['CLOSED','停用']],deviceStatus:[['ONLINE','在线'],['OFFLINE','离线']],enabled:[[true,'启用'],[false,'停用']]}
 function selectLocation(point){form.latitude=point.latitude.toFixed(6);form.longitude=point.longitude.toFixed(6);form.coordinateType=point.coordinateType;if(point.address)form.address=point.address.slice(0,200)}
 async function save(){
  if(busy.value)return;error.value=''
