@@ -10,6 +10,7 @@ export const today = () => stamp().slice(0,10)
 export function socketStatus(db,socket) {
   const d=db.devices.find(d=>d.id===socket.deviceId),s=db.stations.find(s=>s.id===d?.stationId)
   const active=db.orders.find(o=>o.socketId===socket.id&&activeStatuses.includes(o.status))
+  if(socket.businessStatus)return ({IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用',STARTING:'启动中'})[socket.businessStatus]||'异常占用'
   if(active?.status==='abnormal')return '异常占用'
   if(active?.status==='starting')return '启动中'
   if(active)return '充电中'
@@ -35,6 +36,7 @@ export function createService(db){
   function flagAbnormal(ids,reason){for(const o of db.orders.filter(o=>ids.includes(o.socketId)&&['starting','charging'].includes(o.status))){o.status='abnormal';o.statusChangedAt=new Date().toISOString();o.reason=reason;record(o,'abnormal',reason)}}
   function addSocket(d,number){const label=number===1?'A':'B';db.sockets.push({id:uid('P'),deviceId:d.id,number,code:`${d.code}-${label}`,name:`${label}插座`,enabled:true,fault:false,faultReason:''})}
   const api = {
+    setSocketPower(id,value){const s=get('sockets',id),watts=Number(value);if(!Number.isInteger(watts)||watts<1||watts>10000)throw Error('插座功率须为 1～10000 W 的整数。');if(['STARTING','CHARGING','ABNORMAL'].includes(s.businessStatus)||(!s.businessId&&occupied([id])))throw Error('插座存在未结束任务，不能修改功率。');s.powerWatts=watts},
     saveStation(payload,id){
       const name=text(payload.name,'站点名称'),address=text(payload.address,'站点地址')
       if(payload.lat===''||payload.lng===''||!Number.isFinite(Number(payload.lat))||!Number.isFinite(Number(payload.lng))||Math.abs(Number(payload.lat))>90||Math.abs(Number(payload.lng))>180)throw Error('请填写有效坐标：纬度 -90～90，经度 -180～180。')
