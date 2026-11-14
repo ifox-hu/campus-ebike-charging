@@ -8,6 +8,9 @@
 **/.env.*
 !**/.env.example
 !uni-app/.env.connected
+!mobile-client/.env.connected
+!mobile-client/.env.sandbox
+!mobile-client/.env.alipay-sandbox
 **/*.log
 **/project.private.config.json
 .idea/

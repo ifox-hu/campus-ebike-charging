@@ -13,7 +13,7 @@
 
 > 在线页面是公开静态演示，演示账号 `demo`、密码 `Demo@123456`（仅模拟登录流程，并非真实身份认证）；业务、资料、通知与设置只保存在访问者自己的浏览器，不控制真实充电设备，不发生真实付款。
 >
-> 本轮最终联机验收组合（2026-11-14）：本仓库 `frontend/` 的 connected 管理端、同级目录 `云创用户端/` 和 `ev-charging-platform/backend/`。两端共用 `/api` 业务接口。新订单仅核算电费，历史账单不重算。详见 [验收矩阵](docs/graduation-acceptance.md)、[演示脚本](docs/graduation-demo.md) 与 [最终架构](docs/graduation-architecture.md)。
+> 本轮最终联机验收组合（2026-11-14）：本仓库 `frontend/` 的 connected 管理端、本仓库 `mobile-client/` 用户端，以及配套 `ev-charging-platform/backend/`。两端共用 `/api` 业务接口。新订单仅核算电费，历史账单不重算。详见 [验收矩阵](docs/graduation-acceptance.md)、[演示脚本](docs/graduation-demo.md) 与 [最终架构](docs/graduation-architecture.md)。
 >
 > 本仓库 `uni-app/` 与 `backend/charging-service/` 保留为另一套参考实现，不能把其中的硬件低功率检测、地图或消息能力直接计入本轮联机验收。Pages仍为独立静态演示。
 
@@ -46,7 +46,7 @@
 
 ### 用户端（H5 / 微信小程序）
 
-配套用户端采用 uni-app，共用页面可构建为 H5 和微信小程序。以下是实际运行的 **H5 预览截图**，并非微信真机截图；用户端源码位于 `uni-app/`。截图使用通用演示数据，不展示具体学校楼栋或坐标。截图来源与复现方式见 [展示说明](docs/showcase.md)。
+配套用户端采用 uni-app，共用页面可构建为 H5 和微信小程序。以下是实际运行的 **H5 预览截图**，并非微信真机截图；当前联机用户端源码位于 `mobile-client/`；以下旧版截图对应保留的 `uni-app/` 参考实现。截图使用通用演示数据，不展示具体学校楼栋或坐标。截图来源与复现方式见 [展示说明](docs/showcase.md)。
 
 | 找站与空闲筛选 | 设备排布与插座 |
 | --- | --- |
@@ -220,14 +220,9 @@ cd campus-ebike-charging
 
 ### 双端联网（推荐）
 
-1. 按 [配置说明](docs/configuration.md) 复制环境模板、设置数据库与 JWT 配置，并初始化独立开发 MySQL。空库按 V1—V10 初始化；已有库先备份并按当前版本升级，不重跑空库建表脚本。
-2. 在仓库根目录启动统一业务后端（PowerShell）：
-
-   ```powershell
-   ./scripts/dev-charging.ps1
-   ```
-
-3. 新开终端，从仓库根目录启动管理端：
+1. 准备配套后端 [ev-charging-platform](https://github.com/ifox-hu/ev-charging-platform)，按其 README 配置 Java 17、MySQL 和数据库/JWT环境变量。空库顺序初始化V1—V11；现有库先备份并按已有版本升级，不重跑空库建表脚本。部署细节见 [最终联机组合](docs/deployment.md#本轮最终联机组合)。
+2. 在配套 `ev-charging-platform/backend/` 目录启动业务API；模拟支付演示按其说明启用 `graduation-demo` 配置。使用现有账号或注册普通用户；演示配置不会替代数据库及权限配置。
+3. 新开终端，从本仓库根目录启动管理端：
 
    ```bash
    cd frontend
@@ -235,17 +230,15 @@ cd campus-ebike-charging
    npm run dev:connected
    ```
 
-4. 再新开终端，从仓库根目录启动 H5 用户端：
+4. 再新开终端，从本仓库根目录启动H5用户端：
 
    ```bash
-   cd uni-app
+   cd mobile-client
    npm ci
    npm run dev:connected
    ```
 
-默认业务 API 8081、管理端 5201、用户端 5198。改变 API 端口时，两端代理地址需同步修改。
-
-脚本显式使用 `graduation` 配置，缺失的演示账号会初始化为 `graduation_admin` / `DemoAdmin2027!` 与 `graduation_user` / `DemoUser2027!`；密码可通过环境配置修改，已有账号不被覆盖。这些账号与在线静态演示的 `demo` 账号不同，仅用于本地开发演示。运营员需已有 `OPERATOR` 账号，当前没有人员账号创建界面。
+默认业务API8081、管理端5201、用户端5198。改变API端口时，两端代理地址需同步修改。客户端源码已纳入本仓库，无需再单独寻找“云创用户端”目录；原本地目录仍保留。
 
 ### 管理端静态演示
 
@@ -264,7 +257,7 @@ npm run dev:pages
 一份 uni-app 源码生成两端。以下命令从仓库根目录进入用户端；`dev:h5` 为独立演示，完整 H5 业务联调使用上方的 `dev:connected`：
 
 ```bash
-cd uni-app
+cd mobile-client
 npm ci
 npm run dev:h5
 ```
@@ -275,7 +268,7 @@ npm run dev:h5
 npm run build:mp-weixin
 ```
 
-H5 独立演示默认端口 5197。`build:mp-weixin` 是构建命令，应在需要构建时另行执行；微信开发者工具导入 `uni-app/dist/build/mp-weixin/`，AppID 在 `uni-app/src/manifest.json` 配置。微信端联调需另行配置业务 API、网络访问和平台要求，不能直接套用 H5 开发代理。编译通过不代表微信真机或正式发布验收。
+H5 独立演示默认端口 5197。`build:mp-weixin` 是构建命令，应在需要构建时另行执行；微信开发者工具导入 `mobile-client/dist/build/mp-weixin/`，AppID 在 `mobile-client/src/manifest.json` 配置。微信端联调需另行配置业务 API、网络访问和平台要求，不能直接套用 H5 开发代理。编译通过不代表微信真机或正式发布验收。
 
 ### 可选独立账号模式
 
@@ -369,7 +362,8 @@ backend/
   compose.yaml           # 独立开发数据库
   .env.example           # 数据库配置模板
   pom.xml                # 后端聚合测试入口
-uni-app/                 # H5 / 微信小程序共享工程
+mobile-client/           # 当前联机 H5 / 微信小程序客户端
+uni-app/                 # 保留的旧版参考客户端
   src/pages/             # 找站、设备、充电、订单、报修、我的
   src/components/        # 共享组件与高德地图
   src/data/              # 演示目录数据

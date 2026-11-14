@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+qa/*.png
+qa/backend-classpath.txt
+*.local

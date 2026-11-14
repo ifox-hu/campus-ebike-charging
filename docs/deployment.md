@@ -8,8 +8,8 @@
 
 1. 业务后端：`ev-charging-platform/backend/`，Java 17；生产启动前先备份指定MySQL数据库，按已有版本顺序核对 `ev-charging-platform/docs/db/`，本轮增加 `V11__graduation_scene_and_repair_progress.sql`。V11只加字段和告警确认表，不清空历史数据；未执行时不要先启动新版应用。
 2. 管理端：`campus-ebike-charging/frontend/`，运行 `npm run dev:connected`，默认5201，代理8081；`npm run build:connected`输出 `dist-connected/`。
-3. 用户端：`云创用户端/`，运行 `npm run dev:connected`，当前本地配置5198，代理8081；H5运行 `npm run build:h5:connected`，微信构建 `npm run build:mp-weixin`。AppID、合法域名及开发者工具、真机验证另行完成。
-4. 两端必须指向同一业务后端与数据库。静态Pages不接入该验收链路。本轮测试使用独立H2，未对现有MySQL执行V11，也未部署或推送。
+3. 用户端：`campus-ebike-charging/mobile-client/`，运行 `npm run dev:connected`，当前本地配置5198，代理8081；H5运行 `npm run build:h5:connected`，微信构建 `npm run build:mp-weixin`。AppID、合法域名及开发者工具、真机验证另行完成。
+4. 两端必须指向同一业务后端与数据库。静态Pages不接入该验收链路。本轮测试使用独立H2，未对现有MySQL执行V11，未执行实际部署。源码推送不等于服务已部署。
 
 只需回退应用时可保留V11新增字段；不要通过删列回滚，否则会丢失场景与进度记录。数据库变更前的备份应由部署者验证可恢复。
 

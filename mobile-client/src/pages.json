@@ -1,0 +1,13 @@
+{
+  "pages":[
+    {"path":"pages/home/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/station/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/start/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/session/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/orders/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/mine/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/report/index","style":{"navigationStyle":"custom"}},
+    {"path":"pages/account/index","style":{"navigationStyle":"custom"}}
+  ],
+  "globalStyle":{"navigationBarTextStyle":"black","navigationBarTitleText":"轻充","navigationBarBackgroundColor":"#ffffff","backgroundColor":"#f7f7fb"}
+}

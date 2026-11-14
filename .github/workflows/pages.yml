@@ -25,6 +25,7 @@ jobs:
           cache-dependency-path: |
             frontend/package-lock.json
             uni-app/package-lock.json
+            mobile-client/package-lock.json
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -43,6 +44,13 @@ jobs:
           npm ci
           npm test
           npm run build:h5
+          npm run build:mp-weixin
+      - name: Verify current mobile client
+        working-directory: mobile-client
+        run: |
+          npm ci
+          npm test
+          npm run build:h5:connected
           npm run build:mp-weixin
       - name: Build public management demo
         working-directory: frontend

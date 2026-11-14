@@ -6,7 +6,7 @@
 
 ```mermaid
 flowchart LR
- U[uni-app 用户端 云创用户端] -->|认证与业务 API| B[Spring Boot ev业务后端]
+ U[uni-app 用户端 mobile-client] -->|认证与业务 API| B[Spring Boot ev业务后端]
  A[Vue 3 connected管理端] -->|同一 API| B
  B --> D[(MySQL 业务数据库)]
  B --> S[后端计量与到期调度]
