@@ -1,6 +1,27 @@
 export function formatNumber(value,digits=2){return value===null||value===undefined||value===''||!Number.isFinite(Number(value))?'—':Number(value).toFixed(digits)}
 const labels={station:{OPERATING:'运营中',CLOSED:'停用',MAINTENANCE:'维护中'},device:{ONLINE:'在线',OFFLINE:'离线',DISABLED:'停用'},socket:{IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',OFFLINE:'离线',DISABLED:'停用'},order:{STARTING:'启动中',CHARGING:'充电中',COMPLETED:'已结束',START_FAILED:'启动失败',FAILED:'启动失败',ABNORMAL:'异常待处理'},repair:{OPEN:'待处理',PROCESSING:'处理中',RESOLVED:'已处理'},payment:{UNPAID:'待支付',PAID:'已模拟支付',NOT_REQUIRED:'无需支付'}}
 export const statusLabel=(value,kind)=>labels[kind]?.[value]||(value?`未知（${value}）`:'未提供')
+export function orderPresentation(order){
+ const full=order.chargeMode==='FULL'||order.planId==='FULL'
+ const plan=full?'充满自停':order.planId==='CUSTOM'?`自定义 ${order.durationMinutes??'未记录'} 分钟`:order.durationMinutes?`定时 ${order.durationMinutes} 分钟`:'历史订单未记录'
+ const reasons={DURATION_REACHED:'已达到选择时长',USER_STOPPED:'用户提前结束',FULL_SIMULATED:'持续低功率，模拟充电结束',FULL_POWER_CONFIRMED:'持续低功率，设备停止已确认',MAX_DURATION_REACHED:'达到最长保护时限'}
+ return {plan,meter:order.meteringSource==='SOFTWARE'?'软件模拟计量':order.meteringSource==='TCP'?'设备模拟器计量':'历史订单未记录',reason:reasons[order.endReason]||order.endReason||order.failureReason||'未记录'}
+}
+export function electricityRatePayload(form){
+ if(form.electricityPrice===''||form.electricityPrice==null||!Number.isFinite(Number(form.electricityPrice))||Number(form.electricityPrice)<0)throw Error('电价必须为非负数')
+ if(!/^[1-9]\d*$/.test(String(form.stationId)))throw Error('请选择站点')
+ if(!/^\d{2}:\d{2}(:\d{2})?$/.test(form.startTime)||!/^\d{2}:\d{2}(:\d{2})?$/.test(form.endTime))throw Error('请填写HH:mm:ss格式的时间')
+ return {stationId:Number(form.stationId),startTime:form.startTime,endTime:form.endTime,electricityPrice:Number(form.electricityPrice),servicePrice:0}
+}
+export function scopeRecords(rows,{stationId='',abnormalOnly=false,abnormalDeviceIds=[]}={}){
+ const ids=new Set(abnormalDeviceIds.map(String))
+ return rows.filter(row=>(!stationId||String(row.stationId)===String(stationId))&&(!abnormalOnly||row.status==='OFFLINE'||row.status==='FAULT'||ids.has(String(row.id))))
+}
+export function scopeDeviceCatalog(data,scope={}){
+ const devices=scopeRecords(data.devices,scope),ids=new Set(devices.map(d=>String(d.stationId)))
+ const stations=scope.stationId?data.stations.filter(s=>String(s.id)===String(scope.stationId)):scope.abnormalOnly?data.stations.filter(s=>ids.has(String(s.id))):data.stations
+ return {...data,devices,stations}
+}
 export function relationRows(stations,devices,sockets){
  const siteMap=new Map(stations.map(s=>[s.id,s])),deviceMap=new Map(devices.map(d=>[d.id,d]))
  return {stations:stations.map(s=>{const own=devices.filter(d=>d.stationId===s.id);return {...s,deviceCount:own.length,socketCount:sockets.filter(p=>own.some(d=>d.id===p.chargerId)).length}}),devices:devices.map(d=>({...d,stationName:siteMap.get(d.stationId)?.name||`站点 #${d.stationId}`,socketCount:sockets.filter(p=>p.chargerId===d.id).length})),sockets:sockets.map(s=>({...s,deviceCode:deviceMap.get(s.chargerId)?.code||`设备 #${s.chargerId}`}))}

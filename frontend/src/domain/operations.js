@@ -1,8 +1,18 @@
 export function mapConnectedSource(data){
- return {reportsLoaded:false,stations:data.stations.map(s=>({...s,enabled:s.status==='OPERATING',scene:s.scene||'未分类',lat:s.latitude,lng:s.longitude})),
- devices:data.devices.map(d=>({...d,online:d.status==='ONLINE',enabled:d.enabled!==false,rowId:d.stationId+':'+(d.rowName||'未分排')})),
+ return {reportsLoaded:data.reportsLoaded===true,stations:data.stations.map(s=>({...s,enabled:s.status==='OPERATING',scene:s.scene||'未分类',lat:s.latitude,lng:s.longitude})),
+ devices:data.devices.map(d=>({...d,online:d.status==='ONLINE',enabled:d.enabled!==false&&d.status!=='DISABLED',rowId:d.stationId+':'+(d.rowName||'未分排')})),
  sockets:data.sockets.map(s=>({...s,serverStatus:s.status,deviceId:s.chargerId,enabled:!['DISABLED','OFFLINE'].includes(s.status),fault:s.status==='FAULT'})),
- orders:data.orders.map(o=>({...o,number:o.orderNo,socketId:o.connectorId,status:({STARTING:'starting',CHARGING:'charging',COMPLETED:'ended',START_FAILED:'failed',ABNORMAL:'abnormal'})[o.status]||'unknown',startedAt:o.startTime,endedAt:o.endTime,total:o.totalAmount==null?null:Number(o.totalAmount),energy:o.energyKwh==null?null:Number(o.energyKwh),reason:o.failureReason||o.endReason||''})),reports:[]};
+ orders:data.orders.map(o=>({...o,number:o.orderNo,socketId:o.connectorId,status:({STARTING:'starting',CHARGING:'charging',COMPLETED:'ended',START_FAILED:'failed',ABNORMAL:'abnormal'})[o.status]||'unknown',startedAt:o.startTime,endedAt:o.endTime,total:o.totalAmount==null?null:Number(o.totalAmount),energy:o.energyKwh==null?null:Number(o.energyKwh),reason:o.failureReason||o.endReason||''})),reports:data.reports||[]};
+}
+export function overviewMetrics(db,date){
+ const stats=operationsStats(db,{from:date,to:date})
+ const devices=new Map(db.devices.map(d=>[d.id,d])),stations=new Map(db.stations.map(s=>[s.id,s]))
+ const occupied=new Set(db.orders.filter(o=>['starting','charging','abnormal'].includes(o.status)).map(o=>o.socketId))
+ const free=db.sockets.filter(s=>{const d=devices.get(s.deviceId),site=stations.get(d?.stationId);return site?.enabled!==false&&d?.online&&d.enabled!==false&&s.enabled!==false&&!s.fault&&!occupied.has(s.id)&&(s.serverStatus==='IDLE'||!s.serverStatus)}).length
+ return {...stats,free,pendingRepairs:db.reportsLoaded?db.reports.filter(r=>['OPEN','pending'].includes(r.status)).length:null,abnormalDevices:currentAbnormalDeviceIds(db).length}
+}
+export function currentAbnormalDeviceIds(db,now=Date.now()){
+ return [...new Set(activeAlerts(db,now).filter(a=>a.deviceId!=null&&!a.key.endsWith(':START_FAILED')).map(a=>a.deviceId))]
 }
 export function activeAlerts(db,now=Date.now()){
  const alerts=[];const socketMap=new Map(db.sockets.map(s=>[s.id,s]));const deviceMap=new Map(db.devices.map(d=>[d.id,d]));

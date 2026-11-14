@@ -1,6 +1,7 @@
 <script setup>
 import {computed,reactive,ref} from 'vue'
 import StationLocationPicker from '../components/StationLocationPicker.vue'
+import {electricityRatePayload} from './platformClient.js'
 const props=defineProps({client:Object,type:String,record:Object,stations:Array,stationId:[String,Number]})
 const emit=defineEmits(['done','cancel'])
 const fields={
@@ -8,7 +9,7 @@ const fields={
  devices:[['stationId','所属站点','station'],['rowName','设备排号','text',30],['prefix','编号前缀（字母/数字/横线）','text',40],['name','设备名称前缀','text',60],['count','批量数量（1—30）','number']],
  device:[['rowName','设备排号','text',30],['status','通信状态','deviceStatus'],['enabled','管理状态','enabled']],
  socket:[['powerWatts','插座配置功率（W，1—10000）','number']],
- rates:[['stationId','所属站点','station'],['startTime','开始时间（HH:mm:ss）','text',8],['endTime','结束时间（全天末尾23:59:59）','text',8],['electricityPrice','电费（元/kWh）','number'],['servicePrice','服务费（元/kWh）','number']]
+ rates:[['stationId','所属站点','station'],['startTime','开始时间（HH:mm:ss）','text',8],['endTime','结束时间（全天末尾23:59:59）','text',8],['electricityPrice','电价（元/kWh）','number']]
 }
 const form=reactive({name:'',address:'',scene:'未分类',latitude:'',longitude:'',coordinateType:'GCJ02',description:'',status:'OPERATING',stationId:props.stationId||props.stations[0]?.id||'',rowName:'A排',prefix:'',count:1,enabled:true,startTime:'00:00:00',endTime:'23:59:59',electricityPrice:.6,servicePrice:0,...props.record})
 const busy=ref(false),error=ref(''),schema=computed(()=>fields[props.type]||[])
@@ -28,9 +29,7 @@ async function save(){
    payload.count=Number(form.count);payload.stationId=Number(form.stationId)
   }
   if(props.type==='rates'){
-   for(const key of ['electricityPrice','servicePrice']){if(form[key]===''||!Number.isFinite(Number(form[key]))||Number(form[key])<0)throw Error('费率必须为非负数');payload[key]=Number(form[key])}
-   if(!/^\d{2}:\d{2}(:\d{2})?$/.test(form.startTime)||!/^\d{2}:\d{2}(:\d{2})?$/.test(form.endTime))throw Error('请填写HH:mm:ss格式的时间')
-   payload.stationId=Number(form.stationId)
+   Object.assign(payload,electricityRatePayload(form))
   }
   if(props.type==='socket'){
    const watts=Number(form.powerWatts)

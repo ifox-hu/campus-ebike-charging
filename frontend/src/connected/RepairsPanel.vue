@@ -1,14 +1,16 @@
 <script setup>
-import {ref,onMounted,onBeforeUnmount} from 'vue'
+import {ref,computed,watch,onMounted,onBeforeUnmount} from 'vue'
 import {statusLabel} from './platformClient.js'
-const props=defineProps({client:Object,enabled:Boolean,admin:Boolean})
-const rows=ref([]),filter=ref(''),busy=ref(false),saving=ref(false),error=ref(''),message=ref(''),selected=ref(null),nextStatus=ref('PROCESSING'),resolution=ref('')
+const props=defineProps({client:Object,enabled:Boolean,admin:Boolean,scope:{type:Object,default:()=>({})}})
+const emit=defineEmits(['clear-scope'])
+const rows=ref([]),filter=ref(props.scope.repairStatus||''),busy=ref(false),saving=ref(false),error=ref(''),message=ref(''),selected=ref(null),nextStatus=ref('PROCESSING'),resolution=ref('')
 const assignee=ref('');function history(row){try{return JSON.parse(row.progressHistory||'[]')}catch{return []}}
+const visible=computed(()=>rows.value.filter(r=>!props.scope.stationId||String(r.stationId)===String(props.scope.stationId)))
 let active=true
 async function reload(){
  if(!props.enabled||busy.value||saving.value)return
  busy.value=true;error.value=''
- try{const result=await props.client.repairs(filter.value);if(active)rows.value=result}
+ try{const result=await props.client.repairs(filter.value);if(active){rows.value=result;if(props.scope.repairId){const target=result.find(r=>String(r.id)===String(props.scope.repairId));if(target)open(target);else error.value='该报修不存在或当前账号无权查看。'}}}
  catch(e){if(active&&!e.stale)error.value=e.message}
  finally{if(active)busy.value=false}
 }
@@ -22,7 +24,7 @@ async function save(){
  finally{if(active)saving.value=false}
  if(active&&!error.value)await reload()
 }
-onMounted(reload);onBeforeUnmount(()=>{active=false})
+watch(()=>props.scope,()=>{filter.value=props.scope.repairStatus||'';reload()});onMounted(reload);onBeforeUnmount(()=>{active=false})
 defineExpose({reload})
 </script>
 <template>
@@ -31,10 +33,10 @@ defineExpose({reload})
   <p v-if="!enabled" class="remote-error">当前后端版本尚未提供在线报修，请更新后端后重试。</p>
   <template v-else>
    <div class="filter-bar"><select v-model="filter" aria-label="报修状态筛选" :disabled="busy||saving" @change="reload"><option value="">全部报修</option><option value="OPEN">待处理</option><option value="PROCESSING">处理中</option><option value="RESOLVED">已处理</option></select><button class="outline-button" :disabled="busy||saving" @click="reload">刷新报修</button></div>
-   <p v-if="error" class="remote-error" role="alert">{{error}}</p><p v-if="message" class="remote-message" role="status">{{message}}</p>
+   <p v-if="scope.stationId||scope.repairId" class="remote-message">按关联站点或报修记录查看 <button class="text-button" @click="emit('clear-scope')">清除关联筛选</button></p><p v-if="error" class="remote-error" role="alert">{{error}}</p><p v-if="message" class="remote-message" role="status">{{message}}</p>
    <div class="management-table-wrap"><table class="management-table repair-table"><thead><tr><th>编号</th><th>用户</th><th>站点 / 设备</th><th>问题说明</th><th>状态</th><th>提交时间</th><th>操作</th></tr></thead><tbody>
-    <tr v-for="row in rows" :key="row.id"><td>{{row.id}}</td><td>{{row.ownerUsername}}</td><td>{{row.stationName}}<br/>{{row.socketCode||row.deviceCode}}</td><td class="repair-description">{{row.description}}</td><td>{{statusLabel(row.status,'repair')}}</td><td>{{row.createdAt?.replace('T',' ').slice(0,19)}}</td><td><button class="table-link repair-open" @click="open(row)">{{row.status==='RESOLVED'?'查看结果':'处理'}}</button></td></tr>
-    <tr v-if="!rows.length"><td colspan="7" class="empty-table">{{busy?'正在读取报修…':'暂无报修记录'}}</td></tr>
+    <tr v-for="row in visible" :key="row.id"><td>{{row.id}}</td><td>{{row.ownerUsername}}</td><td>{{row.stationName}}<br/>{{row.socketCode||row.deviceCode}}</td><td class="repair-description">{{row.description}}</td><td>{{statusLabel(row.status,'repair')}}</td><td>{{row.createdAt?.replace('T',' ').slice(0,19)}}</td><td><button class="table-link repair-open" @click="open(row)">{{row.status==='RESOLVED'?'查看结果':'处理'}}</button></td></tr>
+    <tr v-if="!visible.length"><td colspan="7" class="empty-table">{{busy?'正在读取报修…':'暂无报修记录'}}</td></tr>
    </tbody></table></div>
   </template>
   <div v-if="selected" class="modal-shade"><section class="modal-card repair-dialog" role="dialog" aria-modal="true" aria-label="报修处理"><header><h2>报修 #{{selected.id}}</h2><button class="icon-button" :disabled="saving" aria-label="关闭报修" @click="selected=null">×</button></header><div class="remote-detail">

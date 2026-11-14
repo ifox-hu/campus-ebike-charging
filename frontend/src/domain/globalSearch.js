@@ -3,7 +3,7 @@ export function globalSearch(db,query){
  const q=String(query||'').trim().toLowerCase().slice(0,100)
  const results=[],stations=new Map(db.stations.map(s=>[s.id,s])),devices=new Map(db.devices.map(d=>[d.id,d])),rows=new Map((db.rows||[]).map(r=>[r.id,r]))
  function add(kind,id,title,description,target,terms=[]){const texts=[title,description,...terms].map(t=>String(t||'').toLowerCase());if(!q||texts.some(t=>t.includes(q)))results.push({key:`${kind}:${id}`,kind,id,title,description,target,rank:texts.some(t=>t===q)?100:texts.some(t=>t.startsWith(q))?40:10})}
- navigation.forEach(n=>add('menu',n.id,n.label,'管理功能入口',{page:n.id},['菜单']))
+ navigation.forEach(n=>add('menu',n.id,n.label,'管理功能入口',{page:n.id},['菜单',...(n.id==='rates'?['收费','费率','电价']:[])]))
  if(q){
   db.stations.forEach(s=>add('station',s.id,s.name,s.address,{page:'devices',stationId:s.id},[s.scene,'站点']))
   db.devices.forEach(d=>add('device',d.id,d.code,`${stations.get(d.stationId)?.name||''} · ${rows.get(d.rowId)?.name||''} · ${d.name}`,{deviceId:d.id},['设备']))

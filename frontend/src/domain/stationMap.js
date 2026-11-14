@@ -12,11 +12,11 @@ export function buildStationMapRows(db){
   const sockets=db.sockets.filter(s=>ids.has(s.deviceId)),socketIds=new Set(sockets.map(s=>s.id))
   const counts={free:0,charging:0,starting:0,fault:0,abnormal:0,disabled:0,offline:0}
   const keys={'空闲':'free','充电中':'charging','启动中':'starting','故障':'fault','异常占用':'abnormal','停用':'disabled','离线':'offline'}
-  for(const socket of sockets){const serverLabels={IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',DISABLED:'停用',OFFLINE:'离线'};const label=Object.hasOwn(socket,'serverStatus')?(serverLabels[socket.serverStatus]||'停用'):socketStatus(db,socket);const key=keys[label];if(key)counts[key]++}
-  const offlineDevices=devices.filter(d=>!d.online).length
+  for(const socket of sockets){const device=devices.find(d=>d.id===socket.deviceId);const serverLabels={IDLE:'空闲',CHARGING:'充电中',FAULT:'故障',DISABLED:'停用',OFFLINE:'离线'};const label=Object.hasOwn(socket,'serverStatus')?station.enabled===false||device?.enabled===false?'停用':socket.serverStatus==='FAULT'?'故障':!device?.online?'离线':(serverLabels[socket.serverStatus]||'停用'):socketStatus(db,socket);const key=keys[label];if(key)counts[key]++}
+  const offlineDevices=devices.filter(d=>d.enabled!==false&&!d.online).length
   const hasAlert=offlineDevices>0||counts.fault>0||counts.abnormal>0
   return {...station,...counts,position:stationPosition(station),deviceCount:devices.length,socketCount:sockets.length,offlineDevices,hasAlert,
-   pendingRepairs:db.reportsLoaded===false?null:db.reports.filter(r=>r.status==='pending'&&socketIds.has(r.socketId)).length,
+   pendingRepairs:db.reportsLoaded===false?null:db.reports.filter(r=>['pending','OPEN'].includes(r.status)&&(r.stationId===station.id||socketIds.has(r.socketId))).length,
    tone:!station.enabled?'disabled':hasAlert?'alert':counts.charging||counts.starting?'charging':'idle'}
  })
 }

@@ -13,7 +13,9 @@
 
 > 在线页面是公开静态演示，演示账号 `demo`、密码 `Demo@123456`（仅模拟登录流程，并非真实身份认证）；业务、资料、通知与设置只保存在访问者自己的浏览器，不控制真实充电设备，不发生真实付款。
 >
-> 完整业务联调使用 `frontend/` 管理端、`uni-app/` 用户端和 `backend/charging-service/` 统一业务后端，订单、插座和报修通过同一数据库关联。公开静态演示及可选的独立账号模式与联网业务分别运行，账号和业务数据不互通。
+> 本轮最终联机验收组合（2026-11-14）：本仓库 `frontend/` 的 connected 管理端、同级目录 `云创用户端/` 和 `ev-charging-platform/backend/`。两端共用 `/api` 业务接口。新订单仅核算电费，历史账单不重算。详见 [验收矩阵](docs/graduation-acceptance.md)、[演示脚本](docs/graduation-demo.md) 与 [最终架构](docs/graduation-architecture.md)。
+>
+> 本仓库 `uni-app/` 与 `backend/charging-service/` 保留为另一套参考实现，不能把其中的硬件低功率检测、地图或消息能力直接计入本轮联机验收。Pages仍为独立静态演示。
 
 ## 目录
 
