@@ -4,15 +4,16 @@ import {isStaticDemo} from '../runtime.js'
 import {STATIC_DEMO_ACCOUNT} from '../services/staticAccount.js'
 import { account, signIn, restoreAccount } from '../domain/account.js'
 import EnergyLogin from './EnergyLogin.vue'
-const emit=defineEmits(['success'])
+const emit=defineEmits(['success','pending'])
+const energyLogin=ref(null)
 const rememberKey=isStaticDemo?'campus-demo-last-account':'ebike-last-admin-account'
 let remembered='';try{remembered=localStorage.getItem(rememberKey)||''}catch{}
 const username=ref(remembered||(isStaticDemo?'demo':'admin')),password=ref(''),remember=ref(!!remembered),busy=ref(false),error=ref('')
 function fillDemo(){username.value=STATIC_DEMO_ACCOUNT.username;password.value=STATIC_DEMO_ACCOUNT.password;error.value=''}
-async function login(){error.value='';busy.value=true;try{await signIn(username.value.trim(),password.value);try{if(remember.value)localStorage.setItem(rememberKey,username.value.trim());else localStorage.removeItem(rememberKey)}catch{}password.value='';emit('success')}catch(e){error.value=e.message;password.value=''}finally{busy.value=false}}
+async function login(){if(busy.value)return;error.value='';busy.value=true;emit('pending',true);try{await signIn(username.value.trim(),password.value);try{if(remember.value)localStorage.setItem(rememberKey,username.value.trim());else localStorage.removeItem(rememberKey)}catch{}password.value='';if(account.user){await energyLogin.value?.complete();if(account.user)emit('success')}}catch(e){error.value=e.message;password.value=''}finally{busy.value=false;emit('pending',false)}}
 </script>
 <template>
- <EnergyLogin v-model:username="username" v-model:password="password" v-model:remember="remember" :title="isStaticDemo?'在线演示登录':'管理员登录'" :subtitle="isStaticDemo?'校园 · 医院 · 小区 · 园区 · 办公区集中充电':'登录后管理站点、设备与独立插座'" :busy="busy" :error="error||account.error" :message="account.loginMessage" @submit="login">
+ <EnergyLogin ref="energyLogin" v-model:username="username" v-model:password="password" v-model:remember="remember" :title="isStaticDemo?'在线演示登录':'管理员登录'" :subtitle="isStaticDemo?'校园 · 医院 · 小区 · 园区 · 办公区集中充电':'登录后管理站点、设备与独立插座'" :busy="busy" :error="error||account.error" :message="account.loginMessage" @submit="login">
   <template #help>
    <button v-if="account.error&&!isStaticDemo" type="button" class="text-button reconnect-button" @click="restoreAccount">重试连接账号服务</button>
    <div v-if="isStaticDemo" class="demo-login-help"><div class="demo-help-heading"><strong>公开演示账号</strong><button type="button" @click="fillDemo">填入演示账号</button></div><p>账号 <code>{{STATIC_DEMO_ACCOUNT.username}}</code> · 密码 <code>{{STATIC_DEMO_ACCOUNT.password}}</code></p><small>此登录用于展示操作流程，数据仅保存在当前浏览器。</small></div>

@@ -1,15 +1,23 @@
 <script setup>
 import brandMark from '../assets/brand-mark.svg'
-import {onMounted,onBeforeUnmount,ref} from 'vue'
+import {onMounted,onBeforeUnmount,ref,watch} from 'vue'
 import UiIcon from './UiIcon.vue'
 import './energy-login.css'
 const props=defineProps({title:{type:String,default:'管理员登录'},subtitle:{type:String,default:'登录管理平台，连接无限可能'},username:String,password:String,remember:Boolean,allowRemember:{type:Boolean,default:true},busy:Boolean,error:String,message:String})
 const emit=defineEmits(['update:username','update:password','update:remember','submit'])
-const stage=ref(null),hit=ref(null),show=ref(false),status=ref('能量场已就绪')
-let cleanup,active=true
-onMounted(async()=>{
- try{const {mountEnergyScene}=await import('./energyScene.js');if(active)cleanup=mountEnergyScene(stage.value,hit.value,text=>status.value=text)}
- catch{status.value='能量核心'}
+const stage=ref(null),hit=ref(null),show=ref(false),status=ref('能量场已就绪'),focused=ref(false)
+let cleanup,active=true,ready=Promise.resolve()
+watch(focused,value=>cleanup?.setFocused(value))
+watch(()=>props.busy,value=>cleanup?.setBusy(value))
+function focusOut(event){focused.value=event.currentTarget.contains(event.relatedTarget)}
+defineExpose({async complete(){await ready;if(active)await cleanup?.complete()}})
+onMounted(()=>{
+ ready=import('./energyScene.js').then(({mountEnergyScene})=>{
+  if(!active)return
+  cleanup=mountEnergyScene(stage.value,hit.value,text=>status.value=text)
+  cleanup.setFocused(focused.value)
+  cleanup.setBusy(props.busy)
+ }).catch(()=>{status.value='能量核心 · 静态展示'})
 })
 onBeforeUnmount(()=>{active=false;cleanup?.()})
 </script>
@@ -20,11 +28,11 @@ onBeforeUnmount(()=>{active=false;cleanup?.()})
   <section class="ec-hero"><div class="ec-eyebrow">BEYOND ENERGY. INTO THE FUTURE.</div><h1>能量无界<span>智联未来</span></h1><p>让数据流动，让连接发生。<br>以智慧，驱动每一种可能。</p></section>
   <span class="ec-ghost-word" aria-hidden="true">ENERGY</span>
   <div ref="stage" class="ec-stage"><div class="ec-fallback" aria-hidden="true"></div><button ref="hit" type="button" class="ec-core-hit" aria-label="拖拽旋转能量装置，滚轮或双指缩放，点击触发能量反馈"></button></div>
-  <div class="ec-callout ec-callout-a" aria-hidden="true"><small>ENERGY NEXUS</small><strong><b class="ec-dot"></b>能量核心</strong></div>
+  <div class="ec-callout ec-callout-a" aria-hidden="true"><small>ENERGY NEXUS</small><strong><b class="ec-dot"></b>{{status}}</strong></div>
   <div class="ec-callout ec-callout-b" aria-hidden="true"><small>CONNECTED INTELLIGENCE</small><strong>连接 · 感知 · 进化</strong></div>
   <span class="ec-status-a11y" role="status">{{status}}</span>
   <span class="ec-side-caption" aria-hidden="true">SMART CHARGING / INFINITE POSSIBILITIES</span>
-  <div class="ec-panel-shell"><form class="ec-panel" aria-label="管理平台登录" @submit.prevent="!busy&&emit('submit')">
+  <div class="ec-panel-shell"><form class="ec-panel" aria-label="管理平台登录" @focusin="focused=true" @focusout="focusOut" @submit.prevent="!busy&&emit('submit')">
    <div class="ec-panel-top"><span>ACCESS YOUR WORKSPACE</span><UiIcon name="fullscreen"/></div><h2>{{title}}</h2><p class="ec-sub">{{subtitle}}</p>
    <p v-if="message" class="ec-login-info" role="status">{{message}}</p><p v-if="error" class="ec-feedback" role="alert">{{error}}</p>
    <label class="ec-label" for="energy-account">登录账号</label><div class="ec-field"><UiIcon name="user"/><input id="energy-account" :value="username" @input="emit('update:username',$event.target.value)" placeholder="请输入账号" autocomplete="username" required maxlength="64" :disabled="busy"/></div>

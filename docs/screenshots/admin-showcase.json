@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2026-11-15T14:00:33.835Z",
+  "source": "http://127.0.0.1:5217/",
+  "mode": "pages",
+  "viewport": {
+    "width": 1600,
+    "height": 1100
+  },
+  "mapMode": "diagram",
+  "scenarios": [
+    "校园",
+    "医院",
+    "住宅小区",
+    "产业园区",
+    "办公区",
+    "商业配套"
+  ],
+  "stationCount": 16,
+  "logo": "original-graduation-logo",
+  "isolatedBrowserContext": true,
+  "defaultBusinessDataUnchanged": true,
+  "captures": [
+    {
+      "file": "showcase-admin-login.png",
+      "title": "能量核心登录与原版标志"
+    },
+    {
+      "file": "showcase-admin-layout.png",
+      "title": "按排管理双插座设备与页面标签"
+    },
+    {
+      "file": "showcase-admin-socket.png",
+      "title": "设备详情与 A/B 独立插座"
+    },
+    {
+      "file": "showcase-admin-orders.png",
+      "title": "充电订单、状态与账单查询"
+    },
+    {
+      "file": "showcase-admin-operations.png",
+      "title": "运营分析与告警工作台"
+    },
+    {
+      "file": "showcase-admin-dashboard.png",
+      "title": "运营概览与站点分布"
+    }
+  ],
+  "errors": []
+}
