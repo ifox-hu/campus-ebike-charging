@@ -9,7 +9,7 @@
 | 页面 | 展示内容 | 图片 |
 | --- | --- | --- |
 | 登录 | 能量核心、账号输入、密码显隐 | [登录截图](screenshots/showcase-admin-login.png) |
-| 运营概览 | 业务指标、站点分布、多页面标签 | [概览截图](screenshots/showcase-admin-dashboard.png) |
+| 运营概览 | 业务指标、高德地图站点分布、多页面标签 | [概览截图](screenshots/showcase-admin-dashboard.png) |
 | 设备排布 | 按站点筛选、多排设备、A/B 插座状态 | [排布截图](screenshots/showcase-admin-layout.png) |
 | 插座详情 | 设备信息、A/B 插座、充电操作 | [插座截图](screenshots/showcase-admin-socket.png) |
 | 订单管理 | 日期筛选、充电状态、支付状态、账单查询 | [订单截图](screenshots/showcase-admin-orders.png) |

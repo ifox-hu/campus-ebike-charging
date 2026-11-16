@@ -6,7 +6,7 @@
     "width": 1600,
     "height": 1100
   },
-  "mapMode": "diagram",
+  "mapMode": "amap",
   "scenarios": [
     "校园",
     "医院",
@@ -42,7 +42,11 @@
     },
     {
       "file": "showcase-admin-dashboard.png",
-      "title": "运营概览与站点分布"
+      "title": "运营概览与站点分布",
+      "capturedAt": "2026-11-16T03:28:29.939Z",
+      "source": "https://ifox-hu.github.io/campus-ebike-charging/",
+      "mapMode": "amap",
+      "mapResponseCount": 22
     }
   ],
   "errors": []

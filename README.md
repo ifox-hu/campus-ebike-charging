@@ -40,7 +40,7 @@
 
 | 能量核心登录 · 原版 logo | 运营概览 · 站点分布与页面标签 |
 | --- | --- |
-| ![管理端能量核心登录与原版标志](docs/screenshots/showcase-admin-login.png) | ![运营概览、站点坐标示意与多页面标签](docs/screenshots/showcase-admin-dashboard.png) |
+| ![管理端能量核心登录与原版标志](docs/screenshots/showcase-admin-login.png) | ![运营概览、高德地图站点分布与多页面标签](docs/screenshots/showcase-admin-dashboard.png) |
 | **设备排布 · 按站点与排筛选** | **设备详情 · A/B 独立插座** |
 | ![管理端设备排布](docs/screenshots/showcase-admin-layout.png) | ![设备详情与独立插座状态](docs/screenshots/showcase-admin-socket.png) |
 | **充电订单 · 状态与账单查询** | **运营分析 · 告警工作台** |
