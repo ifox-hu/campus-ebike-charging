@@ -220,7 +220,7 @@ cd campus-ebike-charging
 
 ### 双端联网（推荐）
 
-1. 准备配套后端 [ev-charging-platform](https://github.com/ifox-hu/ev-charging-platform)，按其 README 配置 Java 17、MySQL 和数据库/JWT环境变量。空库顺序初始化V1—V11；现有库先备份并按已有版本升级，不重跑空库建表脚本。部署细节见 [最终联机组合](docs/deployment.md#本轮最终联机组合)。
+1. 准备配套后端 [ev-charging-platform](https://github.com/ifox-hu/ev-charging-platform)，按其 README 配置 Java 17、MySQL 和数据库/JWT环境变量。空库顺序初始化V1—V11；现有库先备份并按已有版本升级，不重跑空库建表脚本。部署细节见 [联机运行](docs/deployment.md#联机运行)。
 2. 在配套 `ev-charging-platform/backend/` 目录启动业务 API；模拟支付演示按其说明启用 `graduation-demo` 配置，使用现有账号或注册普通用户。
 3. 新开终端，从本仓库根目录启动管理端：
 

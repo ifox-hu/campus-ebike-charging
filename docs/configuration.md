@@ -2,7 +2,7 @@
 
 ## 地图配置
 
-项目确实包含高德 JavaScript API 2.0 接入。目录整理后仍保留以下调用：
+各端地图实现如下：
 
 | 客户端 | 实现 | 说明 |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ VITE_AMAP_SECURITY_CODE=
 ADMIN_API_PROXY_TARGET=http://127.0.0.1:8081
 ```
 
-本地 Vite 必须从 `frontend/` 启动。无 Key 时保留坐标示意与站点操作；不会显示一个假的高德底图。在线静态构建仅使用显式构建环境 `PAGES_AMAP_KEY` 与 `PAGES_AMAP_SECURITY_CODE`，不会读取其他项目的私有配置。
+从 `frontend/` 启动 Vite。无 Key 时使用坐标示意；在线静态构建通过 `PAGES_AMAP_KEY` 与 `PAGES_AMAP_SECURITY_CODE` 配置地图。
 
 ### H5
 
@@ -63,8 +63,8 @@ Compose 使用独立项目名与数据卷，端口为 `127.0.0.1:13307`。`charg
 
 个人中心支持上传JPG、PNG、WebP头像（源文件不超过5MB），在浏览器中居中裁剪并压缩为256×256图片，点击保存后同步到右上角。可预览、取消或恢复默认首字头像。静态演示保存在当前浏览器；独立账号模式将头像随账号资料存入H2，新版启动时会以幂等语句补充头像列，保留旧账号及资料。服务端只接受有尺寸和长度限制的PNG/JPEG图片数据，不保存外部图片链接。
 
-首次初始化账号 `admin` / `Admin@123456`，可通过 `EBIKE_ADMIN_USERNAME` 与 `EBIKE_ADMIN_PASSWORD` 设置；不会覆盖已改过的账号。它不等同于统一业务后端的 ADMIN 账号。
+独立账号服务首次初始化账号为 `admin` / `Admin@123456`，可通过 `EBIKE_ADMIN_USERNAME` 与 `EBIKE_ADMIN_PASSWORD` 设置。已有账号保留原密码。
 
-## 本地文件与发布边界
+## 本地配置文件
 
-`.env.local`、数据库、日志、依赖、构建目录与个人小程序配置均忽略提交。源码目录整理不迁移或重置现有业务库，也不自动上传任何地图凭证。
+`.env.local`、数据库、日志、依赖、构建目录与个人小程序配置均由 Git 忽略。数据库升级步骤见 [部署说明](deployment.md)。

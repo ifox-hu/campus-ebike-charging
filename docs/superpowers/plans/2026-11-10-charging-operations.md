@@ -1,20 +1,23 @@
-# Charging plans and operations implementation plan
+# 充电方案与运营功能开发记录
 
-Goal: deliver the user-approved five plans (1h / 2h / 3h / FULL / CUSTOM) across both clients and the server, then complete the useful cross-client workflows from the feature review.
+日期：2026-11-10。
 
-Architecture: retain Vue, uni-app and Spring Boot. The server owns validation, tariff snapshots, quotes and scheduled settlement. Browser-only features remain explicitly local; actual hardware and third-party payment remain simulated.
+## 技术设计
 
-Decisions: custom duration is an integer from 15 through 720 minutes. FULL uses the existing 1.2 kWh software threshold with a 12-hour safety cutoff, explicitly described as simulation. Existing HOUR_4/HOUR_5 local historical orders must survive migration. Old backend requests default to FULL for compatibility. Existing databases are never reset; additive SQL migration is required.
+Vue管理端、uni-app用户端和Spring Boot后端共用充电方案。后端负责方案校验、费率快照、预计金额和定时结算，本地演示使用浏览器存储。
 
-- [x] Charging: tests for plan validation, duration-based quotes, deadline settlement, ownership and legacy restoration; implement server fields, migration, quote endpoint and scheduler; connect start/session screens.
-- [x] Scan: generate/download socket QR codes in both administration modes; H5 image decoding and camera scan with cleanup; keep native WeChat scan and manual fallback.
-- [x] User experience: scene filters, favorites/recent stations, order search/date filters, durable per-account message read state derived from server orders and repairs.
-- [x] Connected administration: native station/device/socket/rate forms using existing guarded APIs; real map and grouped physical device layout; allow existing OPERATOR role with read-only maintenance controls.
-- [x] Operations: date/scene-filtered trend charts and station statistics; durable alert acknowledgement with notes, linked orders/devices; repair assignee and timeline using existing tickets.
-- [x] Verification: unit/integration suites, both admin builds, local/connected H5 and WeChat build, focused browser QA, documentation and migration instructions.
+自定义时长为15—720分钟整数。FULL初版采用1.2 kWh阈值和12小时时限，后续调整为 [插座功率判断](2026-11-12-socket-power-autostop.md)。历史四/五小时订单保留原方案及截止时间，数据库通过增量SQL升级。
 
-Not included: live payment merchant onboarding, real electrical protection or production hardware claims, wallet/points/coupons, mandatory location permission, invented campus data.
+## 功能
 
-Execution log: user delegated remaining implementation choices; keep the existing isolated worktree. Complete inline; no additional approval checkpoints.
+- 提供1h、2h、3h、FULL、CUSTOM五种方案，增加预计金额接口和服务端结算调度。
+- 管理端生成插座二维码；H5支持图片识码、摄像头扫码和输入编号，微信端使用原生扫码。
+- 用户端增加场景筛选、收藏、最近浏览、订单搜索与日期筛选、消息已读状态。
+- 管理端提供站点、设备、插座和电价表单，按排展示设备并控制角色操作权限。
+- 运营页提供日期和场景筛选、趋势图、站点统计、告警确认及报修时间线。
 
-Verification: administration 50 tests, user client 63 tests, account service 10 tests, charging service 60 tests; zero failures. Default/Pages/connected administration builds, local/connected H5 builds and WeChat build passed. Pages smoke, mobile five-plan/custom-duration smoke and real isolated Spring/H2 cross-client operations workflow passed. Image decoding exercised; camera hardware and real merchant payment not tested. Existing running database was not migrated or reset.
+## 测试记录
+
+当日管理端50项、用户端63项、账号服务10项、充电业务60项测试通过。管理端default/Pages/connected、用户端本地/联网H5及微信小程序构建通过。
+
+浏览器检查覆盖Pages、五种充电方案、自定义时长、图片识码，以及Spring Boot/H2测试环境中的两端订单与报修流程。

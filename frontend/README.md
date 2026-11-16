@@ -48,4 +48,4 @@ npm run preview:pages
 node e2e/capture-admin-showcase.cjs
 ```
 
-截图环境需安装 Playwright 并提供 Microsoft Edge；脚本使用独立浏览器上下文，生成登录、概览、排布、插座、订单和运营告警 6 张实拍截图，以及 `docs/screenshots/admin-showcase.json` 环境记录。可通过 `ADMIN_SHOWCASE_URL` 指定地址；高德底图为硬性要求时，设置 `ADMIN_SHOWCASE_REQUIRE_AMAP=true`。详细来源和数据范围见 [展示说明](../docs/showcase.md)。
+截图使用 Playwright 和 Microsoft Edge，生成登录、概览、排布、插座、订单和运营告警 6 张图片，以及 `docs/screenshots/admin-showcase.json` 环境记录。通过 `ADMIN_SHOWCASE_URL` 指定地址，生成高德底图版本时设置 `ADMIN_SHOWCASE_REQUIRE_AMAP=true`。步骤见 [截图说明](../docs/showcase.md)。

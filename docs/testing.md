@@ -20,7 +20,7 @@ mvn -B -f backend/pom.xml test
 
 ## 浏览器验证
 
-需额外的 Playwright 与 Microsoft Edge，它们不是运行依赖。先启动待测前端，再运行对应脚本：
+浏览器检查使用 Playwright 与 Microsoft Edge。先启动测试前端，再运行对应脚本：
 
 | 脚本 | 默认目标 |
 | --- | --- |
@@ -38,16 +38,16 @@ mvn -B -f backend/pom.xml test
 
 `PAGES_QA_URL`、`ADMIN_MAP_BASE`、`MOBILE_QA_URL` 可指向单独测试端口。生成的截图与 JSON 留在各自 e2e 目录并忽略提交；README 只引用 `docs/screenshots/` 中挑选的展示图片。
 
-验证已发布的真实地图时，设置 `PAGES_EXPECT_AMAP=true` 后运行 `frontend/e2e/verify-pages.cjs`，必须加载高德 SDK、显示五个站点标记且没有回退示意图。`verify-map-interactions.cjs` 通过 `ADMIN_MAP_BASE` 指向线上地址、`ADMIN_MAP_USER` / `ADMIN_MAP_PASSWORD` 使用演示账号，可进一步验证滚轮、拖动及搜索定位。
+检查线上地图时，设置 `PAGES_EXPECT_AMAP=true` 后运行 `frontend/e2e/verify-pages.cjs`，检查高德 SDK、站点标记和地图加载状态。`verify-map-interactions.cjs` 通过 `ADMIN_MAP_BASE` 指定地址，`ADMIN_MAP_USER` / `ADMIN_MAP_PASSWORD` 指定演示账号，检查滚轮、拖动及搜索定位。
 
-浏览器测试使用隔离上下文，不操作用户日常浏览器状态。服务端接口失败不会被测试工具替换成成功的假响应。
+浏览器测试使用独立上下文。
 
-`verify-energy-login.cjs` 的 connected 部分使用明确的请求桩验证账号、密码和错误响应的界面契约，不作为真实后端联机验收；Pages 部分使用静态演示的实际登录实现，并验证 WebGL 不可用时仍能登录。可用 `ENERGY_PAGES_URL`、`ENERGY_CONNECTED_URL` 指向构建预览地址；提供 `ENERGY_ACCOUNT_URL` 时还会验证可选账号服务的重试按钮不会提交密码。
+`verify-energy-login.cjs` 的 connected 部分通过接口桩检查账号、密码和错误响应，Pages 部分检查静态登录、聚能过渡和 WebGL 降级。用 `ENERGY_PAGES_URL`、`ENERGY_CONNECTED_URL` 指定预览地址；设置 `ENERGY_ACCOUNT_URL` 后，还会检查账号服务的重试连接按钮。
 
 头像验收覆盖图片上传与压缩、取消不生效、右上角同步、刷新保留、无效/超大文件拒绝、恢复默认及窄屏布局。独立账号测试使用临时数据库中的`avatar_test_admin`测试账号，不应指向日常账号库。
 
 站点选址脚本通过真实高德地图验证点击、标记拖动、地点搜索、取消、确认、保存后重读和窄屏布局，并用网络中断验证手工填写仍可用。设置 `STATION_PICKER_CONNECTED=true` 并指定 `STATION_PICKER_URL` 可对隔离测试后端验证联网保存；此模式会修改测试站点坐标，不能指向日常业务库。
 
-`verify-operations.cjs` 必须使用临时隔离数据库及 graduation 测试账号运行，会创建示例站点、设备、费率、订单和报修；不得指向生产或日常演示数据库。它从管理端下载二维码，在用户端识别图片并启动自定义75分钟方案，核对两端订单、消息已读、报修时间线，以及故障恢复后再次告警。摄像头真机权限与真实微信支付不属于该自动测试范围。
+`verify-operations.cjs` 必须使用临时隔离数据库及 graduation 测试账号运行，会创建示例站点、设备、费率、订单和报修；不得指向生产或日常演示数据库。它从管理端下载二维码，在用户端识别图片并启动自定义75分钟方案，核对两端订单、消息已读、报修时间线，以及故障恢复后再次告警。
 
-功率自停测试覆盖先高后低、持续低功率窗口、短暂波动、零功率、样本重复/过期/间断、曲线积分及延迟结算。软件300 W FULL曲线在215分钟结束，约0.977 kWh；这不是实测电池容量。
+功率自停测试覆盖先高后低、持续低功率窗口、短暂波动、零功率、样本重复/过期/间断、曲线积分及延迟结算。软件300 W FULL曲线在215分钟结束，约0.977 kWh。
