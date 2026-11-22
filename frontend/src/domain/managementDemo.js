@@ -9,6 +9,35 @@ const sanitize = value => value == null ? null : JSON.parse(JSON.stringify(value
 const active = new Set(['starting', 'charging', 'abnormal'])
 const emptyMetrics = () => ({ orderCount: 0, energyKwh: 0, electricityFee: 0, serviceFee: 0, totalAmount: 0, paidAmount: 0, activeCount: 0, deviceCount: 0, onlineDeviceCount: 0, openRepairCount: 0 })
 
+function seedAuditExamples(metadata) {
+  if (metadata.auditSeedVersion === 1) return false
+  // Anchor relative dates once, so opening a different account or returning tomorrow
+  // never changes existing examples or adds a second batch. These do not replay edits.
+  const firstExample = metadata.logs.find(row => row.id === 'audit-demo-v1-campus-rate')
+  const anchor = metadata.auditSeedDate || firstExample?.createdAt?.slice(0, 10) || new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  const day = offset => new Date(Date.parse(`${anchor}T12:00:00+08:00`) - offset * 86400000).toISOString().slice(0, 10)
+  const examples = [
+    ['campus-rate', 'campus', 'demo_campus', 'OPERATOR_ADMIN', 0, '10:15:00', 'PUT', '/rates/ST01', '调整站点费率', { electricRate: 0.55, serviceRate: 0.05 }, { electricRate: 0.6, serviceRate: 0.06 }],
+    ['hospital-device', 'hospital', 'demo_hospital', 'OPERATOR_ADMIN', 0, '09:40:00', 'PATCH', '/devices/D-HOSPITAL-01/online', '恢复设备在线状态', { online: false }, { online: true }],
+    ['platform-team', 'platform', 'demo', 'ADMIN', 0, '09:10:00', 'POST', '/operators/platform/staff', '创建运营团队账号', null, { username: 'sample_platform_staff', role: 'OPERATOR', enabled: true }],
+    ['campus-repair', 'campus', 'demo_campus', 'OPERATOR_ADMIN', 1, '16:20:00', 'PATCH', '/repairs/SAMPLE-CAMPUS-01', '处理插座报修', { status: 'pending' }, { status: 'resolved', resolution: '已检查插座接触情况，记录示例处理结果。' }],
+    ['hospital-rate', 'hospital', 'demo_hospital', 'OPERATOR_ADMIN', 1, '14:30:00', 'PUT', '/rates/ST07', '调整站点服务费', { electricRate: 0.6, serviceRate: 0.08 }, { electricRate: 0.6, serviceRate: 0.06 }],
+    ['platform-owner', 'platform', 'demo', 'ADMIN', 1, '11:00:00', 'PUT', '/operators/stations/SAMPLE-PLATFORM-01/owner', '分配站点运营归属', { operatorId: 'campus' }, { operatorId: 'platform' }],
+    ['campus-device', 'campus', 'demo_campus', 'OPERATOR_ADMIN', 2, '15:10:00', 'PATCH', '/devices/SAMPLE-CAMPUS-02/status', '恢复检修设备使用', { enabled: false }, { enabled: true }],
+    ['hospital-repair', 'hospital', 'demo_hospital', 'OPERATOR_ADMIN', 2, '13:50:00', 'PATCH', '/repairs/SAMPLE-HOSPITAL-01', '处理设备离线报修', { status: 'pending' }, { status: 'resolved', resolution: '已核验通信状态并记录处理结果。' }],
+    ['campus-team', 'campus', 'demo_campus', 'OPERATOR_ADMIN', 2, '09:30:00', 'POST', '/operators/campus/staff', '创建校园运营员账号', null, { username: 'sample_campus_staff', role: 'OPERATOR', enabled: true }],
+  ]
+  const knownIds = new Set(metadata.logs.map(row => row.id))
+  for (const [key, operatorId, username, role, offset, time, method, path, action, beforeValue, afterValue] of examples) {
+    const id = `audit-demo-v1-${key}`
+    if (!knownIds.has(id)) metadata.logs.push({ id, operatorId, username, role, method, path, statusCode: 200, createdAt: `${day(offset)}T${time}+08:00`, action: `${action}（示例）`, beforeValue, afterValue })
+  }
+  metadata.logs.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+  metadata.auditSeedVersion = 1
+  metadata.auditSeedDate = anchor
+  return true
+}
+
 /** Read current cooperation metadata without coupling the charging service to UI state. */
 export function isDemoOperatorAcceptingOrders(operatorId, storage = globalThis.localStorage) {
   let operators = DEMO_OPERATORS
@@ -30,6 +59,9 @@ export function createDemoManagementClient({ getUser, getSource, onChanged = () 
     const saved = JSON.parse(globalThis.localStorage?.getItem(STORAGE_KEY) || 'null')
     if (saved && Number.isInteger(saved.sequence) && ['operators', 'team', 'logs'].every(key => Array.isArray(saved[key]))) metadata = saved
   } catch { /* An unavailable browser store still permits an in-memory demo. */ }
+  if (seedAuditExamples(metadata)) {
+    try { globalThis.localStorage?.setItem(STORAGE_KEY, JSON.stringify(metadata)) } catch { /* Keep examples available in memory when browser persistence is unavailable. */ }
+  }
   let committedMetadata = clone(metadata)
   function actor() {
     const user = getUser()

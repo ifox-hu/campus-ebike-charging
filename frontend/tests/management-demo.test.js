@@ -18,6 +18,7 @@ const staff = { username: 'team_test', displayName: '演示运营员', password:
 
 test('demo operator edits, team records and sanitized audit survive adapter reconstruction', async () => {
   const f = fixture(), api = f.client
+  const baseline = (await api.audit()).total
   const created = await api.createOperator({ name: '测试运营商', cooperationStatus: '洽谈中' })
   assert.equal(created.cooperationStatus, '洽谈中')
   await api.updateOperator(created.id, { contactName: '测试联系人', phone: '示例联系方式', enabled: true })
@@ -31,7 +32,7 @@ test('demo operator edits, team records and sanitized audit survive adapter reco
   assert.equal((await restored.team(created.id))[0].enabled, false)
   assert.equal(f.source.stations.find(row => row.id === 'ST03').operatorId, created.id)
   const audit = await restored.audit()
-  assert.equal(audit.total, 7)
+  assert.equal(audit.total, baseline + 7)
   assert.ok(!JSON.stringify([...f.values.values()]).includes('DemoPass1234'))
   assert.ok(!JSON.stringify([...f.values.values()]).includes('NextPassword123'))
   assert.ok(!JSON.stringify([...f.values.values()]).includes('NeverLeak123'))
@@ -97,7 +98,7 @@ test('failed persistence rolls back operators, team changes, logs and station ow
 
 test('empty pagination, order-only user relationships and historical statistics follow management contract', async () => {
   const f = fixture(), api = f.client
-  assert.equal((await api.audit()).totalPages, 1)
+  assert.equal((await api.audit(1, { keyword: 'not-present' })).totalPages, 1)
   assert.equal((await api.serviceUsers({ keyword: 'not-present' })).totalPages, 1)
   const campusDevice = f.source.devices.find(row => f.source.stations.find(station => station.id === row.stationId).operatorId === 'campus')
   const socket = f.source.sockets.find(row => row.deviceId === campusDevice.id)
@@ -115,16 +116,70 @@ test('empty pagination, order-only user relationships and historical statistics 
 
 test('tenant audit filters cannot disclose another tenant or platform-wide events', async () => {
   const f = fixture(), api = f.client
+  const baseline = (await api.audit(1, { operatorId: 'campus' })).total
   await api.createTeam(staff, 'campus')
   await api.createTeam({ ...staff, username: 'hospital_team' }, 'hospital')
   await api.recordOperation({ action: '平台范围记录', afterValue: { phone: '' } })
   f.login({ username: 'demo_campus', role: 'OPERATOR_ADMIN', operatorId: 'campus' })
   const logs = await api.audit()
-  assert.equal(logs.total, 1)
+  assert.equal(logs.total, baseline + 1)
   assert.ok(logs.rows.every(row => row.operatorId === 'campus'))
   await assert.rejects(api.audit(1, { operatorId: 'hospital' }))
   await assert.rejects(api.recordOperation({ action: '冒充其他运营商', operatorId: 'hospital' }))
-  assert.equal((await api.audit()).total, 1)
+  assert.equal((await api.audit()).total, baseline + 1)
+})
+
+test('sample audit migration persists once, preserves user logs and supports operator and date filters', async () => {
+  const f = fixture(), api = f.client
+  const seeded = await api.audit()
+  assert.equal(seeded.total, 9)
+  assert.equal(new Set(seeded.rows.map(row => row.id)).size, 9)
+  assert.ok(seeded.rows.every(row => row.action.includes('示例')))
+  assert.ok(!/password|token|secret|credential/i.test(JSON.stringify(seeded.rows)))
+  const key = [...f.values.keys()][0]
+  const initial = JSON.parse(f.values.get(key))
+  assert.equal(initial.auditSeedVersion, 1)
+  const shanghaiToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  assert.equal(initial.auditSeedDate, shanghaiToday)
+  await api.recordOperation({ action: '用户自己的操作', operatorId: 'campus' })
+  const persisted = f.values.get(key)
+  assert.deepEqual(await createDemoManagementClient(f.options).audit(), await api.audit())
+  assert.equal(f.values.get(key), persisted)
+  const old = JSON.parse(persisted)
+  delete old.auditSeedVersion
+  delete old.auditSeedDate
+  old.logs = old.logs.filter(row => !row.action.includes('示例')).concat(initial.logs[0])
+  f.values.set(key, JSON.stringify(old))
+  const migrated = createDemoManagementClient(f.options)
+  const logs = await migrated.audit()
+  assert.equal(logs.total, 10)
+  assert.equal(logs.rows.filter(row => row.action === '用户自己的操作').length, 1)
+  assert.equal(new Set(logs.rows.map(row => row.id)).size, logs.total)
+  for (const operatorId of ['campus', 'hospital', 'platform']) {
+    const scoped = await migrated.audit(1, { operatorId })
+    assert.ok(scoped.total > 0)
+    assert.ok(scoped.rows.every(row => row.operatorId === operatorId))
+  }
+  const today = await migrated.audit(1, { from: initial.auditSeedDate, to: initial.auditSeedDate })
+  assert.ok(today.total > 0)
+  assert.ok(today.rows.every(row => row.createdAt.startsWith(initial.auditSeedDate)))
+  assert.equal((await migrated.audit(1, { from: '2000-01-01', to: '2000-01-01' })).total, 0)
+  const empty = JSON.parse(persisted)
+  delete empty.auditSeedVersion
+  empty.logs = []
+  f.values.set(key, JSON.stringify(empty))
+  assert.equal((await createDemoManagementClient(f.options).audit()).total, 9)
+  const previousVisit = JSON.parse(f.values.get(key))
+  previousVisit.auditSeedDate = '2026-01-03'
+  for (const row of previousVisit.logs) row.createdAt = `2026-01-03${row.createdAt.slice(10)}`
+  f.values.set(key, JSON.stringify(previousVisit))
+  const previousVisitStored = f.values.get(key)
+  const laterVisit = createDemoManagementClient(f.options)
+  assert.equal((await laterVisit.audit()).total, 9)
+  assert.equal((await laterVisit.audit(1, { from: '2026-01-03', to: '2026-01-03' })).total, 9)
+  assert.equal(f.values.get(key), previousVisitStored)
+  f.login({ username: 'demo_hospital', role: 'OPERATOR_ADMIN', operatorId: 'hospital' })
+  assert.ok((await laterVisit.audit()).rows.every(row => row.operatorId === 'hospital'))
 })
 
 test('suspended and terminated demo cooperation blocks new orders while active orders can finish', async () => {

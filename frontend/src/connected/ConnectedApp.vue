@@ -61,6 +61,7 @@ const operatorNames = computed(() => Object.fromEntries(operators.value.map(item
 const menus = computed(() => managementNavigation(user.value?.role));
 const visibleData = computed(() => filterOperatorData(data, operatorFilter.value));
 const source = computed(() => mapConnectedSource(visibleData.value));
+const allDashboardSource = computed(() => mapConnectedSource(data));
 const visibleStationIds = computed(() => operatorFilter.value ? visibleData.value.stations.map(site => site.id) : null);
 function changeOperatorFilter() {
   scope.value = {};
@@ -402,21 +403,10 @@ onBeforeUnmount(() => {
         充电管理 / <strong>{{ title }}</strong>
       </div>
       <div class="topbar-tools connected-tools">
-        <label v-if="platformAdmin" class="connected-operator-filter">运营商
-          <select v-model="operatorFilter" @change="changeOperatorFilter">
-            <option value="">全部运营商</option>
-            <option v-for="item in operators" :key="item.id" :value="String(item.id)">{{ item.name }}</option>
-          </select>
-        </label>
-        <span v-else class="preview-mode-chip">{{ user.operatorName || '运营商后台' }}</span
-        ><button
-          v-if="platformAdmin"
-          class="text-button"
-          @click="nav('audit')"
-        >
-          操作日志</button
-        ><span>{{ user.displayName || user.username }}</span
-        ><button class="text-button" @click="logout()">退出</button>
+        <span v-if="!platformAdmin" class="preview-mode-chip">{{ user.operatorName || '运营商后台' }}</span>
+        <button v-if="platformAdmin" class="text-button" @click="nav('audit')">操作日志</button>
+        <span>{{ user.displayName || user.username }}</span>
+        <button class="text-button" @click="logout()">退出</button>
       </div>
     </header>
     <main class="main-content">
@@ -441,7 +431,8 @@ onBeforeUnmount(() => {
         :stations="data.stations" :operators="operators" :source="source" @updated="refresh" @order="openOrder" />
       <ConnectedDashboardPage
         v-else-if="page === 'dashboard'"
-        :source="source"
+        :source="allDashboardSource"
+        :operators="operators"
         :client="client"
         :account-key="user.username"
         :loaded-at="loadedAt"

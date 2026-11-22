@@ -24,7 +24,7 @@ export function activeAlerts(db,now=Date.now()){
 }
 export function operationsStats(db,{from='',to='',scene=''}={}){
  const stations=db.stations.filter(s=>!scene||s.scene===scene),ids=new Set(stations.map(s=>s.id));
- const orders=db.orders.filter(o=>ids.has(o.stationId)&&(!from||String(o.startedAt).slice(0,10)>=from)&&(!to||String(o.startedAt).slice(0,10)<=to));
+ const orders=db.orders.filter(o=>(!scene||ids.has(o.stationId))&&(!from||String(o.startedAt).slice(0,10)>=from)&&(!to||String(o.startedAt).slice(0,10)<=to));
  const completed=orders.filter(o=>o.status==='ended');const hours=Array(24).fill(0),days=new Map();
  for(const o of orders){const hour=Number(String(o.startedAt).slice(11,13));if(Number.isInteger(hour)&&hour>=0&&hour<24)hours[hour]++;const date=String(o.startedAt||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;if(!days.has(date))days.set(date,{date,count:0,amount:0});const row=days.get(date);row.count++;if(o.status==='ended'&&Number.isFinite(o.total))row.amount+=o.total;}
  return {orders:orders.length,completed:completed.length,failed:orders.filter(o=>['failed','abnormal'].includes(o.status)).length,amount:completed.reduce((n,o)=>n+(Number.isFinite(o.total)?o.total:0),0),energy:completed.reduce((n,o)=>n+(Number.isFinite(o.energy)?o.energy:0),0),missingBills:completed.filter(o=>!Number.isFinite(o.total)).length,hours,days:[...days.values()].sort((a,b)=>a.date.localeCompare(b.date)),stations:stations.map(s=>{
