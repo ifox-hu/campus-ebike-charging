@@ -13,6 +13,12 @@ export function addOperatorOwnership(data){
  for(const station of data.stations){
   station.operatorId??=seededOwners.get(station.id)||'platform'
  }
+ for(const order of data.orders||[])order.operatorId??=data.stations.find(site=>site.id===order.stationId)?.operatorId||'platform'
+ for(const report of data.reports||[]){
+  const socket=data.sockets.find(row=>row.id===report.socketId),device=data.devices.find(row=>row.id===socket?.deviceId)
+  report.stationId??=device?.stationId
+  report.operatorId??=data.stations.find(site=>site.id===report.stationId)?.operatorId||'platform'
+ }
  return data
 }
 
@@ -21,6 +27,7 @@ const scopedCollections={
 }
 
 export function operatorDemoData(data,operatorId){
+ addOperatorOwnership(data)
  if(!operatorId)return data
  const stations=data.stations.filter(site=>site.operatorId===operatorId)
  const siteIds=new Set(stations.map(site=>site.id))
@@ -32,8 +39,8 @@ export function operatorDemoData(data,operatorId){
   ...data,stations,devices,sockets,
   rows:data.rows.filter(row=>siteIds.has(row.stationId)),
   rates:data.rates.filter(rate=>siteIds.has(rate.stationId)),
-  orders:data.orders.filter(order=>siteIds.has(order.stationId)&&socketIds.has(order.socketId)),
-  reports:data.reports.filter(report=>socketIds.has(report.socketId)),
+  orders:data.orders.filter(order=>order.operatorId===operatorId),
+  reports:data.reports.filter(report=>report.operatorId===operatorId),
  }
 }
 

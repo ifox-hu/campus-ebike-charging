@@ -1,7 +1,28 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {createPlatformClient,formatNumber,statusLabel,relationRows} from '../src/connected/platformClient.js'
+import {createPlatformClient,formatNumber,statusLabel,relationRows,filterOperatorData} from '../src/connected/platformClient.js'
 const response=(data,status=200)=>({ok:status>=200&&status<300,status,json:async()=>({code:status,data,message:status>=400?'接口拒绝':'成功'})})
+
+test('平台筛选按历史记录的运营商归档，站点转让不转移旧订单和报修', () => {
+ const data={stations:[{id:1,operatorId:2}],devices:[{id:3,stationId:1}],sockets:[{id:4,chargerId:3}],orders:[{id:5,stationId:1,operatorId:1},{id:6,stationId:1,operatorId:2}],reports:[{id:7,stationId:1,operatorId:1}]}
+ const former=filterOperatorData(data,'1'),current=filterOperatorData(data,'2')
+ assert.equal(former.stations.length,0);assert.deepEqual(former.orders.map(row=>row.id),[5]);assert.deepEqual(former.reports.map(row=>row.id),[7])
+ assert.deepEqual(current.orders.map(row=>row.id),[6]);assert.equal(current.reports.length,0);assert.equal(current.devices.length,1)
+ assert.strictEqual(filterOperatorData(data,''),data)
+})
+
+test('新增管理接口传递服务用户分页、运营商筛选和团队操作', async () => {
+ const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b')
+ await client.serviceUsers({page:2,keyword:'李 同学'})
+ assert.equal(f.calls.at(-1).path,'/api/service-users?page=2&keyword=%E6%9D%8E+%E5%90%8C%E5%AD%A6')
+ await client.statistics({operatorId:2,from:'2026-11-01',to:'2026-11-23'})
+ assert.equal(f.calls.at(-1).path,'/api/management/statistics?operatorId=2&from=2026-11-01&to=2026-11-23')
+ await client.setTeamEnabled(7,false,2)
+ assert.equal(f.calls.at(-1).path,'/api/team/7/status')
+ assert.deepEqual(JSON.parse(f.calls.at(-1).options.body),{enabled:false,operatorId:2})
+ await client.audit(2,{operatorId:2,username:'campus'})
+ assert.equal(f.calls.at(-1).path,'/api/audit-logs?page=2&size=20&operatorId=2&username=campus')
+})
 
 test('插座功率保存使用统一业务后端连接器接口',async()=>{
  const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b')

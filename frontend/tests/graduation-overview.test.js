@@ -27,10 +27,13 @@ test('full-charge plan, meter, end reason and unknown history remain truthful',(
  assert.equal(platform.orderPresentation({}).plan,'历史订单未记录')
  assert.match(platform.orderPresentation({durationMinutes:60}).plan,/60/)
 })
-test('electricity rate form always sends zero service fee and rejects empty or negative price',()=>{
+test('rate form derives a small service price from the selected percentage',()=>{
  assert.equal(typeof platform.electricityRatePayload,'function')
  const form={stationId:'3',startTime:'00:00:00',endTime:'23:59:59',electricityPrice:'0.6',servicePrice:99}
- assert.deepEqual(platform.electricityRatePayload(form),{stationId:3,startTime:'00:00:00',endTime:'23:59:59',electricityPrice:.6,servicePrice:0})
+ assert.deepEqual(platform.electricityRatePayload(form),{stationId:3,startTime:'00:00:00',endTime:'23:59:59',electricityPrice:.6,servicePrice:.06})
+ assert.equal(platform.electricityRatePayload({...form,serviceFeePercent:1}).servicePrice,.006)
+ assert.equal(platform.electricityRatePayload({...form,serviceFeePercent:0}).servicePrice,0)
+ for(const value of ['',-1,101,'bad'])assert.throws(()=>platform.electricityRatePayload({...form,serviceFeePercent:value}))
  assert.throws(()=>platform.electricityRatePayload({...form,electricityPrice:''}))
  assert.throws(()=>platform.electricityRatePayload({...form,electricityPrice:-1}))
 })

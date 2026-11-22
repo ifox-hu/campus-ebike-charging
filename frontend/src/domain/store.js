@@ -4,6 +4,7 @@ import { migrateV2,migrateCampusLocations,migrateDemoLayouts,expandDemoScenarios
 import { createService, deviceStatus, socketStatus, activeStatuses } from './service.js'
 import { isStaticDemo } from '../runtime.js'
 import { addOperatorOwnership, operatorDemoData, mergeOperatorDemoData } from './operatorDemo.js'
+import { isDemoOperatorAcceptingOrders } from './managementDemo.js'
 const STORAGE_KEY='ebike-graduation-admin-demo-v3'
 let initial=createSeed()
 try{const valid=s=>s&&['stations','devices','sockets','users','rates','orders','reports'].every(k=>Array.isArray(s[k]))&&Number.isInteger(s.sequence);const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(valid(stored)&&stored.version===3&&Array.isArray(stored.rows))initial=stored;else{const old=JSON.parse(localStorage.getItem('ebike-graduation-admin-demo-v2')||'null');if(valid(old)&&old.version===2)initial=migrateV2(old)}}catch{}
@@ -11,7 +12,7 @@ initial=expandDemoScenarios(migrateDemoLayouts(migrateCampusLocations(initial)))
 let allData=isStaticDemo?addOperatorOwnership(initial):initial
 let currentOperator=null
 export const db=reactive({...allData})
-export const api=createService(db)
+export const api=createService(db,isStaticDemo?{canStartAtStation:station=>isDemoOperatorAcceptingOrders(station.operatorId)}:undefined)
 export const storageWarning=reactive({message:''})
 function persist(){
  allData=isStaticDemo?mergeOperatorDemoData(allData,db,currentOperator):{...db}
@@ -25,6 +26,16 @@ export function selectDemoOperator(operatorId){
  persist()
  currentOperator=operatorId
  Object.assign(db,operatorDemoData(allData,currentOperator))
+}
+// Management screens need all owners even when the main workspace is filtered.
+export function getDemoManagementSource(){
+ if(isStaticDemo)allData=mergeOperatorDemoData(allData,db,currentOperator)
+ return isStaticDemo?allData:db
+}
+export function refreshDemoManagementView(){
+ if(!isStaticDemo)return
+ Object.assign(db,operatorDemoData(allData,currentOperator))
+ persist()
 }
 watch(db,persist,{deep:true,flush:'post',immediate:true})
 export const socketsView=computed(()=>db.sockets.map(s=>{const device=db.devices.find(d=>d.id===s.deviceId),station=db.stations.find(st=>st.id===device?.stationId),order=s.businessId?null:db.orders.find(o=>o.socketId===s.id&&activeStatuses.includes(o.status));return {...s,device,station,order,status:socketStatus(db,s)}}))

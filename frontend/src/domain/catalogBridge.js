@@ -5,7 +5,7 @@ export function catalogOf(db){return {
  rows:db.rows.map(r=>pick(r,['id','stationId','name','index'])),
  devices:db.devices.map(d=>pick(d,['id','code','name','stationId','rowId','position','enabled','online'])),
  sockets:db.sockets.map(s=>({...pick(s,['id','deviceId','number','code','name','enabled','fault','faultReason']),powerWatts:s.powerWatts??300})),
- rates:db.rates.map(r=>({stationId:r.stationId,electricRate:r.electricRate}))
+ rates:db.rates.map(r=>({stationId:r.stationId,electricRate:r.electricRate,serviceRate:r.serviceRate??Number((r.electricRate/10).toFixed(4))}))
 }}
 export function mergeCatalog(db,catalog){
  for(const key of ['stations','rows','devices','sockets','rates'])if(!Array.isArray(catalog?.[key]))throw Error('站点目录文件不完整。')

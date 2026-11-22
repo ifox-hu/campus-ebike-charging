@@ -1,11 +1,13 @@
 <script setup>
 import {ref,computed,watch,onMounted,onBeforeUnmount} from 'vue'
 import {statusLabel} from './platformClient.js'
-const props=defineProps({client:Object,enabled:Boolean,admin:Boolean,scope:{type:Object,default:()=>({})}})
+const props=defineProps({client:Object,enabled:Boolean,admin:Boolean,stationIds:Array,operatorId:[String,Number],scope:{type:Object,default:()=>({})}})
 const emit=defineEmits(['clear-scope'])
 const rows=ref([]),filter=ref(props.scope.repairStatus||''),busy=ref(false),saving=ref(false),error=ref(''),message=ref(''),selected=ref(null),nextStatus=ref('PROCESSING'),resolution=ref('')
 const assignee=ref('');function history(row){try{return JSON.parse(row.progressHistory||'[]')}catch{return []}}
-const visible=computed(()=>rows.value.filter(r=>!props.scope.stationId||String(r.stationId)===String(props.scope.stationId)))
+const visible=computed(()=>rows.value.filter(r=>
+ (!props.operatorId || (r.operatorId != null ? String(r.operatorId)===String(props.operatorId) : !props.stationIds || props.stationIds.includes(r.stationId)))&&
+ (!props.scope.stationId||String(r.stationId)===String(props.scope.stationId))))
 let active=true
 async function reload(){
  if(!props.enabled||busy.value||saving.value)return
@@ -24,6 +26,7 @@ async function save(){
  finally{if(active)saving.value=false}
  if(active&&!error.value)await reload()
 }
+watch(()=>props.operatorId,()=>{selected.value=null;message.value=''});
 watch(()=>props.scope,()=>{filter.value=props.scope.repairStatus||'';reload()});onMounted(reload);onBeforeUnmount(()=>{active=false})
 defineExpose({reload})
 </script>

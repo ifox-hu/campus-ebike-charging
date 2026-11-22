@@ -14,7 +14,7 @@ export function createSeed() {
     }
   }
   const sockets=devices.flatMap((d,i)=>Array.from({length:2},(_,j)=>({id:`${d.id}P${j+1}`,deviceId:d.id,number:j+1,code:`${d.code}-${j===0?'A':'B'}`,name:`${j===0?'A':'B'}插座`,enabled:true,fault:(i===5&&j===1)||(i===7&&j===0),faultReason:i===5&&j===1?'过流告警':i===7&&j===0?'插座损坏':''})))
-  const rates=stations.map(s=>({stationId:s.id,electricRate:.6,serviceRate:.2,updatedAt:'2026-11-01 09:00:00'}))
+  const rates=stations.map(s=>({stationId:s.id,electricRate:.6,serviceRate:.06,updatedAt:'2026-11-01 09:00:00'}))
   const orders=[]
   for(let i=0;i<42;i++){
     const socket=sockets[(i*3)%sockets.length],device=devices.find(d=>d.id===socket.deviceId),station=stations.find(s=>s.id===device.stationId)

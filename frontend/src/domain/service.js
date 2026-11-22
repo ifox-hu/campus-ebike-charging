@@ -31,7 +31,7 @@ export function deviceStatus(db,d){
   if(db.sockets.some(s=>s.deviceId===d.id&&s.fault))return '部分插座故障'
   return '正常'
 }
-export function createService(db){
+export function createService(db,{canStartAtStation=()=>true}={}){
   const get=(list,id)=>{const item=db[list].find(i=>i.id===id);if(!item)throw Error('关联记录不存在，请刷新页面。');return item}
   const uid=prefix=>`${prefix}${++db.sequence}`
   const text=(s,label)=>{if(!String(s??'').trim())throw Error(`请填写${label}。`);return String(s).trim()}
@@ -47,8 +47,11 @@ export function createService(db){
       const name=text(payload.name,'站点名称'),address=text(payload.address,'站点地址')
       if(payload.lat===''||payload.lng===''||!Number.isFinite(Number(payload.lat))||!Number.isFinite(Number(payload.lng))||Math.abs(Number(payload.lat))>90||Math.abs(Number(payload.lng))>180)throw Error('请填写有效坐标：纬度 -90～90，经度 -180～180。')
       const values={name,address,scene:text(payload.scene,'应用场景'),lat:Number(payload.lat),lng:Number(payload.lng),note:String(payload.note||'')}
+      for(const [field,label,max] of [['contactPhone','站点联系电话',30],['businessHours','营业时间',100]]){
+        if(payload[field]!==undefined){const value=String(payload[field]||'').trim();if(value.length>max)throw Error(`${label}最多 ${max} 个字符。`);values[field]=value}
+      }
       if(id){const s=get('stations',id);Object.assign(s,values);return s}
-      const s={id:uid('ST'),...values,enabled:true};db.stations.push(s);db.rates.push({stationId:s.id,electricRate:.6,serviceRate:.2,updatedAt:stamp()});return s
+      const s={id:uid('ST'),...values,enabled:true};db.stations.push(s);db.rates.push({stationId:s.id,electricRate:.6,serviceRate:.06,updatedAt:stamp()});return s
     },
     setStationEnabled(id,enabled){const s=get('stations',id);const devices=db.devices.filter(d=>d.stationId===id).map(d=>d.id);if(!enabled&&occupied(db.sockets.filter(p=>devices.includes(p.deviceId)).map(p=>p.id)))throw Error('站点存在未结束任务，请先处理充电或异常订单。');s.enabled=enabled},
     saveDevice(payload,id){
@@ -100,6 +103,7 @@ export function createService(db){
       if(get('sockets',socketId).businessId)throw Error('此插座已接入业务库，请从 H5 或小程序发起充电。')
       if(requestKey){requestKey=text(requestKey,'启动请求标识');const previous=db.orders.find(o=>o.requestKey===requestKey);if(previous){if(previous.socketId!==socketId||previous.userId!==userId)throw Error('该启动请求已用于其他用户或插座。');return previous}}
       const socket=get('sockets',socketId),device=get('devices',socket.deviceId),station=get('stations',device.stationId),user=get('users',userId)
+      if(!canStartAtStation(station))throw Error('运营商已暂停或终止合作，禁止新建充电任务。')
       if(!user.enabled)throw Error('用户已停用，禁止新建充电任务。')
       if(occupied([socketId]))throw Error('插座已被未结束任务占用。')
       if(!station.enabled||!device.enabled||!socket.enabled)throw Error('站点、设备或插座已停用。')
@@ -107,6 +111,7 @@ export function createService(db){
       if(socket.fault)throw Error('插座存在故障，禁止启动。')
       const rate=db.rates.find(r=>r.stationId===station.id)
       const id=uid('O'),o={id,number:`SIM${today().replaceAll('-','')}${db.sequence}`,requestKey:requestKey||id,userId,stationId:station.id,deviceId:device.id,socketId,stationName:station.name,deviceCode:device.code,socketCode:socket.code,status:'starting',payStatus:'none',requestedAt:stamp(),startedAt:stamp(),endedAt:'',minutes:0,energy:0,electricRate:rate.electricRate,serviceRate:rate.serviceRate,electricFee:0,serviceFee:0,total:0,reason:''}
+      o.operatorId=station.operatorId||'platform'
       const row=db.rows.find(r=>r.id===device.rowId);o.rowId=row?.id;o.rowName=row?.name||'';o.position=device.position;record(o,'requested','提交启动请求，插座保持占用，等待模拟设备反馈。');db.orders.unshift(o);return o
     },
     confirmStartSimulation(id,success,reason='模拟设备启动失败'){

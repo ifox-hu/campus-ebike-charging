@@ -7,7 +7,7 @@ test('原16个站点及365台双插座设备完整发布，不夹带账号和模
  const db=createSeed(),catalog=catalogOf(db)
  assert.equal(catalog.stations.length,16);assert.equal(catalog.devices.length,365);assert.equal(catalog.sockets.length,730)
  assert.equal(catalog.users,undefined);assert.equal(catalog.orders,undefined)
- assert.ok(catalog.sockets.every(s=>s.powerWatts===300));assert.ok(catalog.rates.every(r=>!('serviceRate' in r)))
+ assert.ok(catalog.sockets.every(s=>s.powerWatts===300));assert.ok(catalog.rates.every(r=>r.serviceRate===.06))
 })
 test('发布后使用业务占用状态，离线设备不计为空闲且不允许本地模拟启动',()=>{
  const db=createSeed(),socket=db.sockets[0],api=createService(db)

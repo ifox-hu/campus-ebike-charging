@@ -3,10 +3,10 @@ import { nextTick, ref, watch } from 'vue'
 import { navigation } from '../data.js'
 import UiIcon from './UiIcon.vue'
 
-const props = defineProps({ tabs: { type: Array, required: true }, currentPage: { type: String, required: true } })
+const props = defineProps({ tabs: { type: Array, required: true }, currentPage: { type: String, required: true }, navigation: { type: Array, default: () => navigation } })
 const emit = defineEmits(['select', 'close'])
 const list = ref(null)
-const label = page => navigation.find(item => item.id === page)?.label || page
+const label = page => props.navigation.find(item => item.id === page)?.label || page
 
 watch(() => [props.currentPage, props.tabs.length], async () => {
   await nextTick()
