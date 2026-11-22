@@ -15,29 +15,46 @@ import UiIcon from './components/UiIcon.vue'
 import PageTabs from './components/PageTabs.vue'
 import { createTabState, visitPage, closePage } from './domain/pageTabs.js'
 import { navigation } from './data.js'
-import { api,db,storageWarning } from './domain/store.js'
+import { api,db,storageWarning,selectDemoOperator } from './domain/store.js'
+import { DEMO_OPERATORS } from './domain/operatorDemo.js'
 import { account,restoreAccount,checkSession } from './domain/account.js'
 import { refreshReadState } from './domain/notifications.js'
-const fromHash=()=>navigation.some(n=>n.id===location.hash.slice(2))?location.hash.slice(2):'dashboard'
+const operatorView=computed(()=>isStaticDemo&&account.user?.role==='OPERATOR_ADMIN')
+const operatorFilter=ref('')
+const visibleNavigation=computed(()=>navigation.filter(item=>!operatorView.value||item.id!=='users'))
+const operatorName=computed(()=>DEMO_OPERATORS.find(item=>item.id===account.user?.operatorId)?.name)
+const canManageStations=computed(()=>!operatorView.value&&!operatorFilter.value)
+const fromHash=()=>visibleNavigation.value.some(n=>n.id===location.hash.slice(2))?location.hash.slice(2):'dashboard'
 const pageTabs=ref(createTabState(fromHash()))
 const currentPage=computed(()=>pageTabs.value.currentPage)
 const collapsed=ref(false),dialog=ref(null),toast=ref(''),toastError=ref(false),loginPending=ref(false)
 const pageTitle=computed(()=>navigation.find(n=>n.id===currentPage.value)?.label||'数据统计')
 let toastTimer,sessionTimer
 function message(text,error=false){toast.value=text;toastError.value=error;clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.value='',3500)}
-function navigate(target){const next=visitPage(pageTabs.value,target);if(next===pageTabs.value)return;pageTabs.value=next;location.hash=`/${next.currentPage}`;dialog.value=null}
+function navigate(target){if(!visibleNavigation.value.some(item=>item.id===(typeof target==='string'?target:target.page)))return;const next=visitPage(pageTabs.value,target);if(next===pageTabs.value)return;pageTabs.value=next;location.hash=`/${next.currentPage}`;dialog.value=null}
 function closeTab(page){const next=closePage(pageTabs.value,page);if(next===pageTabs.value)return;const changed=next.currentPage!==currentPage.value;pageTabs.value=next;if(changed){location.hash=`/${next.currentPage}`;dialog.value=null}}
 function openDevice(value){const data=typeof value==='string'?{id:value}:value;dialog.value={type:'device',title:'设备与独立插座',id:data.id||data.deviceId,focusSocketId:data.socketId}}
 function openOrder(id){dialog.value={type:'order',title:'充电订单详情',id}}
-function edit(payload){const labels={stations:'站点',devices:'设备',rates:'收费规则',reports:'报修处理',rows:'设备排',batch:'追加设备'};dialog.value={type:'editor',entityType:payload.type,id:payload.id,stationId:payload.stationId,rowId:payload.rowId,title:payload.type==='reports'?'报修处理':payload.type==='batch'?'批量追加双插座设备':`${payload.id?'修改':'新增'}${labels[payload.type]}`}}
+function edit(payload){if(payload.type==='stations'&&!canManageStations.value)return;const labels={stations:'站点',devices:'设备',rates:'收费规则',reports:'报修处理',rows:'设备排',batch:'追加设备'};dialog.value={type:'editor',entityType:payload.type,id:payload.id,stationId:payload.stationId,rowId:payload.rowId,title:payload.type==='reports'?'报修处理':payload.type==='batch'?'批量追加双插座设备':`${payload.id?'修改':'新增'}${labels[payload.type]}`}}
 function openTarget(t){if(t.deviceId)openDevice(t);else if(t.orderId)openOrder(t.orderId);else if(t.reportId)edit({type:'reports',id:t.reportId});else navigate(t)}
 function openAccount(mode){dialog.value={type:'account',mode,title:({profile:'个人中心',password:'修改密码',preferences:'显示设置'})[mode]}}
 function saved(text){dialog.value=null;message(typeof text==='string'?text:'已保存，关联页面与工作台已同步更新。')}
-function confirmToggle(p){dialog.value={...p,type:'confirm'}}
+function confirmToggle(p){if((p.kind==='station'&&!canManageStations.value)||(p.kind==='user'&&operatorView.value))return;dialog.value={...p,type:'confirm'}}
 function applyConfirmation(){try{const d=dialog.value;({station:api.setStationEnabled,device:api.setDeviceEnabled,user:api.setUserEnabled}[d.kind])(d.id,d.enabled);dialog.value=null;message('状态已更新，历史记录保留。')}catch(e){dialog.value.error=e.message}}
 function handleEscape(e){if(e.key==='Escape')dialog.value=null}
 function routeChanged(){if(account.user&&fromHash()!==currentPage.value)navigate(fromHash())}
-function loggedIn(){navigate(account.returnTo||'dashboard')}
+function loggedIn(){navigate(visibleNavigation.value.some(item=>item.id===account.returnTo)?account.returnTo:'dashboard')}
+watch(()=>account.user?.username,()=>{
+ operatorFilter.value=''
+ selectDemoOperator(account.user?.operatorId||null)
+ pageTabs.value=createTabState(fromHash())
+ dialog.value=null
+},{flush:'sync'})
+function changeOperatorFilter(){
+ selectDemoOperator(operatorFilter.value||null)
+ pageTabs.value=createTabState(currentPage.value)
+ dialog.value=null
+}
 watch(()=>account.user,(user,old)=>{if(!user&&old){account.returnTo=currentPage.value;dialog.value=null;location.hash='/login'}else if(user&&!old&&location.hash==='/login'){navigate(account.returnTo||'dashboard')}})
 onMounted(()=>{account.returnTo=currentPage.value;restoreAccount();document.addEventListener('keydown',handleEscape);window.addEventListener('hashchange',routeChanged);sessionTimer=setInterval(()=>{checkSession();refreshReadState()},30000)})
 onBeforeUnmount(()=>{clearTimeout(toastTimer);clearInterval(sessionTimer);document.removeEventListener('keydown',handleEscape);window.removeEventListener('hashchange',routeChanged)})
@@ -46,15 +63,15 @@ onBeforeUnmount(()=>{clearTimeout(toastTimer);clearInterval(sessionTimer);docume
  <div v-if="account.loading" class="auth-loading"><span class="auth-loading-spinner"></span><p>{{isStaticDemo?'正在载入公开演示…':'正在连接账号服务…'}}</p></div>
  <LoginPage v-else-if="!account.user||loginPending" @pending="loginPending=$event" @success="loggedIn"/>
  <div v-else class="platform" :class="{'sidebar-collapsed':collapsed}">
-  <aside class="sidebar"><a href="#/dashboard" class="brand" aria-label="电动自行车智慧充电管理系统首页" @click.prevent="navigate('dashboard')"><img class="brand-logo" :src="brandMark" alt=""/><span class="brand-name">电动自行车<br/>智慧充电管理系统</span></a><nav class="navigation" aria-label="主导航"><div v-for="nav in navigation" :key="nav.id" class="nav-group"><button class="nav-item" :class="{active:nav.id===currentPage}" @click="navigate(nav.id)" :title="nav.label"><UiIcon :name="nav.icon"/><span>{{nav.label}}</span></button></div></nav></aside>
-  <header class="topbar" :class="{'collapsed-topbar':collapsed}"><button class="icon-button fold-button" @click="collapsed=!collapsed" :aria-label="collapsed?'展开导航':'收起导航'"><UiIcon name="menu" size="1.5rem"/></button><div class="breadcrumbs"><span>电动自行车充电管理 / </span><strong>{{pageTitle}}</strong></div><TopbarTools @target="openTarget" @account="openAccount" @runtime="dialog={type:'runtime',title:'运行状态与说明'}" @message="message"/></header>
+  <aside class="sidebar"><a href="#/dashboard" class="brand" aria-label="电动自行车智慧充电管理系统首页" @click.prevent="navigate('dashboard')"><img class="brand-logo" :src="brandMark" alt=""/><span class="brand-name">电动自行车<br/>智慧充电管理系统</span></a><nav class="navigation" aria-label="主导航"><div v-for="nav in visibleNavigation" :key="nav.id" class="nav-group"><button class="nav-item" :class="{active:nav.id===currentPage}" @click="navigate(nav.id)" :title="nav.label"><UiIcon :name="nav.icon"/><span>{{nav.label}}</span></button></div></nav></aside>
+  <header class="topbar" :class="{'collapsed-topbar':collapsed}"><button class="icon-button fold-button" @click="collapsed=!collapsed" :aria-label="collapsed?'展开导航':'收起导航'"><UiIcon name="menu" size="1.5rem"/></button><div class="breadcrumbs"><span>电动自行车充电管理 / </span><strong>{{pageTitle}}</strong></div><label v-if="isStaticDemo&&!operatorView" class="demo-operator-filter">运营商<select v-model="operatorFilter" @change="changeOperatorFilter"><option value="">全部运营商</option><option v-for="item in DEMO_OPERATORS" :key="item.id" :value="item.id">{{item.name}}</option></select></label><span v-else-if="operatorName" class="preview-mode-chip">{{operatorName}}</span><TopbarTools @target="openTarget" @account="openAccount" @runtime="dialog={type:'runtime',title:'运行状态与说明'}" @message="message"/></header>
   <main class="main-content">
    <div class="tab-strip workspace-tab-strip"><PageTabs :tabs="pageTabs.tabs" :current-page="currentPage" @select="navigate" @close="closeTab"/><span class="tab-mode-note">{{currentPage==='dashboard'?'运营概览':'基础业务管理'}} · 设备软件模拟</span></div>
    <p v-if="storageWarning.message" class="storage-warning">{{storageWarning.message}}</p>
    <div v-for="tab in pageTabs.tabs" v-show="currentPage===tab.page" :key="tab.page" class="workspace-page">
     <DashboardPage v-if="tab.page==='dashboard'" @open-device="openDevice" @navigate="navigate" @message="message"/>
     <OperationsPanel v-else-if="tab.page==='operations'" :source="db" :account-key="account.user.username" @device="openDevice" @order="openOrder"/>
-    <ManagePage v-else :page="tab.page" :station-scope="tab.stationId" @edit="edit" @device="openDevice" @order="openOrder" @confirm="confirmToggle" @navigate="navigate"/>
+    <ManagePage v-else :page="tab.page" :station-scope="tab.stationId" :can-manage-stations="canManageStations" @edit="edit" @device="openDevice" @order="openOrder" @confirm="confirmToggle" @navigate="navigate"/>
    </div>
   </main>
   <Transition name="toast"><div v-if="toast" role="status" class="toast-message" :class="{error:toastError}"><span>{{toastError?'!':'✓'}}</span>{{toast}}</div></Transition>

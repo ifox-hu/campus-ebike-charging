@@ -56,3 +56,18 @@ test('static preferences and read notices persist per browser and unknown endpoi
  await assert.rejects(()=>request('/account/preferences',{method:'PUT',body:{fontSize:'bad',density:'compact'}}),/显示设置/)
  await assert.rejects(()=>request('/unknown'),/不支持/)
 })
+
+test('operator accounts restore the correct role and keep separate settings', async () => {
+ const storage = memory(), sessionStorage = memory()
+ const request = createStaticAccountRequest({storage, sessionStorage})
+ const signIn = username => request('/auth/login', {method:'POST', body:{username, password:'demo123'}})
+ const campus = (await signIn('demo_campus')).data
+ assert.equal(campus.role, 'OPERATOR_ADMIN')
+ assert.equal(campus.operatorId, 'campus')
+ await request('/account/profile', {method:'PUT', body:{displayName:'校园运维'}})
+ const hospital = (await signIn('demo_hospital')).data
+ assert.equal(hospital.operatorId, 'hospital')
+ assert.notEqual(hospital.displayName, '校园运维')
+ assert.equal((await createStaticAccountRequest({storage, sessionStorage})('/auth/me')).data.username, 'demo_hospital')
+ assert.equal((await signIn('demo_campus')).data.displayName, '校园运维')
+})
