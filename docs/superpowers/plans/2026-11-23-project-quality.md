@@ -29,7 +29,7 @@
 - [x] Extract operator/team services and unify API responses; run backend contract tests in both repositories.
 - [x] Extract refresh policy; verify fast/slow requests and preserve session revision checks.
 - [x] Add lint/format tooling and CI; format management source and fix substantive lint findings.
-- [ ] Run complete relevant suites/builds, inspect browser flows, synchronize README/screenshots and deploy.
+- [x] Run complete relevant suites/builds, inspect browser flows, synchronize README/screenshots and deploy.
 
 ## Implementation Rulings
 
@@ -45,3 +45,5 @@
 - Browser: manual refresh followed by two automatic connector refreshes issues no stations/operators/users base requests during the fast cycle.
 - Independent review found a static-demo handoff issue retaining an original platform assignee. Added a failing regression test, then fixed the adapter while preserving cross-operator rejection.
 - README and developer conventions updated; fee and repair screenshots captured from the local static frontend.
+- Published management commit 645a27e; workflow 45206459661 completed successfully. Checked fee preview, overdue filtering entry and assignee dropdown on the public Pages site, with no browser errors.
+- Companion backend commit 83c4ad5 passed CI. Its separate legacy frontend Pages workflow reached configure-pages and failed because that repository has no enabled Pages site; current management demo is published from campus-ebike-charging.
