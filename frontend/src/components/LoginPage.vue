@@ -2,19 +2,21 @@
 import { ref } from 'vue'
 import {isStaticDemo} from '../runtime.js'
 import {STATIC_DEMO_ACCOUNT,STATIC_DEMO_ACCOUNTS} from '../services/staticAccount.js'
-import { account, signIn, restoreAccount } from '../domain/account.js'
+import { account, signIn, restoreAccount, loadLoginCaptcha } from '../domain/account.js'
+import LoginCaptcha from './LoginCaptcha.vue'
 import EnergyLogin from './EnergyLogin.vue'
 const emit=defineEmits(['success','pending'])
-const energyLogin=ref(null)
+const energyLogin=ref(null),loginCaptcha=ref(null)
 const rememberKey=isStaticDemo?'campus-demo-last-account':'ebike-last-admin-account'
 let remembered='';try{remembered=localStorage.getItem(rememberKey)||''}catch{}
 const username=ref(remembered||(isStaticDemo?'demo':'admin')),password=ref(''),remember=ref(!!remembered),busy=ref(false),error=ref('')
 const selectedDemo=ref(STATIC_DEMO_ACCOUNT.username)
-function fillDemo(demo){username.value=demo.username;password.value=demo.password;error.value=''}
-async function login(){if(busy.value)return;error.value='';busy.value=true;emit('pending',true);try{await signIn(username.value.trim(),password.value);try{if(remember.value)localStorage.setItem(rememberKey,username.value.trim());else localStorage.removeItem(rememberKey)}catch{}password.value='';if(account.user){await energyLogin.value?.complete();if(account.user)emit('success')}}catch(e){error.value=e.message;password.value=''}finally{busy.value=false;emit('pending',false)}}
+async function fillDemo(demo){username.value=demo.username;password.value=demo.password;error.value='';await loginCaptcha.value?.fillDemo()}
+async function login(){if(busy.value)return;error.value='';busy.value=true;emit('pending',true);try{const captcha=loginCaptcha.value.validate();await signIn(username.value.trim(),password.value,captcha);try{if(remember.value)localStorage.setItem(rememberKey,username.value.trim());else localStorage.removeItem(rememberKey)}catch{}password.value='';if(account.user){await energyLogin.value?.complete();if(account.user)emit('success')}}catch(e){error.value=e.message;password.value='';await loginCaptcha.value?.refresh()}finally{busy.value=false;emit('pending',false)}}
 </script>
 <template>
  <EnergyLogin ref="energyLogin" v-model:username="username" v-model:password="password" v-model:remember="remember" :title="isStaticDemo?'在线演示登录':'管理员登录'" :subtitle="isStaticDemo?'校园 · 医院 · 小区 · 园区 · 办公区集中充电':'登录后管理站点、设备与独立插座'" :busy="busy" :error="error||account.error" :message="account.loginMessage" @submit="login">
+  <template #captcha><LoginCaptcha ref="loginCaptcha" :load-challenge="loadLoginCaptcha" :disabled="busy"/></template>
   <template #help>
    <button v-if="account.error&&!isStaticDemo" type="button" class="text-button reconnect-button" @click="restoreAccount">重试连接账号服务</button>
    <div v-if="isStaticDemo" class="demo-login-help">

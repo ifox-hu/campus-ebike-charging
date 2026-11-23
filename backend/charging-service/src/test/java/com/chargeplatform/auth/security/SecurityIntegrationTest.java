@@ -41,6 +41,8 @@ class SecurityIntegrationTest {
     @MockBean
     private SysUserMapper users;
 
+    @MockBean private com.chargeplatform.auth.service.CaptchaService captchas;
+
     private SysUser admin;
     private SysUser operator;
 
@@ -71,6 +73,19 @@ class SecurityIntegrationTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.code").value(401))
             .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void managementLoginRequiresCaptchaAndChallengeIsAnonymousAndNotCached() throws Exception {
+        org.mockito.Mockito.doThrow(new IllegalArgumentException("验证码已失效，请刷新后重试。"))
+            .when(captchas).verify(null, null);
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"admin\",\"password\":\"test-admin-password\"}"))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.data").doesNotExist());
+        when(captchas.issue(null)).thenReturn(new com.chargeplatform.auth.service.CaptchaService.Challenge("id", "data:image/png;base64,image", 123000L));
+        mockMvc.perform(get("/api/auth/captcha"))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonPath("$.data.id").value("id")).andExpect(jsonPath("$.data.answer").doesNotExist());
     }
 
     @Test

@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .authenticationEntryPoint((request,response,exception)->writeError(response,objectMapper,401,"请先登录"))
                 .accessDeniedHandler((request,response,exception)->writeError(response,objectMapper,403,"当前账号没有操作权限")))
             .authorizeHttpRequests(auth->auth
-                .requestMatchers("/api/health/**","/api/auth/login","/api/auth/register","/api/hello/**","/actuator/health","/actuator/info","/h2-console/**","/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
+                .requestMatchers("/api/health/**","/api/auth/login","/api/auth/captcha","/api/auth/register","/api/hello/**","/actuator/health","/actuator/info","/h2-console/**","/v3/api-docs/**","/swagger-ui/**","/swagger-ui.html").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
                 .requestMatchers("/api/audit-logs/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET,"/api/auth/users").hasAnyRole("ADMIN","OPERATOR")

@@ -22,7 +22,7 @@ onMounted(()=>{
 onBeforeUnmount(()=>{active=false;cleanup?.()})
 </script>
 <template>
- <main class="energy-login" aria-label="电动自行车智慧充电管理系统登录">
+ <main class="energy-login" :class="{'has-captcha':!!$slots.captcha}" aria-label="电动自行车智慧充电管理系统登录">
   <div class="ec-atmosphere" aria-hidden="true"></div>
   <header class="ec-nav"><div class="ec-brand"><img class="ec-mark" :src="brandMark" alt=""/><div><b>智慧充电</b><small>SMART E-BIKE CHARGING</small></div></div><div class="ec-nav-right"><span><b class="ec-dot"></b>智慧充电管理平台</span><span>简体中文</span></div></header>
   <section class="ec-hero"><div class="ec-eyebrow">BEYOND ENERGY. INTO THE FUTURE.</div><h1>能量无界<span>智联未来</span></h1><p>让数据流动，让连接发生。<br>以智慧，驱动每一种可能。</p></section>
@@ -37,6 +37,7 @@ onBeforeUnmount(()=>{active=false;cleanup?.()})
    <p v-if="message" class="ec-login-info" role="status">{{message}}</p><p v-if="error" class="ec-feedback" role="alert">{{error}}</p>
    <label class="ec-label" for="energy-account">登录账号</label><div class="ec-field"><UiIcon name="user"/><input id="energy-account" :value="username" @input="emit('update:username',$event.target.value)" placeholder="请输入账号" autocomplete="username" required maxlength="64" :disabled="busy"/></div>
    <label class="ec-label" for="energy-password">登录密码</label><div class="ec-field"><UiIcon name="lock"/><input id="energy-password" :value="password" @input="emit('update:password',$event.target.value)" placeholder="请输入密码" :type="show?'text':'password'" autocomplete="current-password" required maxlength="72" :disabled="busy"/><button class="ec-eye" type="button" :aria-label="show?'隐藏密码':'显示密码'" @click="show=!show"><UiIcon :name="show?'eyeOff':'eye'"/></button></div>
+   <slot name="captcha"/>
    <div v-if="allowRemember" class="ec-options"><label><input :checked="remember" @change="emit('update:remember',$event.target.checked)" type="checkbox"/>记住账号</label><span>不保存密码</span></div>
    <button type="submit" class="ec-submit login-submit" :disabled="busy"><span>{{busy?'正在登录…':'登 录'}}</span><UiIcon name="arrow"/></button>
    <div v-if="$slots.help" class="ec-help-content"><slot name="help"/></div>

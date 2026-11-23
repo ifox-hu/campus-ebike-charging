@@ -13,8 +13,16 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class AuthController {
     private final AuthService service;
 
-    public AuthController(AuthService service) {
+    public AuthController(AuthService service,com.chargeplatform.auth.service.CaptchaService captchas) {
         this.service = service;
+        this.captchas = captchas;
+    }
+
+    private final com.chargeplatform.auth.service.CaptchaService captchas;
+
+    @GetMapping("/captcha")
+    public org.springframework.http.ResponseEntity<ApiResponse<com.chargeplatform.auth.service.CaptchaService.Challenge>> captcha(@RequestParam(required = false) String previousId) {
+        return org.springframework.http.ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore()).body(ApiResponse.success(captchas.issue(previousId)));
     }
 
     @PostMapping("/login")

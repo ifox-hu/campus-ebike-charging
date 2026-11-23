@@ -2,6 +2,7 @@
 import brandMark from '../assets/brand-mark.svg';
 import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 import UiIcon from '../components/UiIcon.vue';
+import LoginCaptcha from '../components/LoginCaptcha.vue';
 import EnergyLogin from '../components/EnergyLogin.vue';
 import RepairsPanel from './RepairsPanel.vue';
 import { managementNavigation, managementPages } from '../domain/management.js';
@@ -53,6 +54,7 @@ const editor = ref(null);
 const socketBusy = ref(false);
 const scope = ref({});
 const energyLogin = ref(null);
+const loginCaptcha = ref(null);
 const platformAdmin = computed(() => user.value?.role === 'ADMIN');
 const canWrite = computed(() => platformAdmin.value || user.value?.role === 'OPERATOR_ADMIN');
 const operators = ref([]);
@@ -172,7 +174,8 @@ async function login() {
   try {
     clear();
     const session = sessionRevision;
-    const profile = await client.login(username.value.trim(), password.value);
+    const captcha=loginCaptcha.value.validate();
+    const profile = await client.login(username.value.trim(), password.value, captcha);
     password.value = '';
     await energyLogin.value?.complete();
     if (session !== sessionRevision) return;
@@ -192,6 +195,7 @@ async function login() {
     }, 5000);
   } catch (e) {
     if (!e.stale) loginError.value = e.message;
+    await loginCaptcha.value?.refresh();
   } finally {
     password.value = '';
     loginBusy.value = false;
@@ -378,7 +382,7 @@ onBeforeUnmount(() => {
     :busy="loginBusy"
     :error="loginError"
     @submit="login"
-    ><template #help>使用平台管理员、运营商管理员或运营员账号。</template></EnergyLogin
+    ><template #captcha><LoginCaptcha ref="loginCaptcha" :load-challenge="client.captcha" :disabled="loginBusy"/></template><template #help>使用平台管理员、运营商管理员或运营员账号。</template></EnergyLogin
   >
   <div v-else class="platform connected-platform" :class="{ 'sidebar-collapsed': collapsed }">
     <aside class="sidebar">

@@ -209,12 +209,13 @@ export function createPlatformClient({
   }
   const teamScope = operatorId => operatorId ? { operatorId: Number(id(operatorId)) } : {};
   return {
-    async login(username, password) {
+    captcha: (previousId='') => request('/auth/captcha'+query({previousId}), {anonymous:true,bearer:''}),
+    async login(username, password, captcha = {}) {
       token = '';
       const version = ++generation;
       const login = await request('/auth/login', {
         method: 'POST',
-        body: { username, password },
+        body: { username, password, ...captcha },
         anonymous: true,
         bearer: '',
       });

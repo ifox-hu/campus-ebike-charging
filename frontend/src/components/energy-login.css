@@ -114,3 +114,6 @@
 @media(min-width:1100px){.energy-login .ec-panel-shell{right:8%;width:365px}.energy-login .ec-stage{width:64%;max-width:1100px}.energy-login .ec-nav{padding-left:55px}}
 @media(min-width:691px) and (max-width:820px){.energy-login .ec-panel-shell{width:290px}.energy-login .ec-hero{max-width:49%}}
 @media(max-width:690px){.energy-login{min-height:1450px}.energy-login .ec-panel-shell{width:auto}.energy-login .ec-field input{font-size:16px}.energy-login .ec-footer-note{max-width:100%}.energy-login .ec-hero h1{font-size:40px}.energy-login .ec-options label{min-height:44px}}
+
+.energy-login.has-captcha{min-height:max(940px,100svh)}
+@media(max-width:690px){.energy-login.has-captcha{min-height:max(1540px,100svh)}}
