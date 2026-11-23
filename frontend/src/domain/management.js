@@ -5,7 +5,7 @@ const shared = [
   { id: 'rates', label: '计费管理', icon: 'rule' },
   { id: 'orders', label: '充电订单', icon: 'order' },
   { id: 'reports', label: '故障报修', icon: 'edit' },
-  { id: 'operations', label: '设备告警', icon: 'chart' },
+  { id: 'operations', label: '设备告警', icon: 'alert' },
 ];
 
 export function managementNavigation(role) {
