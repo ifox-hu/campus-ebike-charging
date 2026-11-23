@@ -17,9 +17,9 @@ const devicesView=computed(()=>view.value.devices),socketsView=computed(()=>view
 import { money, today } from '../domain/service.js'
 import { userTrend, feeTrend, typeChart, siteChart } from '../domain/statistics.js'
 const emit=defineEmits(['open-device','navigate','message'])
-const dateRange=ref(dashboardRange('today')),period=ref('today'),noticeTab=ref('report'),reversed=ref(false),selectedRow=ref('D2')
+const dateRange=ref(dashboardRange('sixMonths')),period=ref('sixMonths'),noticeTab=ref('report'),reversed=ref(false),selectedRow=ref('D2')
 const chartRange=computed(()=>dashboardRangeForSource(db.value,dateRange.value))
-const periodLabel=computed(()=>({today:'今日',week:'近七天',month:'近一个月',all:'累计',custom:'期间'})[period.value])
+const periodLabel=computed(()=>({today:'今日',week:'近七天',month:'近一个月',sixMonths:'近六个月',all:'累计',custom:'期间'})[period.value])
 const metricRows=computed(()=>{
  const orders=db.value.orders.filter(o=>inDashboardRange(o.startedAt,dateRange.value)),settled=db.value.orders.filter(o=>o.status==='ended'&&inDashboardRange(o.endedAt||o.startedAt,dateRange.value))
  return [

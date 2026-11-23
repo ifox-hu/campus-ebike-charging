@@ -3,6 +3,11 @@ import { today } from './service.js'
 const validDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value
 export function dashboardRange(period, end=today(), custom={}) {
  if(period==='all')return null
+ if(period==='sixMonths'){
+  if(!validDate(end))throw Error('日期范围无效。')
+  const start=new Date(`${end.slice(0,7)}-01T00:00:00Z`);start.setUTCMonth(start.getUTCMonth()-5)
+  return {start:start.toISOString().slice(0,10),end,granularity:'month'}
+ }
  if(period==='custom'){
   if(!validDate(custom.start)||!validDate(custom.end)||custom.start>custom.end||(Date.parse(custom.end)-Date.parse(custom.start))/86400000>365)throw Error('请选择有效日期区间，开始日期不能晚于结束日期，最长为一年。')
   return {start:custom.start,end:custom.end}

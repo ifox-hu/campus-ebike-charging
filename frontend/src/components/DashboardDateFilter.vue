@@ -1,10 +1,10 @@
 <script setup>
 import {ref} from 'vue'
 import {dashboardRange} from '../domain/dashboardPeriod.js'
-const props=defineProps({modelValue:{type:Object,default:()=>dashboardRange('today')}})
+const props=defineProps({modelValue:{type:Object,default:()=>dashboardRange('sixMonths')}})
 const emit=defineEmits(['update:modelValue','period'])
-const selected=ref('today'),start=ref(props.modelValue?.start||''),end=ref(props.modelValue?.end||''),error=ref('')
-const choices=[['today','今日'],['week','近七天'],['month','近一个月'],['all','全部'],['custom','自定义']]
+const selected=ref('sixMonths'),start=ref(props.modelValue?.start||''),end=ref(props.modelValue?.end||''),error=ref('')
+const choices=[['today','今日'],['week','近七天'],['month','近一个月'],['sixMonths','近六个月'],['all','全部'],['custom','自定义']]
 function choose(id){selected.value=id;error.value='';if(id==='custom'){start.value=props.modelValue?.start||start.value;end.value=props.modelValue?.end||end.value;return}const range=dashboardRange(id);start.value=range?.start||'';end.value=range?.end||'';emit('update:modelValue',range);emit('period',id)}
 function apply(){try{const range=dashboardRange('custom',undefined,{start:start.value,end:end.value});emit('update:modelValue',range);emit('period','custom');error.value=''}catch(e){error.value=e.message}}
 </script>

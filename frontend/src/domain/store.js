@@ -5,11 +5,12 @@ import { createService, deviceStatus, socketStatus, activeStatuses } from './ser
 import { isStaticDemo } from '../runtime.js'
 import { addOperatorOwnership, operatorDemoData, mergeOperatorDemoData } from './operatorDemo.js'
 import { isDemoOperatorAcceptingOrders } from './managementDemo.js'
+import { ensureDemoHistory } from './demoHistory.js'
 const STORAGE_KEY='ebike-graduation-admin-demo-v3'
 let initial=createSeed()
 try{const valid=s=>s&&['stations','devices','sockets','users','rates','orders','reports'].every(k=>Array.isArray(s[k]))&&Number.isInteger(s.sequence);const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(valid(stored)&&stored.version===3&&Array.isArray(stored.rows))initial=stored;else{const old=JSON.parse(localStorage.getItem('ebike-graduation-admin-demo-v2')||'null');if(valid(old)&&old.version===2)initial=migrateV2(old)}}catch{}
 initial=expandDemoScenarios(migrateDemoLayouts(migrateCampusLocations(initial)))
-let allData=isStaticDemo?addOperatorOwnership(initial):initial
+let allData=isStaticDemo?addOperatorOwnership(ensureDemoHistory(initial)):initial
 let currentOperator=null
 export const db=reactive({...allData})
 export const api=createService(db,isStaticDemo?{canStartAtStation:station=>isDemoOperatorAcceptingOrders(station.operatorId)}:undefined)

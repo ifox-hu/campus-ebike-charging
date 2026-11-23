@@ -16,7 +16,7 @@ const date = () => {
   return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
 };
 const metrics = computed(() => overviewMetrics(props.source, props.range===undefined?date():props.range));
-const periodLabel=computed(()=>({today:'今日',week:'近七天',month:'近一个月',all:'累计',custom:'期间'})[props.period]);
+const periodLabel=computed(()=>({today:'今日',week:'近七天',month:'近一个月',sixMonths:'近六个月',all:'累计',custom:'期间'})[props.period]);
 const cards = computed(() => [
   ...(props.platformAdmin ? [{
     label: '运营商数量', value: props.operatorCount, unit: '家', target: { page: 'operators' },
