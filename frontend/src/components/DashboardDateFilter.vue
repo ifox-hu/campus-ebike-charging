@@ -1,0 +1,14 @@
+<script setup>
+import {ref} from 'vue'
+import {dashboardRange} from '../domain/dashboardPeriod.js'
+const props=defineProps({modelValue:{type:Object,default:()=>dashboardRange('today')}})
+const emit=defineEmits(['update:modelValue','period'])
+const selected=ref('today'),start=ref(props.modelValue?.start||''),end=ref(props.modelValue?.end||''),error=ref('')
+const choices=[['today','今日'],['week','近七天'],['month','近一个月'],['all','全部'],['custom','自定义']]
+function choose(id){selected.value=id;error.value='';if(id==='custom'){start.value=props.modelValue?.start||start.value;end.value=props.modelValue?.end||end.value;return}const range=dashboardRange(id);start.value=range?.start||'';end.value=range?.end||'';emit('update:modelValue',range);emit('period',id)}
+function apply(){try{const range=dashboardRange('custom',undefined,{start:start.value,end:end.value});emit('update:modelValue',range);emit('period','custom');error.value=''}catch(e){error.value=e.message}}
+</script>
+<template><div class="dashboard-date-filter"><div class="date-presets" role="group" aria-label="仪表盘时间范围"><button v-for="[id,label] in choices" :key="id" type="button" :class="{active:selected===id}" :aria-pressed="selected===id" @click="choose(id)">{{label}}</button></div><form v-if="selected==='custom'" class="custom-range" @submit.prevent="apply"><input v-model="start" type="date" aria-label="仪表盘开始日期"/><span>至</span><input v-model="end" type="date" aria-label="仪表盘结束日期"/><button type="submit" class="apply-range">查询</button></form><span v-else class="applied-range" data-testid="dashboard-applied-range">{{modelValue?`${modelValue.start} 至 ${modelValue.end}`:'全部时间'}}</span><p v-if="error" role="alert">{{error}}</p></div></template>
+<style scoped>
+.dashboard-date-filter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}.date-presets{display:flex;border:1px solid #dedbea;border-radius:7px;overflow:hidden;flex-wrap:wrap;background:#fff9}.date-presets button{padding:9px 15px;border-right:1px solid #e4e0ed;color:#777083;font:inherit;font-size:12px;white-space:nowrap}.date-presets button:last-child{border-right:0}.date-presets button.active{background:#6962ff;color:white}.date-presets button:hover:not(.active){background:#f0edff}.custom-range{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:#8b8499}.custom-range input{padding:8px 9px;border:1px solid #dedbea;border-radius:6px;background:#fff;color:#645c75;font:inherit;max-width:145px;min-width:0}.apply-range{padding:8px 14px;border-radius:6px;background:#6962ff;color:#fff}.applied-range{color:#9a93a6;font-size:12px}.dashboard-date-filter p{width:100%;margin:0;color:#b74756;font-size:12px}@media(max-width:520px){.date-presets button{padding:9px 10px}.custom-range input{max-width:125px}}
+</style>

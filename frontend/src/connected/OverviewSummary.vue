@@ -1,47 +1,35 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { overviewMetrics, activeAlerts } from '../domain/operations.js';
-import { scopeDashboardSource } from '../domain/dashboardView.js';
-import DashboardOperatorFilter from '../components/DashboardOperatorFilter.vue';
 
 const props = defineProps({
   source: { type: Object, required: true },
-  allSource: Object,
   loaded: Boolean,
+  range: {type:Object,default:undefined},
+  period: {type:String,default:'today'},
   platformAdmin: Boolean,
   operatorCount: { type: Number, default: 0 },
-  operatorId: { type: [String, Number], default: '' },
-  operators: { type: Array, default: () => [] },
 });
 const emit = defineEmits(['navigate', 'device', 'order']);
-const reportsOperatorId = ref('');
-const alertsOperatorId = ref('');
-
-watch(() => props.operatorId, value => {
-  reportsOperatorId.value = value;
-  alertsOperatorId.value = value;
-}, { immediate: true });
-
 const date = () => {
   const day = new Date();
   return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
 };
-const metrics = computed(() => overviewMetrics(props.source, date()));
+const metrics = computed(() => overviewMetrics(props.source, props.range===undefined?date():props.range));
+const periodLabel=computed(()=>({today:'今日',week:'近七天',month:'近一个月',all:'累计',custom:'期间'})[props.period]);
 const cards = computed(() => [
   ...(props.platformAdmin ? [{
     label: '运营商数量', value: props.operatorCount, unit: '家', target: { page: 'operators' },
   }] : []),
-  { label: '今日启动订单', value: metrics.value.orders, unit: '单', target: { page: 'orders', date: date() } },
-  { label: '今日已结算电量', value: metrics.value.energy.toFixed(3), unit: 'kWh', target: { page: 'orders', date: date(), completedOnly: true } },
-  { label: '今日结算账单', value: metrics.value.amount.toFixed(2), unit: '元', target: { page: 'orders', date: date(), completedOnly: true } },
+  { label: periodLabel.value+'启动订单', value: metrics.value.orders, unit: '单', target: { page: 'orders', date: props.range?.start===props.range?.end?props.range?.start:undefined } },
+  { label: periodLabel.value+'已结算电量', value: metrics.value.energy.toFixed(3), unit: 'kWh', target: { page: 'orders', date: props.range?.start===props.range?.end?props.range?.start:undefined, completedOnly: true } },
+  { label: periodLabel.value+'结算账单', value: metrics.value.amount.toFixed(2), unit: '元', target: { page: 'orders', date: props.range?.start===props.range?.end?props.range?.start:undefined, completedOnly: true } },
   { label: '当前空闲插座', value: metrics.value.free, unit: '个', target: { page: 'devices' } },
   { label: '待处理报修', value: metrics.value.pendingRepairs, unit: '条', target: { page: 'reports', repairStatus: 'OPEN' } },
   { label: '当前异常设备', value: metrics.value.abnormalDevices, unit: '台', target: { page: 'devices', abnormalOnly: true } },
 ]);
-const reportsSource = computed(() => scopeDashboardSource(props.allSource || props.source, reportsOperatorId.value));
-const alertsSource = computed(() => scopeDashboardSource(props.allSource || props.source, alertsOperatorId.value));
-const alerts = computed(() => activeAlerts(alertsSource.value).slice(0, 4));
-const reports = computed(() => reportsSource.value.reports.filter(report => report.status === 'OPEN').slice(0, 4));
+const alerts = computed(() => activeAlerts(props.source).slice(0, 4));
+const reports = computed(() => props.source.reports.filter(report => report.status === 'OPEN').slice(0, 4));
 </script>
 
 <template>
@@ -63,7 +51,7 @@ const reports = computed(() => reportsSource.value.reports.filter(report => repo
       </button>
     </div>
     <p class="overview-caption">
-      今日统计按订单开始日期归属，仅合计已结束账单，不等同实收；空闲插座与异常设备为当前状态。
+      订单统计按所选期间的开始日期归属，仅合计已结束账单，不等同实收；空闲插座与异常设备为当前状态。
       {{ metrics.missingBills ? '存在历史金额缺失记录，未计入合计。' : '' }}
     </p>
     <div class="overview-todos">
@@ -72,13 +60,7 @@ const reports = computed(() => reportsSource.value.reports.filter(report => repo
           <h2>报修待办</h2>
           <button class="text-button" @click="emit('navigate', { page: 'reports', repairStatus: 'OPEN' })">查看待处理</button>
         </header>
-        <DashboardOperatorFilter
-          v-if="platformAdmin"
-          v-model="reportsOperatorId"
-          :operators="operators"
-          label="报修运营商"
-        />
-        <p v-if="!reportsSource.reportsLoaded">报修数据未读取，请刷新或检查接口权限。</p>
+        <p v-if="!source.reportsLoaded">报修数据未读取，请刷新或检查接口权限。</p>
         <p v-else-if="!reports.length">暂无待处理报修</p>
         <button
           v-for="report in reports"
@@ -95,12 +77,6 @@ const reports = computed(() => reportsSource.value.reports.filter(report => repo
           <h2>设备异常</h2>
           <button class="text-button" @click="emit('navigate', { page: 'operations' })">全部告警</button>
         </header>
-        <DashboardOperatorFilter
-          v-if="platformAdmin"
-          v-model="alertsOperatorId"
-          :operators="operators"
-          label="异常运营商"
-        />
         <p v-if="!alerts.length">当前没有设备异常待办</p>
         <button
           v-for="alert in alerts"

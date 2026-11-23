@@ -5,7 +5,7 @@ export function mapConnectedSource(data){
  orders:data.orders.map(o=>({...o,number:o.orderNo,socketId:o.connectorId,status:({STARTING:'starting',CHARGING:'charging',COMPLETED:'ended',START_FAILED:'failed',ABNORMAL:'abnormal'})[o.status]||'unknown',startedAt:o.startTime,endedAt:o.endTime,total:o.totalAmount==null?null:Number(o.totalAmount),energy:o.energyKwh==null?null:Number(o.energyKwh),reason:o.failureReason||o.endReason||''})),reports:data.reports||[]};
 }
 export function overviewMetrics(db,date){
- const stats=operationsStats(db,{from:date,to:date})
+ const stats=operationsStats(db,typeof date==='string'?{from:date,to:date}:date?{from:date.start,to:date.end}:{})
  const devices=new Map(db.devices.map(d=>[d.id,d])),stations=new Map(db.stations.map(s=>[s.id,s]))
  const occupied=new Set(db.orders.filter(o=>['starting','charging','abnormal'].includes(o.status)).map(o=>o.socketId))
  const free=db.sockets.filter(s=>{const d=devices.get(s.deviceId),site=stations.get(d?.stationId);return site?.enabled!==false&&d?.online&&d.enabled!==false&&s.enabled!==false&&!s.fault&&!occupied.has(s.id)&&(s.serverStatus==='IDLE'||!s.serverStatus)}).length

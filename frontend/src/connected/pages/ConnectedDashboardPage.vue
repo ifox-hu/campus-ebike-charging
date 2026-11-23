@@ -1,5 +1,7 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
+import DashboardDateFilter from '../../components/DashboardDateFilter.vue';
+import {dashboardRange,dashboardRangeForSource} from '../../domain/dashboardPeriod.js';
 import OverviewSummary from '../OverviewSummary.vue';
 import OperationsPanel from '../../components/OperationsPanel.vue';
 import DashboardStationMap from '../../components/DashboardStationMap.vue';
@@ -18,17 +20,12 @@ const props = defineProps({
 defineEmits(['navigate', 'device', 'order']);
 
 const operatorId = ref('');
-const mapOperatorId = ref('');
-const alertsOperatorId = ref('');
+const dateRange=ref(dashboardRange('today'));
+const period=ref('today');
+const chartRange=computed(()=>dashboardRangeForSource(scopedSource.value,dateRange.value));
 const scopedSource = computed(() => scopeDashboardSource(props.source, operatorId.value));
-const mapSource = computed(() => scopeDashboardSource(props.source, mapOperatorId.value));
-const alertsSource = computed(() => scopeDashboardSource(props.source, alertsOperatorId.value));
 const operatorCount = computed(() => operatorId.value ? 1 : props.operators.length);
 
-watch(operatorId, value => {
-  mapOperatorId.value = value;
-  alertsOperatorId.value = value;
-});
 </script>
 
 <template>
@@ -42,14 +39,14 @@ watch(operatorId, value => {
         v-if="platformAdmin"
         v-model="operatorId"
         :operators="operators"
-        label="概览运营商"
+        label="运营商"
       />
     </header>
+    <DashboardDateFilter v-model="dateRange" @period="period=$event"/>
     <OverviewSummary
       :source="scopedSource"
-      :all-source="source"
-      :operator-id="operatorId"
-      :operators="operators"
+      :range="dateRange"
+      :period="period"
       :operator-count="operatorCount"
       :platform-admin="platformAdmin"
       :loaded="!!loadedAt"
@@ -57,32 +54,13 @@ watch(operatorId, value => {
       @device="$emit('device', $event)"
       @order="$emit('order', $event)"
     />
-    <OrderTrendCard
-      :source="source"
-      :operators="operators"
-      :platform-admin="platformAdmin"
-      :operator-id="operatorId"
-    />
+    <OrderTrendCard :source="scopedSource" :range="chartRange" />
     <section v-if="loadedAt" class="dashboard-map-section" aria-label="站点分布">
-      <div v-if="platformAdmin" class="dashboard-card-filter">
-        <DashboardOperatorFilter
-          v-model="mapOperatorId"
-          :operators="operators"
-          label="地图运营商"
-        />
-      </div>
-      <DashboardStationMap :source="mapSource" @navigate="$emit('navigate', $event)" />
+      <DashboardStationMap :source="scopedSource" @navigate="$emit('navigate', $event)" />
     </section>
     <section class="dashboard-alert-section" aria-label="设备告警记录">
-      <div v-if="platformAdmin" class="dashboard-card-filter">
-        <DashboardOperatorFilter
-          v-model="alertsOperatorId"
-          :operators="operators"
-          label="告警运营商"
-        />
-      </div>
       <OperationsPanel
-        :source="alertsSource"
+        :source="scopedSource"
         :client="client"
         :show-metrics="false"
         :show-statistics="false"
@@ -99,11 +77,6 @@ watch(operatorId, value => {
 .dashboard-map-section,
 .dashboard-alert-section {
   min-width: 0;
-}
-.dashboard-card-filter {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem 1.5rem 0;
 }
 @media (max-width: 520px) {
   .remote-overview > .management-heading {
