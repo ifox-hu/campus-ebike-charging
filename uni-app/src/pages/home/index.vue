@@ -16,11 +16,11 @@ import {groupStationRows} from '../../domain/dual-socket-layout.mjs';
 import PageHeader from '../../components/PageHeader.vue';import BottomNav from '../../components/BottomNav.vue';import DemoNotice from '../../components/DemoNotice.vue';
 import {state,go,enterCode,openSocket,isBackend,connection,refreshData} from '../../store.js';import {availableCount,totalCount} from '../../domain/charging.mjs';
 import {preferences,rememberStation} from '../../user-preferences.js';import {filterStations} from '../../domain/user-experience.mjs';
-const query=ref(''),mapMode=ref(false),sort=ref('default'),selectedId=ref('baoan');
+const query=ref(''),mapMode=ref(false),sort=ref('default');
 const scene=ref(''),savedOnly=ref(false),recentOnly=ref(false);
 const filtered=computed(()=>filterStations(state.stations,{query:query.value,scene:scene.value,savedOnly:savedOnly.value,recentOnly:recentOnly.value,favorites:preferences.favorites,recent:preferences.recent,sort:sort.value}));
 onLoad(q=>{savedOnly.value=q.saved==='1';recentOnly.value=q.recent==='1';});
-const selected=computed(()=>filtered.value.find(s=>s.id===selectedId.value));const active=computed(()=>state.orders.find(isCurrentOrder));
+const active=computed(()=>state.orders.find(isCurrentOrder));
 const openStation=s=>{rememberStation(s.id);go('/pages/station/index?id='+s.id);};
 onShow(()=>refreshData());
 </script>

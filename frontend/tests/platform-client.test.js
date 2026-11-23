@@ -1,48 +1,237 @@
-import test from 'node:test'
-import assert from 'node:assert/strict'
-import {createPlatformClient,formatNumber,statusLabel,relationRows,filterOperatorData} from '../src/connected/platformClient.js'
-const response=(data,status=200)=>({ok:status>=200&&status<300,status,json:async()=>({code:status,data,message:status>=400?'接口拒绝':'成功'})})
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  createPlatformClient,
+  formatNumber,
+  statusLabel,
+  relationRows,
+  filterOperatorData,
+} from '../src/connected/platformClient.js';
+const response = (data, status = 200) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  json: async () => ({ code: status, data, message: status >= 400 ? '接口拒绝' : '成功' }),
+});
 
 test('平台筛选按历史记录的运营商归档，站点转让不转移旧订单和报修', () => {
- const data={stations:[{id:1,operatorId:2}],devices:[{id:3,stationId:1}],sockets:[{id:4,chargerId:3}],orders:[{id:5,stationId:1,operatorId:1},{id:6,stationId:1,operatorId:2}],reports:[{id:7,stationId:1,operatorId:1}]}
- const former=filterOperatorData(data,'1'),current=filterOperatorData(data,'2')
- assert.equal(former.stations.length,0);assert.deepEqual(former.orders.map(row=>row.id),[5]);assert.deepEqual(former.reports.map(row=>row.id),[7])
- assert.deepEqual(current.orders.map(row=>row.id),[6]);assert.equal(current.reports.length,0);assert.equal(current.devices.length,1)
- assert.strictEqual(filterOperatorData(data,''),data)
-})
+  const data = {
+    stations: [{ id: 1, operatorId: 2 }],
+    devices: [{ id: 3, stationId: 1 }],
+    sockets: [{ id: 4, chargerId: 3 }],
+    orders: [
+      { id: 5, stationId: 1, operatorId: 1 },
+      { id: 6, stationId: 1, operatorId: 2 },
+    ],
+    reports: [{ id: 7, stationId: 1, operatorId: 1 }],
+  };
+  const former = filterOperatorData(data, '1'),
+    current = filterOperatorData(data, '2');
+  assert.equal(former.stations.length, 0);
+  assert.deepEqual(
+    former.orders.map((row) => row.id),
+    [5],
+  );
+  assert.deepEqual(
+    former.reports.map((row) => row.id),
+    [7],
+  );
+  assert.deepEqual(
+    current.orders.map((row) => row.id),
+    [6],
+  );
+  assert.equal(current.reports.length, 0);
+  assert.equal(current.devices.length, 1);
+  assert.strictEqual(filterOperatorData(data, ''), data);
+});
 
 test('新增管理接口传递服务用户分页、运营商筛选和团队操作', async () => {
- const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b')
- await client.serviceUsers({page:2,keyword:'李 同学'})
- assert.equal(f.calls.at(-1).path,'/api/service-users?page=2&keyword=%E6%9D%8E+%E5%90%8C%E5%AD%A6')
- await client.statistics({operatorId:2,from:'2026-11-01',to:'2026-11-23'})
- assert.equal(f.calls.at(-1).path,'/api/management/statistics?operatorId=2&from=2026-11-01&to=2026-11-23')
- await client.setTeamEnabled(7,false,2)
- assert.equal(f.calls.at(-1).path,'/api/team/7/status')
- assert.deepEqual(JSON.parse(f.calls.at(-1).options.body),{enabled:false,operatorId:2})
- await client.audit(2,{operatorId:2,username:'campus'})
- assert.equal(f.calls.at(-1).path,'/api/audit-logs?page=2&size=20&operatorId=2&username=campus')
-})
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.login('a', 'b');
+  await client.serviceUsers({ page: 2, keyword: '李 同学' });
+  assert.equal(
+    f.calls.at(-1).path,
+    '/api/service-users?page=2&keyword=%E6%9D%8E+%E5%90%8C%E5%AD%A6',
+  );
+  await client.statistics({ operatorId: 2, from: '2026-11-01', to: '2026-11-23' });
+  assert.equal(
+    f.calls.at(-1).path,
+    '/api/management/statistics?operatorId=2&from=2026-11-01&to=2026-11-23',
+  );
+  await client.setTeamEnabled(7, false, 2);
+  assert.equal(f.calls.at(-1).path, '/api/team/7/status');
+  assert.deepEqual(JSON.parse(f.calls.at(-1).options.body), { enabled: false, operatorId: 2 });
+  await client.audit(2, { operatorId: 2, username: 'campus' });
+  assert.equal(f.calls.at(-1).path, '/api/audit-logs?page=2&size=20&operatorId=2&username=campus');
+});
 
-test('插座功率保存使用统一业务后端连接器接口',async()=>{
- const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b')
- const body={code:'BIKE-01',name:'A插座',ratedPower:120,powerWatts:450}
- await client.saveSocket(3,body)
- assert.equal(f.calls.at(-1).path,'/api/connectors/3');assert.equal(f.calls.at(-1).options.method,'PUT')
- assert.deepEqual(JSON.parse(f.calls.at(-1).options.body),body)
-})
-function fake(){const calls=[];let role='ADMIN',fail=false;return {calls,setRole:r=>role=r,setFail:()=>fail=true,fetch:async(path,options)=>{calls.push({path,options});if(fail)return response(null,401);if(path.endsWith('/auth/login'))return response({token:'test-memory-token',role,username:'test-admin'});if(path.endsWith('/auth/me'))return response({role,username:'test-admin'});return response([])}}}
-test('管理员登录验证身份，登录令牌仅用于请求头',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await assert.rejects(()=>client.stations(),/登录/);const user=await client.login('test-admin','not-a-real-password');assert.equal(user.role,'ADMIN');await client.stations();assert.equal(f.calls.at(-1).options.headers.Authorization,'Bearer test-memory-token');assert.equal(Object.hasOwn(client,'token'),false)})
-test('普通用户不能进入管理端，401 后凭证清空',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});f.setRole('USER');await assert.rejects(()=>client.login('u','p'),/管理员/);await assert.rejects(()=>client.stations(),/登录/);f.setRole('ADMIN');await client.login('a','b');f.setFail();await assert.rejects(()=>client.stations(),/登录|接口拒绝/);await assert.rejects(()=>client.stations(),/登录/)})
-test('普通用户启停使用真实 PATCH，不调用删除或模拟接口',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b');await client.setUserEnabled(7,false);const call=f.calls.at(-1);assert.equal(call.path,'/api/auth/users/7/status?enabled=false');assert.equal(call.options.method,'PATCH');assert.throws(()=>client.setUserEnabled('7/../delete',true),/编号/);assert.throws(()=>client.setUserEnabled(7,'false'),/状态/)})
-test('退出后拒收先前请求的迟到数据',async()=>{const f=fake();let finish;const client=createPlatformClient({fetchImpl:(p,o)=>p.endsWith('/stations')?new Promise(r=>finish=r):f.fetch(p,o)});await client.login('a','b');const pending=client.stations();client.logout();finish(response([{id:1}]));await assert.rejects(()=>pending,/会话|失效/)})
-test('金额缺失不补零、未知状态保留原值，设备关联不改写原始数据',()=>{assert.equal(formatNumber(null),'—');assert.equal(formatNumber('abc'),'—');assert.equal(formatNumber(.36),'0.36');assert.equal(statusLabel('COMPLETED','order'),'已结束');assert.match(statusLabel('NEW_STATUS','socket'),/NEW_STATUS/);const stations=[{id:1,name:'站点'}],devices=[{id:2,stationId:1,code:'D2',status:'ONLINE'}],sockets=[{id:3,chargerId:2,status:'IDLE'}];const result=relationRows(stations,devices,sockets);assert.equal(result.devices[0].socketCount,1);assert.equal(result.stations[0].deviceCount,1);assert.equal(Object.hasOwn(devices[0],'socketCount'),false)})
-test('读取超时明确报错且不自动重试',async()=>{const f=fake();let requests=0;const client=createPlatformClient({timeoutMs:5,fetchImpl:(p,o)=>{if(!p.endsWith('/stations'))return f.fetch(p,o);requests++;return new Promise((_,reject)=>o.signal.addEventListener('abort',()=>reject(Object.assign(Error('aborted'),{name:'AbortError'}))))}});await client.login('a','b');await assert.rejects(()=>client.stations(),/超时/);assert.equal(requests,1)})
-test('错误列表不生成模拟记录；业务 401 与 HTTP 401 一样失效',async()=>{const f=fake();let mode='object',expired=0;const client=createPlatformClient({onExpired:()=>expired++,fetchImpl:(p,o)=>p.endsWith('/stations')?Promise.resolve(mode==='object'?response({rows:[]}):{ok:true,status:200,json:async()=>({code:401,message:'过期'})}):f.fetch(p,o)});await client.login('a','b');await assert.rejects(()=>client.stations(),/格式/);mode='expired';await assert.rejects(()=>client.stations(),/登录/);assert.equal(expired,1);await assert.rejects(()=>client.stations(),/登录/)})
-test('报修读取与处理使用服务端接口和独立状态',async()=>{const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});await client.login('a','b');await client.repairs('OPEN');assert.equal(f.calls.at(-1).path,'/api/repairs?status=OPEN');await client.handleRepair(8,{status:'RESOLVED',resolution:'已修复'});assert.equal(f.calls.at(-1).options.method,'PATCH');assert.deepEqual(JSON.parse(f.calls.at(-1).options.body),{status:'RESOLVED',resolution:'已修复'});assert.equal(statusLabel('START_FAILED','order'),'启动失败');assert.equal(statusLabel('RESOLVED','repair'),'已处理')})
+test('报修处理人员接口按报修编号读取', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.login('a', 'b');
+  await client.repairAssignees(801);
+  assert.equal(f.calls.at(-1).path, '/api/repairs/801/assignees');
+});
 
-test('验证码匿名读取并禁用缓存，登录携带验证码且不附带旧令牌',async()=>{
- const f=fake(),client=createPlatformClient({fetchImpl:f.fetch});
- await client.captcha('old-id');assert.equal(f.calls.at(-1).path,'/api/auth/captcha?previousId=old-id');assert.equal(f.calls.at(-1).options.cache,'no-store');assert.equal(f.calls.at(-1).options.headers.Authorization,undefined);
- await client.login('a','b',{captchaId:'new-id',captchaCode:'1234'});const call=f.calls.find(item=>item.path==='/api/auth/login');assert.deepEqual(JSON.parse(call.options.body),{username:'a',password:'b',captchaId:'new-id',captchaCode:'1234'});assert.equal(call.options.headers.Authorization,undefined);
+test('插座功率保存使用统一业务后端连接器接口', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.login('a', 'b');
+  const body = { code: 'BIKE-01', name: 'A插座', ratedPower: 120, powerWatts: 450 };
+  await client.saveSocket(3, body);
+  assert.equal(f.calls.at(-1).path, '/api/connectors/3');
+  assert.equal(f.calls.at(-1).options.method, 'PUT');
+  assert.deepEqual(JSON.parse(f.calls.at(-1).options.body), body);
+});
+function fake() {
+  const calls = [];
+  let role = 'ADMIN',
+    fail = false;
+  return {
+    calls,
+    setRole: (r) => (role = r),
+    setFail: () => (fail = true),
+    fetch: async (path, options) => {
+      calls.push({ path, options });
+      if (fail) return response(null, 401);
+      if (path.endsWith('/auth/login'))
+        return response({ token: 'test-memory-token', role, username: 'test-admin' });
+      if (path.endsWith('/auth/me')) return response({ role, username: 'test-admin' });
+      return response([]);
+    },
+  };
+}
+test('管理员登录验证身份，登录令牌仅用于请求头', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await assert.rejects(() => client.stations(), /登录/);
+  const user = await client.login('test-admin', 'not-a-real-password');
+  assert.equal(user.role, 'ADMIN');
+  await client.stations();
+  assert.equal(f.calls.at(-1).options.headers.Authorization, 'Bearer test-memory-token');
+  assert.equal(Object.hasOwn(client, 'token'), false);
+});
+test('普通用户不能进入管理端，401 后凭证清空', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  f.setRole('USER');
+  await assert.rejects(() => client.login('u', 'p'), /管理员/);
+  await assert.rejects(() => client.stations(), /登录/);
+  f.setRole('ADMIN');
+  await client.login('a', 'b');
+  f.setFail();
+  await assert.rejects(() => client.stations(), /登录|接口拒绝/);
+  await assert.rejects(() => client.stations(), /登录/);
+});
+test('普通用户启停使用真实 PATCH，不调用删除或模拟接口', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.login('a', 'b');
+  await client.setUserEnabled(7, false);
+  const call = f.calls.at(-1);
+  assert.equal(call.path, '/api/auth/users/7/status?enabled=false');
+  assert.equal(call.options.method, 'PATCH');
+  assert.throws(() => client.setUserEnabled('7/../delete', true), /编号/);
+  assert.throws(() => client.setUserEnabled(7, 'false'), /状态/);
+});
+test('退出后拒收先前请求的迟到数据', async () => {
+  const f = fake();
+  let finish;
+  const client = createPlatformClient({
+    fetchImpl: (p, o) =>
+      p.endsWith('/stations') ? new Promise((r) => (finish = r)) : f.fetch(p, o),
+  });
+  await client.login('a', 'b');
+  const pending = client.stations();
+  client.logout();
+  finish(response([{ id: 1 }]));
+  await assert.rejects(() => pending, /会话|失效/);
+});
+test('金额缺失不补零、未知状态保留原值，设备关联不改写原始数据', () => {
+  assert.equal(formatNumber(null), '—');
+  assert.equal(formatNumber('abc'), '—');
+  assert.equal(formatNumber(0.36), '0.36');
+  assert.equal(statusLabel('COMPLETED', 'order'), '已结束');
+  assert.match(statusLabel('NEW_STATUS', 'socket'), /NEW_STATUS/);
+  const stations = [{ id: 1, name: '站点' }],
+    devices = [{ id: 2, stationId: 1, code: 'D2', status: 'ONLINE' }],
+    sockets = [{ id: 3, chargerId: 2, status: 'IDLE' }];
+  const result = relationRows(stations, devices, sockets);
+  assert.equal(result.devices[0].socketCount, 1);
+  assert.equal(result.stations[0].deviceCount, 1);
+  assert.equal(Object.hasOwn(devices[0], 'socketCount'), false);
+});
+test('读取超时明确报错且不自动重试', async () => {
+  const f = fake();
+  let requests = 0;
+  const client = createPlatformClient({
+    timeoutMs: 5,
+    fetchImpl: (p, o) => {
+      if (!p.endsWith('/stations')) return f.fetch(p, o);
+      requests++;
+      return new Promise((_, reject) =>
+        o.signal.addEventListener('abort', () =>
+          reject(Object.assign(Error('aborted'), { name: 'AbortError' })),
+        ),
+      );
+    },
+  });
+  await client.login('a', 'b');
+  await assert.rejects(() => client.stations(), /超时/);
+  assert.equal(requests, 1);
+});
+test('错误列表不生成模拟记录；业务 401 与 HTTP 401 一样失效', async () => {
+  const f = fake();
+  let mode = 'object',
+    expired = 0;
+  const client = createPlatformClient({
+    onExpired: () => expired++,
+    fetchImpl: (p, o) =>
+      p.endsWith('/stations')
+        ? Promise.resolve(
+            mode === 'object'
+              ? response({ rows: [] })
+              : { ok: true, status: 200, json: async () => ({ code: 401, message: '过期' }) },
+          )
+        : f.fetch(p, o),
+  });
+  await client.login('a', 'b');
+  await assert.rejects(() => client.stations(), /格式/);
+  mode = 'expired';
+  await assert.rejects(() => client.stations(), /登录/);
+  assert.equal(expired, 1);
+  await assert.rejects(() => client.stations(), /登录/);
+});
+test('报修读取与处理使用服务端接口和独立状态', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.login('a', 'b');
+  await client.repairs('OPEN');
+  assert.equal(f.calls.at(-1).path, '/api/repairs?status=OPEN');
+  await client.handleRepair(8, { status: 'RESOLVED', resolution: '已修复' });
+  assert.equal(f.calls.at(-1).options.method, 'PATCH');
+  assert.deepEqual(JSON.parse(f.calls.at(-1).options.body), {
+    status: 'RESOLVED',
+    resolution: '已修复',
+  });
+  assert.equal(statusLabel('START_FAILED', 'order'), '启动失败');
+  assert.equal(statusLabel('RESOLVED', 'repair'), '已处理');
+});
+
+test('验证码匿名读取并禁用缓存，登录携带验证码且不附带旧令牌', async () => {
+  const f = fake(),
+    client = createPlatformClient({ fetchImpl: f.fetch });
+  await client.captcha('old-id');
+  assert.equal(f.calls.at(-1).path, '/api/auth/captcha?previousId=old-id');
+  assert.equal(f.calls.at(-1).options.cache, 'no-store');
+  assert.equal(f.calls.at(-1).options.headers.Authorization, undefined);
+  await client.login('a', 'b', { captchaId: 'new-id', captchaCode: '1234' });
+  const call = f.calls.find((item) => item.path === '/api/auth/login');
+  assert.deepEqual(JSON.parse(call.options.body), {
+    username: 'a',
+    password: 'b',
+    captchaId: 'new-id',
+    captchaCode: '1234',
+  });
+  assert.equal(call.options.headers.Authorization, undefined);
 });

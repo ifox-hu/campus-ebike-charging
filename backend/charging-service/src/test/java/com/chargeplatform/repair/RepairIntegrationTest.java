@@ -27,6 +27,15 @@ class RepairIntegrationTest {
         db.update("INSERT INTO connector(id,charger_id,code,name,rated_power,status) VALUES(31,20,'BIKE-A-01','插座1',300,'FAULT')");
     }
     RepairRequests.Create request(String key){return new RepairRequests.Create(null,31L,"插座指示灯不亮，请检查",key);}
+    @Test void assignmentCandidatesRequireAdminAndNeverExposePasswords() throws Exception {
+        db.update("INSERT INTO sys_user(username,display_name,password,role,enabled) VALUES('operator','运营员','secret','OPERATOR',true),('disabled','停用人员','secret','OPERATOR',false)");
+        var ticket=repairs.create(request("candidates"),"student");
+        mvc.perform(get("/api/repairs/"+ticket.getId()+"/assignees").header("Authorization","Bearer "+jwt.create("student","USER"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/repairs/"+ticket.getId()+"/assignees").header("Authorization","Bearer "+jwt.create("operator","OPERATOR"))).andExpect(status().isForbidden());
+        mvc.perform(get("/api/repairs/"+ticket.getId()+"/assignees").header("Authorization","Bearer "+jwt.create("admin","ADMIN")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.data.length()").value(2))
+            .andExpect(jsonPath("$.data[0].password").doesNotExist());
+    }
     @Test void assignmentHistoryAndOperatorScopeAreEnforced()throws Exception{
         db.update("INSERT INTO sys_user(username,display_name,password,role,enabled) VALUES('operator','运营员','unused','OPERATOR',true),('operator2','其他运营员','unused','OPERATOR',true)");
         var ticket=repairs.create(request("assigned"),"student");

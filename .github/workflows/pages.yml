@@ -35,6 +35,9 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
+          npm run lint
+          npm run lint:clients
+          npm run format:check
           npm test
       - name: Test account and charging services
         run: mvn -B -f backend/pom.xml test

@@ -1,5 +1,6 @@
 package com.chargeplatform.repair.service;
 import com.chargeplatform.auth.mapper.SysUserMapper;
+import com.chargeplatform.auth.domain.SysUser;
 import com.chargeplatform.common.exception.BusinessException;
 import com.chargeplatform.device.mapper.*;
 import com.chargeplatform.station.mapper.StationMapper;
@@ -14,6 +15,15 @@ import java.util.Objects;
 
 @Service
 public class RepairService {
+    public record Assignee(String username,String displayName,String role,boolean enabled) {}
+    public List<Assignee> assignees(Long id,String handler) {
+        var actor=users.selectByUsername(handler);
+        if(actor==null||!actor.isEnabled()||!"ADMIN".equals(actor.getRole()))throw new BusinessException(403,"只有管理员可分派报修");
+        if(tickets.selectById(id)==null)throw new BusinessException(404,"报修记录不存在");
+        return users.selectList(new LambdaQueryWrapper<SysUser>().eq(SysUser::isEnabled,true)
+            .in(SysUser::getRole,List.of("ADMIN","OPERATOR")).orderByAsc(SysUser::getId)).stream()
+            .map(user->new Assignee(user.getUsername(),user.getDisplayName(),user.getRole(),user.isEnabled())).toList();
+    }
     private final RepairMapper tickets;private final SysUserMapper users;private final ConnectorMapper sockets;private final ChargerMapper devices;private final StationMapper stations;
     public RepairService(RepairMapper tickets,SysUserMapper users,ConnectorMapper sockets,ChargerMapper devices,StationMapper stations){this.tickets=tickets;this.users=users;this.sockets=sockets;this.devices=devices;this.stations=stations;}
     @Transactional public RepairTicket create(RepairRequests.Create request,String owner){

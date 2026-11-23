@@ -1,47 +1,140 @@
-import { reactive, watch, computed } from 'vue'
-import { createSeed } from './seed.js'
-import { migrateV2,migrateCampusLocations,migrateDemoLayouts,expandDemoScenarios } from './migration.js'
-import { createService, deviceStatus, socketStatus, activeStatuses } from './service.js'
-import { isStaticDemo } from '../runtime.js'
-import { addOperatorOwnership, operatorDemoData, mergeOperatorDemoData } from './operatorDemo.js'
-import { isDemoOperatorAcceptingOrders } from './managementDemo.js'
-import { ensureDemoHistory } from './demoHistory.js'
-const STORAGE_KEY='ebike-graduation-admin-demo-v3'
-let initial=createSeed()
-try{const valid=s=>s&&['stations','devices','sockets','users','rates','orders','reports'].every(k=>Array.isArray(s[k]))&&Number.isInteger(s.sequence);const stored=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');if(valid(stored)&&stored.version===3&&Array.isArray(stored.rows))initial=stored;else{const old=JSON.parse(localStorage.getItem('ebike-graduation-admin-demo-v2')||'null');if(valid(old)&&old.version===2)initial=migrateV2(old)}}catch{}
-initial=expandDemoScenarios(migrateDemoLayouts(migrateCampusLocations(initial)))
-let allData=isStaticDemo?addOperatorOwnership(ensureDemoHistory(initial)):initial
-let currentOperator=null
-export const db=reactive({...allData})
-export const api=createService(db,isStaticDemo?{canStartAtStation:station=>isDemoOperatorAcceptingOrders(station.operatorId)}:undefined)
-export const storageWarning=reactive({message:''})
-function persist(){
- allData=isStaticDemo?mergeOperatorDemoData(allData,db,currentOperator):{...db}
- try{
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(allData))
-  storageWarning.message=''
- }catch{storageWarning.message='浏览器未能保存演示数据，刷新可能恢复初始数据。'}
+import { reactive, watch, computed } from 'vue';
+import { createSeed } from './seed.js';
+import {
+  migrateV2,
+  migrateCampusLocations,
+  migrateDemoLayouts,
+  expandDemoScenarios,
+} from './migration.js';
+import { createService, deviceStatus, socketStatus, activeStatuses } from './service.js';
+import { isStaticDemo } from '../runtime.js';
+import { addOperatorOwnership, operatorDemoData, mergeOperatorDemoData } from './operatorDemo.js';
+import { isDemoOperatorAcceptingOrders } from './managementDemo.js';
+import { ensureDemoHistory } from './demoHistory.js';
+const STORAGE_KEY = 'ebike-graduation-admin-demo-v3';
+let initial = createSeed();
+try {
+  const valid = (s) =>
+    s &&
+    ['stations', 'devices', 'sockets', 'users', 'rates', 'orders', 'reports'].every((k) =>
+      Array.isArray(s[k]),
+    ) &&
+    Number.isInteger(s.sequence);
+  const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+  if (valid(stored) && stored.version === 3 && Array.isArray(stored.rows)) initial = stored;
+  else {
+    const old = JSON.parse(localStorage.getItem('ebike-graduation-admin-demo-v2') || 'null');
+    if (valid(old) && old.version === 2) initial = migrateV2(old);
+  }
+} catch {}
+initial = expandDemoScenarios(migrateDemoLayouts(migrateCampusLocations(initial)));
+let allData = isStaticDemo ? addOperatorOwnership(ensureDemoHistory(initial)) : initial;
+let currentOperator = null;
+export const db = reactive({ ...allData });
+export const api = createService(
+  db,
+  isStaticDemo
+    ? { canStartAtStation: (station) => isDemoOperatorAcceptingOrders(station.operatorId) }
+    : undefined,
+);
+export const storageWarning = reactive({ message: '' });
+function persist() {
+  allData = isStaticDemo ? mergeOperatorDemoData(allData, db, currentOperator) : { ...db };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+    storageWarning.message = '';
+  } catch {
+    storageWarning.message = '浏览器未能保存演示数据，刷新可能恢复初始数据。';
+  }
 }
-export function selectDemoOperator(operatorId){
- if(!isStaticDemo||currentOperator===operatorId)return
- persist()
- currentOperator=operatorId
- Object.assign(db,operatorDemoData(allData,currentOperator))
+export function selectDemoOperator(operatorId) {
+  if (!isStaticDemo || currentOperator === operatorId) return;
+  persist();
+  currentOperator = operatorId;
+  Object.assign(db, operatorDemoData(allData, currentOperator));
 }
 // Management screens need all owners even when the main workspace is filtered.
-export function getDemoManagementSource(){
- if(isStaticDemo)allData=mergeOperatorDemoData(allData,db,currentOperator)
- return isStaticDemo?allData:db
+export function getDemoManagementSource() {
+  if (isStaticDemo) allData = mergeOperatorDemoData(allData, db, currentOperator);
+  return isStaticDemo ? allData : db;
 }
-export function refreshDemoManagementView(){
- if(!isStaticDemo)return
- Object.assign(db,operatorDemoData(allData,currentOperator))
- persist()
+export function refreshDemoManagementView() {
+  if (!isStaticDemo) return;
+  Object.assign(db, operatorDemoData(allData, currentOperator));
+  persist();
 }
-watch(db,persist,{deep:true,flush:'post',immediate:true})
-export const socketsView=computed(()=>db.sockets.map(s=>{const device=db.devices.find(d=>d.id===s.deviceId),station=db.stations.find(st=>st.id===device?.stationId),order=s.businessId?null:db.orders.find(o=>o.socketId===s.id&&activeStatuses.includes(o.status));return {...s,device,station,order,status:socketStatus(db,s)}}))
-export const devicesView=computed(()=>db.devices.map(d=>{const sockets=socketsView.value.filter(s=>s.deviceId===d.id),ended=db.orders.filter(o=>o.deviceId===d.id&&o.status==='ended');return {...d,row:db.rows.find(r=>r.id===d.rowId),station:db.stations.find(s=>s.id===d.stationId),portCount:sockets.length,free:sockets.filter(s=>s.status==='空闲').length,starting:sockets.filter(s=>s.status==='启动中').length,charging:sockets.filter(s=>s.status==='充电中').length,abnormal:sockets.filter(s=>s.status==='异常占用').length,faults:sockets.filter(s=>s.fault).length,status:deviceStatus(db,d),amount:ended.reduce((n,o)=>n+o.total,0),energy:ended.reduce((n,o)=>n+o.energy,0),times:ended.length}}))
-export const stationsView=computed(()=>db.stations.map(s=>{const devices=devicesView.value.filter(d=>d.stationId===s.id),sockets=socketsView.value.filter(p=>p.station?.id===s.id);return {...s,rowCount:db.rows.filter(r=>r.stationId===s.id).length,deviceCount:devices.length,portCount:sockets.length,free:sockets.filter(p=>p.status==='空闲').length,charging:sockets.filter(p=>p.status==='充电中').length,rate:db.rates.find(r=>r.stationId===s.id)}}))
-export const rowsView=computed(()=>db.rows.map(r=>{const devices=devicesView.value.filter(d=>d.rowId===r.id).sort((a,b)=>a.position-b.position);return {...r,devices,deviceCount:devices.length,portCount:devices.reduce((n,d)=>n+d.portCount,0),free:devices.reduce((n,d)=>n+d.free,0),starting:devices.reduce((n,d)=>n+d.starting,0),charging:devices.reduce((n,d)=>n+d.charging,0)}}).sort((a,b)=>a.index-b.index))
-export const ordersView=computed(()=>db.orders.map(o=>({...o,user:db.users.find(u=>u.id===o.userId)})))
-export const reportsView=computed(()=>db.reports.map(r=>({...r,user:db.users.find(u=>u.id===r.userId),socket:socketsView.value.find(s=>s.id===r.socketId)})))
+watch(db, persist, { deep: true, flush: 'post', immediate: true });
+export const socketsView = computed(() =>
+  db.sockets.map((s) => {
+    const device = db.devices.find((d) => d.id === s.deviceId),
+      station = db.stations.find((st) => st.id === device?.stationId),
+      order = s.businessId
+        ? null
+        : db.orders.find((o) => o.socketId === s.id && activeStatuses.includes(o.status));
+    return { ...s, device, station, order, status: socketStatus(db, s) };
+  }),
+);
+export const devicesView = computed(() =>
+  db.devices.map((d) => {
+    const sockets = socketsView.value.filter((s) => s.deviceId === d.id),
+      ended = db.orders.filter((o) => o.deviceId === d.id && o.status === 'ended');
+    return {
+      ...d,
+      row: db.rows.find((r) => r.id === d.rowId),
+      station: db.stations.find((s) => s.id === d.stationId),
+      portCount: sockets.length,
+      free: sockets.filter((s) => s.status === '空闲').length,
+      starting: sockets.filter((s) => s.status === '启动中').length,
+      charging: sockets.filter((s) => s.status === '充电中').length,
+      abnormal: sockets.filter((s) => s.status === '异常占用').length,
+      faults: sockets.filter((s) => s.fault).length,
+      status: deviceStatus(db, d),
+      amount: ended.reduce((n, o) => n + o.total, 0),
+      energy: ended.reduce((n, o) => n + o.energy, 0),
+      times: ended.length,
+    };
+  }),
+);
+export const stationsView = computed(() =>
+  db.stations.map((s) => {
+    const devices = devicesView.value.filter((d) => d.stationId === s.id),
+      sockets = socketsView.value.filter((p) => p.station?.id === s.id);
+    return {
+      ...s,
+      rowCount: db.rows.filter((r) => r.stationId === s.id).length,
+      deviceCount: devices.length,
+      portCount: sockets.length,
+      free: sockets.filter((p) => p.status === '空闲').length,
+      charging: sockets.filter((p) => p.status === '充电中').length,
+      rate: db.rates.find((r) => r.stationId === s.id),
+    };
+  }),
+);
+export const rowsView = computed(() =>
+  db.rows
+    .map((r) => {
+      const devices = devicesView.value
+        .filter((d) => d.rowId === r.id)
+        .sort((a, b) => a.position - b.position);
+      return {
+        ...r,
+        devices,
+        deviceCount: devices.length,
+        portCount: devices.reduce((n, d) => n + d.portCount, 0),
+        free: devices.reduce((n, d) => n + d.free, 0),
+        starting: devices.reduce((n, d) => n + d.starting, 0),
+        charging: devices.reduce((n, d) => n + d.charging, 0),
+      };
+    })
+    .sort((a, b) => a.index - b.index),
+);
+export const ordersView = computed(() =>
+  db.orders.map((o) => ({ ...o, user: db.users.find((u) => u.id === o.userId) })),
+);
+export const reportsView = computed(() =>
+  db.reports.map((r) => ({
+    ...r,
+    user: db.users.find((u) => u.id === r.userId),
+    socket: socketsView.value.find((s) => s.id === r.socketId),
+  })),
+);

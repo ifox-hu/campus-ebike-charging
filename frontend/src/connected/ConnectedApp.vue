@@ -1,4 +1,5 @@
 <script setup>
+import { createRefreshPolicy } from './refreshPolicy.js';
 import brandMark from '../assets/brand-mark.svg';
 import { computed, onBeforeUnmount, reactive, ref } from 'vue';
 import UiIcon from '../components/UiIcon.vue';
@@ -59,22 +60,17 @@ const platformAdmin = computed(() => user.value?.role === 'ADMIN');
 const canWrite = computed(() => platformAdmin.value || user.value?.role === 'OPERATOR_ADMIN');
 const operators = ref([]);
 const operatorFilter = ref('');
-const operatorNames = computed(() => Object.fromEntries(operators.value.map(item => [item.id, item.name])));
+const operatorNames = computed(() =>
+  Object.fromEntries(operators.value.map((item) => [item.id, item.name])),
+);
 const menus = computed(() => managementNavigation(user.value?.role));
 const visibleData = computed(() => filterOperatorData(data, operatorFilter.value));
 const source = computed(() => mapConnectedSource(visibleData.value));
 const allDashboardSource = computed(() => mapConnectedSource(data));
-const visibleStationIds = computed(() => operatorFilter.value ? visibleData.value.stations.map(site => site.id) : null);
-function changeOperatorFilter() {
-  scope.value = {};
-  dialog.value = null;
-  editor.value = null;
-  navigationVersion.value++;
-  if (page.value === 'rates') {
-    rateStation.value = String(visibleData.value.stations[0]?.id || '');
-    loadRates();
-  }
-}
+const visibleStationIds = computed(() =>
+  operatorFilter.value ? visibleData.value.stations.map((site) => site.id) : null,
+);
+
 async function saved() {
   editor.value = null;
   message.value = '服务端数据已保存。';
@@ -126,10 +122,12 @@ function openOrder(id) {
 let sessionRevision = 0;
 let ratesRequestRevision = 0;
 let timer;
+const refreshPolicy = createRefreshPolicy();
 const client = createPlatformClient({
   onExpired: () => logout('登录已过期，请重新登录业务后端。'),
 });
 function clear() {
+  refreshPolicy.reset();
   sessionRevision++;
   ratesRequestRevision++;
   Object.assign(data, {
@@ -174,7 +172,7 @@ async function login() {
   try {
     clear();
     const session = sessionRevision;
-    const captcha=loginCaptcha.value.validate();
+    const captcha = loginCaptcha.value.validate();
     const profile = await client.login(username.value.trim(), password.value, captcha);
     password.value = '';
     await energyLogin.value?.complete();
@@ -191,7 +189,7 @@ async function login() {
         !editor.value &&
         user.value
       )
-        refresh();
+        refresh({ background: true });
     }, 5000);
   } catch (e) {
     if (!e.stale) loginError.value = e.message;
@@ -206,23 +204,25 @@ function requirePage(value) {
     throw Error('后端分页格式不正确。');
   return value;
 }
-async function refresh() {
+async function refresh({ background = false } = {}) {
   if (!user.value || busy.value || usersBusy.value || actionBusy.value || socketBusy.value) return;
   const requestVersion = sessionRevision;
   busy.value = true;
   error.value = '';
   try {
+    const includeBase = refreshPolicy.includeBase(background);
     const [stations, devices, sockets, orders, userPage, operatorList] = await Promise.all([
-      client.stations(),
+      includeBase ? client.stations() : data.stations,
       client.devices(),
       client.sockets(),
       client.orders(),
-      platformAdmin.value ? client.users(users.value.page) : null,
-      platformAdmin.value ? client.operators() : [],
+      includeBase && platformAdmin.value ? client.users(users.value.page) : null,
+      includeBase && platformAdmin.value ? client.operators() : operators.value,
     ]);
     if (requestVersion !== sessionRevision) return;
     Object.assign(data, { stations, devices, sockets, orders });
     if (userPage) users.value = requirePage(userPage);
+    if (includeBase) refreshPolicy.baseLoaded();
     operators.value = operatorList;
     if (user.value.features?.repairs) {
       try {
@@ -323,9 +323,14 @@ async function showOrder(record) {
   dialog.value = pending;
   try {
     const result = await client.order(record.id);
-    if (requestVersion === sessionRevision && dialog.value?.requestKey === pending.requestKey) dialog.value = { type: 'order', record: result };
+    if (requestVersion === sessionRevision && dialog.value?.requestKey === pending.requestKey)
+      dialog.value = { type: 'order', record: result };
   } catch (e) {
-    if (requestVersion === sessionRevision && dialog.value?.requestKey === pending.requestKey && !e.stale) {
+    if (
+      requestVersion === sessionRevision &&
+      dialog.value?.requestKey === pending.requestKey &&
+      !e.stale
+    ) {
       dialog.value = null;
       error.value = e.message;
     }
@@ -334,7 +339,7 @@ async function showOrder(record) {
 function nav(value) {
   navigationVersion.value++;
   const target = typeof value === 'string' ? { page: value } : value;
-  if (!target || !menus.value.some(item => item.id === target.page)) return;
+  if (!target || !menus.value.some((item) => item.id === target.page)) return;
   page.value = target.page;
   scope.value = { ...target };
   dialog.value = null;
@@ -342,7 +347,9 @@ function nav(value) {
   if (target.page === 'rates') {
     const available = visibleData.value.stations;
     const candidate = target.stationId || rateStation.value;
-    rateStation.value = String(available.find(site => String(site.id) === String(candidate))?.id || available[0]?.id || '');
+    rateStation.value = String(
+      available.find((site) => String(site.id) === String(candidate))?.id || available[0]?.id || '',
+    );
     loadRates();
   }
 }
@@ -382,7 +389,12 @@ onBeforeUnmount(() => {
     :busy="loginBusy"
     :error="loginError"
     @submit="login"
-    ><template #captcha><LoginCaptcha ref="loginCaptcha" :load-challenge="client.captcha" :disabled="loginBusy"/></template><template #help>使用平台管理员、运营商管理员或运营员账号。</template></EnergyLogin
+    ><template #captcha
+      ><LoginCaptcha
+        ref="loginCaptcha"
+        :load-challenge="client.captcha"
+        :disabled="loginBusy" /></template
+    ><template #help>使用平台管理员、运营商管理员或运营员账号。</template></EnergyLogin
   >
   <div v-else class="platform connected-platform" :class="{ 'sidebar-collapsed': collapsed }">
     <aside class="sidebar">
@@ -407,7 +419,9 @@ onBeforeUnmount(() => {
         充电管理 / <strong>{{ title }}</strong>
       </div>
       <div class="topbar-tools connected-tools">
-        <span v-if="!platformAdmin" class="preview-mode-chip">{{ user.operatorName || '运营商后台' }}</span>
+        <span v-if="!platformAdmin" class="preview-mode-chip">{{
+          user.operatorName || '运营商后台'
+        }}</span>
         <button v-if="platformAdmin" class="text-button" @click="nav('audit')">操作日志</button>
         <span>{{ user.displayName || user.username }}</span>
         <button class="text-button" @click="logout()">退出</button>
@@ -418,8 +432,9 @@ onBeforeUnmount(() => {
         运营员账号：基础配置只读，可记录告警并处理分派给本人的报修。
       </p>
       <div class="tab-strip">
-        <button class="active-tab">{{ title }}</button
-        ><span class="tab-mode-note">{{ loadedAt ? '最近同步 ' + loadedAt : '尚未读取数据' }}</span
+        <button class="active-tab">{{ title }}</button><span class="tab-mode-note">{{
+          loadedAt ? '最近同步 ' + loadedAt : '尚未读取数据'
+        }}</span
         ><button
           class="text-button remote-refresh"
           :disabled="busy || actionBusy"
@@ -430,9 +445,19 @@ onBeforeUnmount(() => {
       </div>
       <p v-if="error" class="remote-error" role="alert">{{ error }}</p>
       <p v-if="message" class="remote-message" role="status">{{ message }}</p>
-      <ManagementWorkspace v-if="managementPages.has(page)" :key="user.username + page + operatorFilter"
-        :page="page" :client="client" :user="user" :operator-id="operatorFilter"
-        :stations="data.stations" :operators="operators" :source="source" @updated="refresh" @order="openOrder" />
+      <ManagementWorkspace
+        v-if="managementPages.has(page)"
+        :key="user.username + page + operatorFilter"
+        :page="page"
+        :client="client"
+        :user="user"
+        :operator-id="operatorFilter"
+        :stations="data.stations"
+        :operators="operators"
+        :source="source"
+        @updated="refresh"
+        @order="openOrder"
+      />
       <ConnectedDashboardPage
         v-else-if="page === 'dashboard'"
         :source="allDashboardSource"

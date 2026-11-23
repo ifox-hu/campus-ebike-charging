@@ -8,10 +8,7 @@
     "prefix": "HOSPITAL-STAFF",
     "latitude": 32.9905,
     "longitude": 112.502,
-    "rows": [
-      12,
-      12
-    ],
+    "rows": [12, 12],
     "address": "医院场景 · 职工停车棚（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -25,10 +22,7 @@
     "prefix": "HOSPITAL-VISITOR",
     "latitude": 32.9912,
     "longitude": 112.503,
-    "rows": [
-      10,
-      12
-    ],
+    "rows": [10, 12],
     "address": "医院场景 · 门诊配套非机动车停车区（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -42,10 +36,7 @@
     "prefix": "COMMUNITY-EAST",
     "latitude": 32.987,
     "longitude": 112.511,
-    "rows": [
-      12,
-      15
-    ],
+    "rows": [12, 15],
     "address": "住宅小区场景 · 小区东门集中停车棚（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -59,10 +50,7 @@
     "prefix": "COMMUNITY-SERVICE",
     "latitude": 32.985,
     "longitude": 112.508,
-    "rows": [
-      10,
-      12
-    ],
+    "rows": [10, 12],
     "address": "住宅小区场景 · 社区服务中心非机动车停车区（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -76,9 +64,7 @@
     "prefix": "INDUSTRIAL-STAFF",
     "latitude": 32.997,
     "longitude": 112.523,
-    "rows": [
-      12
-    ],
+    "rows": [12],
     "address": "产业园区场景 · 园区员工通勤停车棚（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -92,10 +78,7 @@
     "prefix": "FACTORY-SHIFT",
     "latitude": 32.999,
     "longitude": 112.525,
-    "rows": [
-      12,
-      12
-    ],
+    "rows": [12, 12],
     "address": "产业园区场景 · 厂区入口非机动车集中停车区（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -109,10 +92,7 @@
     "prefix": "OFFICE-COMMUTE",
     "latitude": 32.983,
     "longitude": 112.52,
-    "rows": [
-      10,
-      10
-    ],
+    "rows": [10, 10],
     "address": "办公区场景 · 办公楼配套非机动车停车棚（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -126,10 +106,7 @@
     "prefix": "OFFICE-STAFF",
     "latitude": 32.981,
     "longitude": 112.517,
-    "rows": [
-      12,
-      15
-    ],
+    "rows": [12, 15],
     "address": "办公区场景 · 单位职工集中停车充电区（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -143,10 +120,7 @@
     "prefix": "RETAIL-STAFF",
     "latitude": 32.993,
     "longitude": 112.515,
-    "rows": [
-      10,
-      12
-    ],
+    "rows": [10, 12],
     "address": "商业配套场景 · 商业配套员工非机动车停车棚（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"
@@ -160,9 +134,7 @@
     "prefix": "RETAIL-MERCHANT",
     "latitude": 32.995,
     "longitude": 112.517,
-    "rows": [
-      12
-    ],
+    "rows": [12],
     "address": "商业配套场景 · 商户配套非机动车集中停车区（虚构演示位置）",
     "coordinateType": "GCJ02",
     "note": "虚构演示站点及模拟规划坐标，仅用于列表、地图与充电流程展示；不代表实际医院、小区、园区或已建充电设施。"

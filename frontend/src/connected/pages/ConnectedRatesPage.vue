@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import RateSchedulePanel from '../../components/RateSchedulePanel.vue';
 import ConnectedTablePage from '../ConnectedTablePage.vue';
 import { formatNumber } from '../platformClient.js';
 import ConnectedScopeFilter from './ConnectedScopeFilter.vue';
@@ -69,6 +70,7 @@ const records = computed(() =>
       </button>
     </template>
     <template #before-table="{ resetFilters }">
+      <RateSchedulePanel v-if="stationId && !ratesError" :rates="rates" :loading="ratesBusy" />
       <p v-if="ratesError" class="remote-error" role="alert">{{ ratesError }}</p>
       <ConnectedScopeFilter
         :scope="scope"

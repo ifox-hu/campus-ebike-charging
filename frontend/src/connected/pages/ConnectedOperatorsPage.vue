@@ -15,7 +15,9 @@ const newStaff = () => ({ username: '', displayName: '', password: '', role: 'OP
 const account = ref(newStaff());
 let staffRequest = 0;
 
-const ownedSites = computed(() => props.stations.filter(site => String(site.operatorId ?? 1) === selected.value));
+const ownedSites = computed(() =>
+  props.stations.filter((site) => String(site.operatorId ?? 1) === selected.value),
+);
 
 async function loadStaff() {
   const request = ++staffRequest;
@@ -31,10 +33,19 @@ async function loadStaff() {
     if (request === staffRequest) loadingStaff.value = false;
   }
 }
-watch(selected, () => { stationId.value = ''; error.value = ''; info.value = ''; loadStaff(); });
-watch(() => props.operators, (items) => {
-  if (!selected.value && items.length) selected.value = String(items[0].id);
-}, { immediate: true });
+watch(selected, () => {
+  stationId.value = '';
+  error.value = '';
+  info.value = '';
+  loadStaff();
+});
+watch(
+  () => props.operators,
+  (items) => {
+    if (!selected.value && items.length) selected.value = String(items[0].id);
+  },
+  { immediate: true },
+);
 
 async function submit(action) {
   if (saving.value) return;
@@ -82,12 +93,17 @@ function toggle(row) {
     info.value = row.enabled ? '账号已停用。' : '账号已启用。';
   });
 }
-const roleName = role => role === 'OPERATOR_ADMIN' ? '运营商管理员' : '运营员';
+const roleName = (role) => (role === 'OPERATOR_ADMIN' ? '运营商管理员' : '运营员');
 </script>
 
 <template>
   <section class="management-page">
-    <header class="management-heading"><div><h1>运营商管理</h1><p>管理合作运营商、站点归属和后台账号。</p></div></header>
+    <header class="management-heading">
+      <div>
+        <h1>运营商管理</h1>
+        <p>管理合作运营商、站点归属和后台账号。</p>
+      </div>
+    </header>
     <p v-if="error" class="remote-error" role="alert">{{ error }}</p>
     <p v-if="info" class="remote-message" role="status">{{ info }}</p>
     <form class="filter-bar" @submit.prevent="createOperator">
@@ -95,37 +111,94 @@ const roleName = role => role === 'OPERATOR_ADMIN' ? '运营商管理员' : '运
       <button class="soft-button active" :disabled="saving">新增运营商</button>
     </form>
     <fieldset class="operator-forms" :disabled="saving">
-      <label>当前运营商
-        <select v-model="selected"><option v-for="item in operators" :key="item.id" :value="String(item.id)">{{ item.name }}</option></select>
+      <label
+        >当前运营商
+        <select v-model="selected">
+          <option v-for="item in operators" :key="item.id" :value="String(item.id)">
+            {{ item.name }}
+          </option>
+        </select>
       </label>
-      <p>{{ ownedSites.length }} 个站点<span v-for="site in ownedSites" :key="site.id"> · {{ site.name }}</span></p>
+      <p>
+        {{ ownedSites.length }} 个站点<span v-for="site in ownedSites" :key="site.id">
+          · {{ site.name }}</span
+        >
+      </p>
       <form class="filter-bar" @submit.prevent="assignStation">
-        <label>分配站点
+        <label
+          >分配站点
           <select v-model="stationId" required>
             <option value="">请选择站点</option>
-            <option v-for="site in stations" :key="site.id" :value="site.id" :disabled="String(site.operatorId ?? 1) === selected">{{ site.name }}</option>
+            <option
+              v-for="site in stations"
+              :key="site.id"
+              :value="site.id"
+              :disabled="String(site.operatorId ?? 1) === selected"
+            >
+              {{ site.name }}
+            </option>
           </select>
         </label>
         <button class="outline-button" :disabled="!selected">保存站点归属</button>
       </form>
       <form class="filter-bar" @submit.prevent="createAccount">
-        <label>登录账号 <input v-model="account.username" required pattern="[A-Za-z0-9_]{3,30}" autocomplete="off" /></label>
+        <label
+          >登录账号
+          <input
+            v-model="account.username"
+            required
+            pattern="[A-Za-z0-9_]{3,30}"
+            autocomplete="off"
+        /></label>
         <label>显示名称 <input v-model="account.displayName" required maxlength="50" /></label>
-        <label>初始密码 <input v-model="account.password" required type="password" minlength="8" maxlength="72" autocomplete="new-password" /></label>
-        <label>角色 <select v-model="account.role"><option value="OPERATOR_ADMIN">运营商管理员</option><option value="OPERATOR">运营员</option></select></label>
+        <label
+          >初始密码
+          <input
+            v-model="account.password"
+            required
+            type="password"
+            minlength="8"
+            maxlength="72"
+            autocomplete="new-password"
+        /></label>
+        <label
+          >角色
+          <select v-model="account.role">
+            <option value="OPERATOR_ADMIN">运营商管理员</option>
+            <option value="OPERATOR">运营员</option>
+          </select></label
+        >
         <button class="soft-button active" :disabled="!selected">新增运营账号</button>
       </form>
     </fieldset>
     <div class="management-table-wrap">
       <table class="management-table">
-        <thead><tr><th>账号</th><th>显示名称</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
+        <thead>
+          <tr>
+            <th>账号</th>
+            <th>显示名称</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
         <tbody>
           <tr v-for="row in staff" :key="row.id">
-            <td>{{ row.username }}</td><td>{{ row.displayName }}</td><td>{{ roleName(row.role) }}</td>
+            <td>{{ row.username }}</td>
+            <td>{{ row.displayName }}</td>
+            <td>{{ roleName(row.role) }}</td>
             <td>{{ row.enabled ? '启用' : '停用' }}</td>
-            <td><button class="table-link" :disabled="saving" @click="toggle(row)">{{ row.enabled ? '停用' : '启用' }}</button></td>
+            <td>
+              <button class="table-link" :disabled="saving" @click="toggle(row)">
+                {{ row.enabled ? '停用' : '启用' }}
+              </button>
+            </td>
           </tr>
-          <tr v-if="!staff.length"><td colspan="5" class="empty-table">{{ loadingStaff ? '正在读取账号…' : '暂无运营账号' }}</td></tr>
+          <tr v-if="!staff.length">
+            <td colspan="5" class="empty-table">
+              {{ loadingStaff ? '正在读取账号…' : '暂无运营账号' }}
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -133,7 +206,18 @@ const roleName = role => role === 'OPERATOR_ADMIN' ? '运营商管理员' : '运
 </template>
 
 <style scoped>
-.operator-forms { border: 0; padding: 0; margin: 0; min-width: 0; }
-label { display: inline-flex; gap: .5rem; align-items: center; }
-.filter-bar { flex-wrap: wrap; }
+.operator-forms {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+label {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.filter-bar {
+  flex-wrap: wrap;
+}
 </style>

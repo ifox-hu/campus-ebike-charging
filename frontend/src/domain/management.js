@@ -11,7 +11,7 @@ const shared = [
 export function managementNavigation(role) {
   if (!['ADMIN', 'OPERATOR_ADMIN', 'OPERATOR'].includes(role)) return [];
   const platform = role === 'ADMIN';
-  const menu = shared.map(item => ({ ...item }));
+  const menu = shared.map((item) => ({ ...item }));
   menu[0].label = platform ? '平台概览' : '运营概览';
   if (platform) {
     menu.splice(1, 0, { id: 'operators', label: '运营商管理', icon: 'system' });
@@ -25,18 +25,35 @@ export function managementNavigation(role) {
   return menu;
 }
 
-export const managementPages = new Set(['operators', 'serviceUsers', 'team', 'statistics', 'audit']);
+export const managementPages = new Set([
+  'operators',
+  'serviceUsers',
+  'team',
+  'statistics',
+  'audit',
+]);
 
 export function csvDocument(rows) {
-  return '\uFEFF' + rows.map(row => row.map(value => {
-    let text = String(value ?? '');
-    if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
-    return '"' + text.replaceAll('"', '""') + '"';
-  }).join(',')).join('\r\n');
+  return (
+    '\uFEFF' +
+    rows
+      .map((row) =>
+        row
+          .map((value) => {
+            let text = String(value ?? '');
+            if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
+            return '"' + text.replaceAll('"', '""') + '"';
+          })
+          .join(','),
+      )
+      .join('\r\n')
+  );
 }
 
 export function downloadCsv(filename, rows) {
-  const url = URL.createObjectURL(new Blob([csvDocument(rows)], { type: 'text/csv;charset=utf-8' }));
+  const url = URL.createObjectURL(
+    new Blob([csvDocument(rows)], { type: 'text/csv;charset=utf-8' }),
+  );
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
@@ -44,5 +61,5 @@ export function downloadCsv(filename, rows) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export const displayTime = value => value ? String(value).replace('T', ' ').slice(0, 19) : '—';
-export const decimal = value => Number(value || 0).toFixed(2);
+export const displayTime = (value) => (value ? String(value).replace('T', ' ').slice(0, 19) : '—');
+export const decimal = (value) => Number(value || 0).toFixed(2);

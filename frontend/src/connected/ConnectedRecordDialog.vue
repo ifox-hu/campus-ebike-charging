@@ -52,7 +52,10 @@ const orderDetails = computed(() =>
         <template v-if="dialog.type === 'station'"
           ><h3>{{ dialog.record.name }}</h3>
           <p>{{ dialog.record.address }}</p>
-          <p>营业时间 {{ dialog.record.businessHours || '未填写' }} · 联系电话 {{ dialog.record.contactPhone || '未填写' }}</p>
+          <p>
+            营业时间 {{ dialog.record.businessHours || '未填写' }} · 联系电话
+            {{ dialog.record.contactPhone || '未填写' }}
+          </p>
           <p>{{ dialog.record.deviceCount }} 台设备 · {{ dialog.record.socketCount }} 个插座</p>
           <div class="station-business-links">
             <button

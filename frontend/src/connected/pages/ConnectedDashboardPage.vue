@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import DashboardDateFilter from '../../components/DashboardDateFilter.vue';
-import {dashboardRange,dashboardRangeForSource} from '../../domain/dashboardPeriod.js';
+import { dashboardRange, dashboardRangeForSource } from '../../domain/dashboardPeriod.js';
 import OverviewSummary from '../OverviewSummary.vue';
 import OperationsPanel from '../../components/OperationsPanel.vue';
 import DashboardStationMap from '../../components/DashboardStationMap.vue';
@@ -20,12 +20,11 @@ const props = defineProps({
 defineEmits(['navigate', 'device', 'order']);
 
 const operatorId = ref('');
-const dateRange=ref(dashboardRange('sixMonths'));
-const period=ref('sixMonths');
-const chartRange=computed(()=>dashboardRangeForSource(scopedSource.value,dateRange.value));
+const dateRange = ref(dashboardRange('sixMonths'));
+const period = ref('sixMonths');
+const chartRange = computed(() => dashboardRangeForSource(scopedSource.value, dateRange.value));
 const scopedSource = computed(() => scopeDashboardSource(props.source, operatorId.value));
-const operatorCount = computed(() => operatorId.value ? 1 : props.operators.length);
-
+const operatorCount = computed(() => (operatorId.value ? 1 : props.operators.length));
 </script>
 
 <template>
@@ -42,7 +41,7 @@ const operatorCount = computed(() => operatorId.value ? 1 : props.operators.leng
         label="运营商"
       />
     </header>
-    <DashboardDateFilter v-model="dateRange" @period="period=$event"/>
+    <DashboardDateFilter v-model="dateRange" @period="period = $event" />
     <OverviewSummary
       :source="scopedSource"
       :range="dateRange"

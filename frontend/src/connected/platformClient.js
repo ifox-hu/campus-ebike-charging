@@ -23,15 +23,20 @@ export const statusLabel = (value, kind) =>
   labels[kind]?.[value] || (value ? `未知（${value}）` : '未提供');
 export function filterOperatorData(data, operatorId) {
   if (!operatorId) return data;
-  const owners = new Map(data.stations.map(site => [site.id, site.operatorId ?? 1]));
-  const stations = data.stations.filter(site => String(site.operatorId ?? 1) === String(operatorId));
-  const stationIds = new Set(stations.map(site => site.id));
-  const devices = data.devices.filter(device => stationIds.has(device.stationId));
-  const deviceIds = new Set(devices.map(device => device.id));
-  const ownRecord = record => String(record.operatorId ?? owners.get(record.stationId)) === String(operatorId);
+  const owners = new Map(data.stations.map((site) => [site.id, site.operatorId ?? 1]));
+  const stations = data.stations.filter(
+    (site) => String(site.operatorId ?? 1) === String(operatorId),
+  );
+  const stationIds = new Set(stations.map((site) => site.id));
+  const devices = data.devices.filter((device) => stationIds.has(device.stationId));
+  const deviceIds = new Set(devices.map((device) => device.id));
+  const ownRecord = (record) =>
+    String(record.operatorId ?? owners.get(record.stationId)) === String(operatorId);
   return {
-    ...data, stations, devices,
-    sockets: data.sockets.filter(socket => deviceIds.has(socket.chargerId)),
+    ...data,
+    stations,
+    devices,
+    sockets: data.sockets.filter((socket) => deviceIds.has(socket.chargerId)),
     orders: data.orders.filter(ownRecord),
     reports: data.reports.filter(ownRecord),
   };
@@ -207,9 +212,10 @@ export function createPlatformClient({
     }
     return params.size ? '?' + params.toString() : '';
   }
-  const teamScope = operatorId => operatorId ? { operatorId: Number(id(operatorId)) } : {};
+  const teamScope = (operatorId) => (operatorId ? { operatorId: Number(id(operatorId)) } : {});
   return {
-    captcha: (previousId='') => request('/auth/captcha'+query({previousId}), {anonymous:true,bearer:''}),
+    captcha: (previousId = '') =>
+      request('/auth/captcha' + query({ previousId }), { anonymous: true, bearer: '' }),
     async login(username, password, captcha = {}) {
       token = '';
       const version = ++generation;
@@ -222,7 +228,8 @@ export function createPlatformClient({
       if (!login?.token || !['ADMIN', 'OPERATOR_ADMIN', 'OPERATOR'].includes(login.role))
         throw Error('请使用管理员或运营员账号登录，普通用户不能进入管理端。');
       const profile = await request('/auth/me', { bearer: login.token });
-      if (!['ADMIN', 'OPERATOR_ADMIN', 'OPERATOR'].includes(profile?.role)) throw Error('此账号没有管理员权限。');
+      if (!['ADMIN', 'OPERATOR_ADMIN', 'OPERATOR'].includes(profile?.role))
+        throw Error('此账号没有管理员权限。');
       if (version !== generation) throw Error('登录会话已变化。');
       token = login.token;
       return profile;
@@ -233,24 +240,36 @@ export function createPlatformClient({
     },
     stations: () => array('/stations'),
     operators: () => array('/operators'),
-    createOperator: (value) => request('/operators', { method: 'POST', body: typeof value === 'string' ? { name: value } : value }),
+    createOperator: (value) =>
+      request('/operators', {
+        method: 'POST',
+        body: typeof value === 'string' ? { name: value } : value,
+      }),
     updateOperator: (value, body) => request('/operators/' + id(value), { method: 'PUT', body }),
     team: (operatorId = '') => array('/team' + query(teamScope(operatorId))),
-    createTeam: (body, operatorId = '') => request('/team', { method: 'POST', body: { ...body, ...teamScope(operatorId) } }),
-    setTeamEnabled: (value, enabled, operatorId = '') => request('/team/' + id(value) + '/status', {
-      method: 'PATCH', body: { enabled, ...teamScope(operatorId) },
-    }),
-    resetTeamPassword: (value, password, operatorId = '') => request('/team/' + id(value) + '/reset-password', {
-      method: 'POST', body: { password, ...teamScope(operatorId) },
-    }),
+    createTeam: (body, operatorId = '') =>
+      request('/team', { method: 'POST', body: { ...body, ...teamScope(operatorId) } }),
+    setTeamEnabled: (value, enabled, operatorId = '') =>
+      request('/team/' + id(value) + '/status', {
+        method: 'PATCH',
+        body: { enabled, ...teamScope(operatorId) },
+      }),
+    resetTeamPassword: (value, password, operatorId = '') =>
+      request('/team/' + id(value) + '/reset-password', {
+        method: 'POST',
+        body: { password, ...teamScope(operatorId) },
+      }),
     serviceUsers: (filters = {}) => request('/service-users' + query(filters)),
     serviceUser: (value, filters = {}) => request('/service-users/' + id(value) + query(filters)),
     statistics: (filters = {}) => request('/management/statistics' + query(filters)),
     operatorStaff: (value) => array('/operators/' + id(value) + '/staff'),
-    createOperatorStaff: (value, body) => request('/operators/' + id(value) + '/staff', { method: 'POST', body }),
-    assignStation: (station, operator) => request('/operators/stations/' + id(station) + '/owner', {
-      method: 'PUT', body: { operatorId: Number(id(operator)) },
-    }),
+    createOperatorStaff: (value, body) =>
+      request('/operators/' + id(value) + '/staff', { method: 'POST', body }),
+    assignStation: (station, operator) =>
+      request('/operators/stations/' + id(station) + '/owner', {
+        method: 'PUT',
+        body: { operatorId: Number(id(operator)) },
+      }),
     devices: () => array('/chargers'),
     sockets: () => array('/connectors'),
     orders: () => array('/orders'),
@@ -263,7 +282,9 @@ export function createPlatformClient({
       return request(`/auth/users/${safe}/status?enabled=${enabled}`, { method: 'PATCH' });
     },
     rates: (value) => array(`/price-periods?stationId=${id(value)}`),
-    audit: (page = 1, filters = {}) => request('/audit-logs' + query({ page, size: 20, ...filters })),
+    audit: (page = 1, filters = {}) =>
+      request('/audit-logs' + query({ page, size: 20, ...filters })),
+    repairAssignees: (value) => array('/repairs/' + id(value) + '/assignees'),
     repairs: (status = '') =>
       array('/repairs' + (status ? '?status=' + encodeURIComponent(status) : '')),
     handleRepair: (value, body) => request('/repairs/' + id(value), { method: 'PATCH', body }),

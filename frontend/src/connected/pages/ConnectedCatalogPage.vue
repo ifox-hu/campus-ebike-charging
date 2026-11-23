@@ -88,7 +88,11 @@ const records = computed(() => {
     :records="records"
   >
     <template #create>
-      <button v-if="devicePage ? canWrite : canManageStations" class="soft-button active" @click="$emit('edit', { type: page })">
+      <button
+        v-if="devicePage ? canWrite : canManageStations"
+        class="soft-button active"
+        @click="$emit('edit', { type: page })"
+      >
         {{ devicePage ? '新增一批设备' : '新增站点' }}
       </button>
     </template>

@@ -1,5 +1,7 @@
 package com.chargeplatform.common.api;
 
+import com.chargeplatform.common.dto.ApiResponse;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConnectionFactory;

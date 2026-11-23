@@ -49,7 +49,7 @@
   </view>
 </template>
 <script setup>
-import {ref,computed} from 'vue';import {onLoad} from '@dcloudio/uni-app';import PageHeader from '../../components/PageHeader.vue';import {state,action,go,isBackend,refreshData,loadRates,connection,startBackend} from '../../store.js';import {startSession,yuan,isDeviceAvailable,chargingPower,paymentMethods} from '../../domain/charging.mjs';
+import {ref,computed} from 'vue';import {onLoad} from '@dcloudio/uni-app';import PageHeader from '../../components/PageHeader.vue';import {state,action,go,isBackend,refreshData,loadRates,connection,startBackend} from '../../store.js';import {startSession,yuan,isDeviceAvailable,chargingPower} from '../../domain/charging.mjs';
 import PaymentChoices from '../../components/PaymentChoices.vue';
 import {useCatalogSync} from '../../use-catalog-sync.js';
 import ConnectionState from '../../components/ConnectionState.vue';import BackendRates from '../../components/BackendRates.vue';import {isCurrentOrder} from '../../domain/order-status.mjs';

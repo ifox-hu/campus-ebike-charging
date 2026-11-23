@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import StationLocationPicker from '../components/StationLocationPicker.vue';
+import { validateRateChange } from '../domain/rateSchedule.js';
 import { electricityRatePayload } from './platformClient.js';
 import { servicePriceFor, servicePercentOf } from '../domain/serviceFees.js';
 const props = defineProps({
@@ -117,6 +118,7 @@ function selectLocation(point) {
 }
 async function save() {
   if (busy.value) return;
+  busy.value = true;
   error.value = '';
   try {
     const payload = Object.fromEntries(schema.value.map(([key]) => [key, form[key]]));
@@ -153,6 +155,8 @@ async function save() {
     }
     if (props.type === 'rates') {
       Object.assign(payload, electricityRatePayload(form));
+      const currentRates = await props.client.rates(payload.stationId);
+      validateRateChange(currentRates, payload, props.record?.id);
       delete payload.serviceFeePercent;
     }
     if (props.type === 'socket') {

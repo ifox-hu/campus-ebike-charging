@@ -11,6 +11,8 @@ import java.util.List;
 @RestController @RequestMapping("/api/repairs") @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
 public class RepairController {
     private final RepairService service;public RepairController(RepairService service){this.service=service;}
+    @GetMapping("/{id}/assignees") @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<RepairService.Assignee>> assignees(@PathVariable Long id,Authentication auth){return ApiResponse.success(service.assignees(id,auth.getName()));}
     @GetMapping public ApiResponse<List<RepairTicket>> list(@RequestParam(required=false)String status,Authentication auth){boolean admin=auth.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_ADMIN"));return ApiResponse.success(service.list(status).stream().filter(t->admin||auth.getName().equals(t.getAssigneeUsername())).toList());}
     @PatchMapping("/{id}") public ApiResponse<RepairTicket> handle(@PathVariable Long id,@Valid @RequestBody RepairRequests.Handle request,Authentication auth){return ApiResponse.success(service.handle(id,request,auth.getName()));}
 }
