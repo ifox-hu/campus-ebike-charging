@@ -7,7 +7,7 @@
       <view class="panel equipment-summary">
         <view class="section-row"><text class="station-name">{{station.name}}</text><button class="small-link" @click="go('/pages/report/index?code='+encodeURIComponent(selected||device.sockets[0]?.code||device.code||device.id))">报修</button></view>
         <text class="block muted small">{{device.name||'双插座充电设备'}} · {{device.code||device.id}}</text>
-        <view class="equipment-tags"><text class="tag">仅收电费</text><text class="small muted">按本次电价与用电量结算</text></view>
+        <view class="equipment-tags"><text class="tag">电费＋服务费</text><text class="small muted">按本次电价与用电量结算</text></view>
       </view>
       <view class="panel port-panel">
         <view class="section-row"><view class="accent-title">选择插座</view><text class="small muted">请核对设备上的编号</text></view>
@@ -24,13 +24,13 @@
         <view class="section-row"><view class="accent-title">充电方式</view><text class="small muted">可提前手动结束</text></view>
         <view class="plan-grid">
           <button v-for="minutes in [60,120,180]" :key="minutes" :class="['plan-card',{chosen:!fullMode&&!customDuration&&durationPreset===minutes}]" :disabled="starting" @click="fullMode=false;customDuration=false;durationPreset=minutes"><text class="plan-name">{{minutes/60}} 小时</text><text class="plan-note">到时自动停止</text><text v-if="!fullMode&&!customDuration&&durationPreset===minutes" class="plan-tick">✓</text></button>
-          <button :class="['plan-card',{chosen:fullMode}]" :disabled="starting||!supportsFull" @click="fullMode=true;customDuration=false"><text class="plan-name">充满自停<text class="simulation-badge">模拟</text></text><text class="plan-note">模拟低功率结束</text><text v-if="fullMode" class="plan-tick">✓</text></button>
+          <button :class="['plan-card',{chosen:fullMode}]" :disabled="starting||!supportsFull" @click="fullMode=true;customDuration=false"><text class="plan-name">充满自停<text v-if="!isBackend||connection.user?.features?.fullChargeSimulation" class="simulation-badge">模拟</text></text><text class="plan-note">持续低功率后结束</text><text v-if="fullMode" class="plan-tick">✓</text></button>
           <button :class="['plan-card','custom-plan',{chosen:customDuration&&!fullMode}]" :disabled="starting" @click="fullMode=false;customDuration=true"><text class="plan-name">自定义时长</text><text class="plan-note">1—720 分钟，按需选择</text><text v-if="customDuration&&!fullMode" class="plan-tick">✓</text></button>
         </view>
         <view v-if="customDuration&&!fullMode" class="duration-custom"><input v-model="customMinutes" type="number" placeholder="输入 1—720" :disabled="starting" aria-label="自定义充电分钟数"/><text>分钟</text></view>
-        <text v-if="!durationValid" class="field-error block">{{fullMode?'当前后端未开放充满自停模拟':'请输入 1—720 的整数分钟。'}}</text>
-        <view class="plan-explanation"><text class="explanation-title">{{fullMode?'充满自停演示':'按实际用电结算'}}</text><text>{{fullMode?'按预设曲线模拟：先正常充电，再降至低功率保持 5 分钟后结束。演示约 215 分钟，不检测真实电池电量。':'到达所选时长后自动结束，也可随时提前结束。仅收电费，不收服务费。'}}</text></view>
-        <text v-if="!supportsFull" class="block muted small">充满自停模拟需新版软件计量后端，当前暂不可用。</text>
+        <text v-if="!durationValid" class="field-error block">{{fullMode?'当前后端未开放充满自停':'请输入 1—720 的整数分钟。'}}</text>
+        <view class="plan-explanation"><text class="explanation-title">{{fullMode?'充满自停':'按实际用电结算'}}</text><text>{{fullMode?'先观察正常充电负载，再连续低功率保持 5 分钟后结束，最长 12 小时。软件计量按预设功率曲线演示。':'到达所选时长后自动结束，也可随时提前结束。电费和服务费按启动时费率计算。'}}</text></view>
+        <text v-if="!supportsFull" class="block muted small">当前后端暂未开放此充电方式。</text>
       </view>
       <view class="panel">
         <view class="section-row"><view class="accent-title">支付方式</view><text class="tag">毕设演示</text></view>
@@ -40,7 +40,7 @@
       </view>
       <view class="panel">
         <BackendRates v-if="isBackend" :station="station"/>
-        <view v-else><view class="accent-title">电费标准</view><view class="electricity-rate"><text class="rate-value">¥{{yuan(station.rates.electricity)}}<text class="small"> / 度</text></text><text class="small muted">仅收电费 · 启动时保存电价</text></view></view>
+        <view v-else><view class="accent-title">电费标准</view><view class="electricity-rate"><text class="rate-value">¥{{yuan(station.rates.electricity)}}<text class="small"> / 度</text></text><text class="small muted">服务费 ¥{{(station.rates.service/100).toFixed(4)}} / 度 · 启动时保存费率</text></view></view>
         <text v-if="isBackend&&!connection.user?.features?.bikeCharging" class="block field-error">当前后台版本暂不支持启动，请联系管理员更新。</text>
       </view>
     </view>
@@ -57,12 +57,12 @@ const stationId=ref(''),deviceId=ref(''),selected=ref(''),starting=ref(false),re
 onLoad(q=>{stationId.value=q.station;deviceId.value=q.device;requestedSocket.value=q.socket||'';if(q.socket&&device.value?.online&&device.value.sockets.some(p=>p.code===q.socket&&p.status==='idle'))selected.value=q.socket;});
 const paymentMethod=ref('wechat');
 const fullMode=ref(false);
-const supportsFull=computed(()=>!isBackend||connection.user?.features?.fullChargeSimulation===true);
+const supportsFull=computed(()=>!isBackend||(connection.user?.features?.fullChargeSupported===true||connection.user?.features?.fullChargeSimulation===true));
 const supportsMock=computed(()=>!isBackend||connection.user?.features?.mockPayment===true);
 const durationPreset=ref(120),customDuration=ref(false),customMinutes=ref('');
 const durationMinutes=computed(()=>customDuration.value?Number(customMinutes.value):durationPreset.value);
 const durationValid=computed(()=>fullMode.value?supportsFull.value:Number.isInteger(durationMinutes.value)&&durationMinutes.value>=1&&durationMinutes.value<=720);
-const planLabel=computed(()=>fullMode.value?'充满自停（模拟）':durationMinutes.value+' 分钟');
+const planLabel=computed(()=>fullMode.value?'充满自停':durationMinutes.value+' 分钟');
 const socketPower=computed(()=>chargingPower(device.value?.sockets.find(p=>p.code===selected.value),device.value));
 const active=computed(()=>state.orders.find(isCurrentOrder));
 const canStart=computed(()=>durationValid.value&&(!isBackend||connection.user?.features?.bikeCharging)&&(!isBackend||station.value?.ratePeriods?.length)&&!connection.loading&&!connection.operation&&!active.value&&station.value&&device.value&&isDeviceAvailable(station.value,device.value)&&device.value.sockets.some(p=>p.code===selected.value&&p.status==='idle'));
@@ -72,7 +72,7 @@ useCatalogSync(async()=>{await refreshData();if(isBackend&&station.value){if(!se
 const start=()=>{
   if(!canStart.value||starting.value)return;
   starting.value=true;
-  uni.showModal({title:'确认开始充电',content:'插座 '+selected.value+' · '+planLabel.value+'。'+(fullMode.value?'按预设功率曲线模拟充满结束，不检测真实电池电量。':'到时自动结束。')+'仅收电费。',confirmText:'确认启动',
+  uni.showModal({title:'确认开始充电',content:'插座 '+selected.value+' · '+planLabel.value+'。'+(fullMode.value?'持续低功率后自动结束，最长12小时。':'到时自动结束。')+'电费＋服务费。',confirmText:'确认启动',
     success:async r=>{
       if(!r.confirm){starting.value=false;return;}
       try{

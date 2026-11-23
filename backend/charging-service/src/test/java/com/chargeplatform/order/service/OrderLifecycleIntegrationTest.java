@@ -20,6 +20,16 @@ class OrderLifecycleIntegrationTest {
     @Autowired ChargeOrderService orders;
     @Autowired JdbcTemplate db;
     @Autowired com.chargeplatform.order.mapper.ChargeOrderMapper repository;
+    @Test void oneMinuteCustomPlanFinishesAtItsDeadline(){
+        var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",1),"student");
+        var start=LocalDateTime.now().minusMinutes(2).withNano(0);
+        db.update("UPDATE charge_order SET start_time=? WHERE id=?",start,order.getId());
+        orders.reconcilePlannedOrders();
+        var ended=orders.get(order.getId());
+        assertEquals("COMPLETED",ended.getStatus());
+        assertEquals(start.plusMinutes(1),ended.getEndTime());
+        assertEquals(new BigDecimal("0.005"),ended.getEnergyKwh());
+    }
     @Test void timedPlanStopsOnServerWithoutClientAndNeverBillsPastDeadline(){
         var order=customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",75),"student");
         assertEquals(75,order.getDurationMinutes());
@@ -37,7 +47,7 @@ class OrderLifecycleIntegrationTest {
         assertEquals(ended.getEndTime(),orders.get(order.getId()).getEndTime());
     }
     @Test void invalidCustomDurationCannotOccupySocket(){
-        for(int duration:new int[]{0,14,721})assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",duration),"student"));
+        for(int duration:new int[]{-1,0,721})assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"CUSTOM",duration),"student"));
         assertThrows(BusinessException.class,()->customer.start(new OrderRequests.CustomerStart(7L,31L,"HOUR_4",null),"student"));
         assertEquals(0,db.queryForObject("SELECT COUNT(*) FROM charge_order",Integer.class));
     }

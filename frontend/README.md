@@ -19,6 +19,9 @@ npm run dev:pages
 - 三维登录场景支持旋转、缩放、脉冲与键盘控制，登录成功后播放聚能动画。
 - 打开的页面在顶部保留标签，支持切换和关闭；切换保留筛选条件，关闭当前页后转到相邻页。
 - 站点地图支持高德底图和坐标示意。
+- 收费规则提供全天时间轴、电费与服务费试算；联网模式可配置多个时段，保存前检查重叠，缺少时段时提示补齐。
+- 报修可选择所属运营商的处理人员，记录处理中和完成进度，并筛选超过24小时未完成的记录。
+- 联网模式每5秒刷新设备、插座、订单和报修，基础资料每60秒或手动刷新。
 
 ## 运行模式
 
@@ -33,12 +36,16 @@ npm run dev:pages
 ## 验证与构建
 
 ```bash
-npm test
+npm run check
+npm run lint:clients
 npm run build:pages
+npm run build:connected
 npm run preview:pages
 ```
 
 构建产物位于 `dist-pages/`，推送到 `main` 后由 GitHub Actions 发布。
+
+`check` 包含 ESLint、Prettier 和管理端测试；`lint:clients` 检查两套用户端。提交前用 `npm run format` 统一管理端格式，分层与权限约定见[开发规范](../docs/code-standards.md)。
 
 ## 更新管理端截图
 

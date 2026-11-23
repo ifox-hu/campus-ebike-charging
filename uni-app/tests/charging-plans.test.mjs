@@ -97,8 +97,8 @@ test('the deadline bill matches the upfront estimate while an early stop costs o
   const estimate=estimatePlanCost(state.stations[0].rates,'CUSTOM',300);
   const order=startSession(state,'14500006-01',1000,'CUSTOM',300);
   stopSession(state,order.id,1000+60*60000);
-  assert.equal(estimate.totalCents,120);
-  assert.equal(order.totalCents,24);
+  assert.equal(estimate.totalCents,99);
+  assert.equal(order.totalCents,20);
   const next=startSession(state,'14500006-01',1000,'CUSTOM',300);
   refreshSession(state,next.id,1000+350*60000);
   assert.equal(next.totalCents,estimate.totalCents);

@@ -7,6 +7,7 @@
 **/.env
 **/.env.*
 !**/.env.example
+!backend/.env.connected.example
 !uni-app/.env.connected
 !mobile-client/.env.connected
 !mobile-client/.env.sandbox

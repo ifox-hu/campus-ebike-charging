@@ -16,7 +16,7 @@ public final class OrderRequests {
     public record CustomerStart(@NotNull(message = "请选择站点") Long stationId,
                                 @NotNull(message = "请选择插座") Long connectorId,
                                 @jakarta.validation.constraints.Pattern(regexp="HOUR_1|HOUR_2|HOUR_3|FULL|CUSTOM") String planId,
-                                @jakarta.validation.constraints.Min(15) @jakarta.validation.constraints.Max(720)
+                                @jakarta.validation.constraints.Min(1) @jakarta.validation.constraints.Max(720)
                                 @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using=StrictMinutes.class) Integer customMinutes) {
         public CustomerStart(Long stationId,Long connectorId){this(stationId,connectorId,"FULL",null);}
     }

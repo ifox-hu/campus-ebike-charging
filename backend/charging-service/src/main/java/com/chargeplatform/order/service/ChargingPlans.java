@@ -14,7 +14,7 @@ public final class ChargingPlans {
             case "HOUR_1" -> 60;case "HOUR_2" -> 120;case "HOUR_3" -> 180;
             case "FULL" -> null;
             case "CUSTOM" -> {
-                if(custom==null||custom<15||custom>720)throw new BusinessException(400,"自定义时长须为15—720分钟的整数");
+                if(custom==null||custom<1||custom>720)throw new BusinessException(400,"自定义时长须为1—720分钟的整数");
                 yield custom;
             }
             default -> throw new BusinessException(400,"请选择有效的充电方式");

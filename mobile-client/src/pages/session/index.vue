@@ -12,25 +12,25 @@
           <view><text class="stat-value">{{yuan(order.totalCents)}}<text>元</text></text><text class="muted">{{order.status==='charging'?(isBackend?'当前已记账费用':'估算费用'):'订单金额'}}</text></view>
         </view>
         <text class="payment-status">{{paymentText}}</text>
-        <view v-if="order.chargeMode==='FULL'" class="full-status"><text class="full-status-title">充满自停 · 软件模拟</text><text>{{order.status==='charging'?'按预设功率曲线演示，低功率保持后自动结束':'本次订单采用充满自停模拟'}}</text><text>不检测真实电池电量，不代表硬件充满保护</text></view>
+        <view v-if="order.chargeMode==='FULL'" class="full-status"><text class="full-status-title">{{isBackend&&order.meteringSource==='TCP'?'充满自停':'充满自停 · 软件模拟'}}</text><text>{{order.status==='charging'?'持续低功率保持后自动结束，可随时手动结束':'本次订单采用充满自停'}}</text></view>
         <text v-if="order.failureReason" class="field-error">{{order.failureReason}}</text>
       </view>
       <view class="panel">
         <view class="section-title">充电信息</view>
         <view class="kv"><text>充电站点</text><text>{{order.stationName}}</text></view>
         <view v-if="order.powerWatts" class="kv"><text>配置功率</text><text>{{order.powerWatts}} W</text></view>
-        <view v-if="order.chargeMode" class="kv"><text>充电方式</text><text>{{order.chargeMode==='FULL'?'充满自停（模拟）':'定时充电'}}</text></view>
-        <view v-if="order.status==='charging'&&order.currentPowerWatts!=null" class="kv"><text>模拟当前功率</text><text>{{order.currentPowerWatts}} W</text></view>
+        <view v-if="order.chargeMode" class="kv"><text>充电方式</text><text>{{order.chargeMode==='FULL'?'充满自停':'定时充电'}}</text></view>
+        <view v-if="order.status==='charging'" class="kv"><text>当前功率</text><text>{{order.currentPowerWatts==null?'—':order.currentPowerWatts+' W'}}</text></view>
         <view class="kv"><text>支付方式</text><text>{{paymentMethodName(order.paymentMethod)}}{{order.paymentEnvironment==='MOCK'?'（模拟）':''}}</text></view><view class="kv"><text>插座编号</text><text>{{order.socketCode}}</text></view>
-        <view v-if="order.durationMinutes" class="kv"><text>选择时长</text><text>{{order.durationMinutes}} 分钟</text></view><view v-if="order.scheduledEndsAt" class="kv"><text>{{order.chargeMode==='FULL'?'模拟预计结束':'预计结束'}}</text><text>{{isBackend?serverTime(order.scheduledEndTimeText):date(order.scheduledEndsAt)}}</text></view><view v-if="order.status==='charging' && order.scheduledEndsAt" class="kv"><text>剩余时间</text><text>{{remainingText}}</text></view><view v-if="order.endReason==='DURATION_REACHED'" class="kv"><text>结束原因</text><text>已达到选择时长</text></view><view v-if="order.endReason==='FULL_SIMULATED'" class="kv"><text>结束原因</text><text>已达到模拟充满条件</text></view><view class="kv"><text>开始时间</text><text>{{isBackend?serverTime(order.startTimeText):date(order.startedAt)}}</text></view>
+        <view v-if="order.durationMinutes" class="kv"><text>选择时长</text><text>{{order.durationMinutes}} 分钟</text></view><view v-if="order.scheduledEndsAt" class="kv"><text>{{order.chargeMode==='FULL'?(isBackend?'最长充电时限':'模拟预计结束'):'预计结束'}}</text><text>{{isBackend?serverTime(order.scheduledEndTimeText):date(order.scheduledEndsAt)}}</text></view><view v-if="order.status==='charging' && order.scheduledEndsAt" class="kv"><text>{{isBackend&&order.chargeMode==='FULL'?'距最长时限':'剩余时间'}}</text><text>{{remainingText}}</text></view><view v-if="order.endReason" class="kv"><text>结束原因</text><text>{{({DURATION_REACHED:'已达到选择时长',FULL_SIMULATED:'已达到模拟充满条件',FULL_POWER_CONFIRMED:'持续低功率，充电已结束',MAX_DURATION_REACHED:'已达到最长充电时限',USER_STOPPED:'手动结束'})[order.endReason]||order.endReason}}</text></view><view class="kv"><text>开始时间</text><text>{{isBackend?serverTime(order.startTimeText):date(order.startedAt)}}</text></view>
         <view v-if="order.status==='ended'" class="kv"><text>结束时间</text><text>{{isBackend?serverTime(order.endTimeText):date(order.endedAt)}}</text></view>
         <view class="kv"><text>订单编号</text><text class="small">{{order.orderNo||order.id}}</text></view>
         <view class="kv"><text>电费{{order.rates?'（'+yuan(order.rates.electricity)+' 元/度）':''}}</text><text>¥{{yuan(order.electricityCents)}}</text></view>
-        <view v-if="order.serviceCents>0" class="kv"><text>历史服务费{{order.rates?'（'+yuan(order.rates.service)+' 元/度）':''}}</text><text>¥{{yuan(order.serviceCents)}}</text></view>
+        <view v-if="order.serviceCents>0" class="kv"><text>服务费{{order.rates?'（'+(order.rates.service/100).toFixed(4)+' 元/度）':''}}</text><text>¥{{yuan(order.serviceCents)}}</text></view>
         <view class="kv total"><text>合计</text><text class="teal">¥{{yuan(order.totalCents)}}</text></view>
         <text v-if="isBackend" class="block muted small">费用由平台结算；历史订单不使用当前站点费率重新计算。</text><text v-if="order.meteringSource" class="block muted small">{{order.simulatedPowerWatts ? '计量参考功率 '+order.simulatedPowerWatts+' W' : '电量以平台记录为准'}}</text>
       </view>
-      <view v-if="order.ratePeriods?.length" class="panel"><text class="section-title">本次费率（启动时保存）</text><view v-for="(period,index) in order.ratePeriods" :key="index" class="rate-period"><text class="block">{{period.startTime}}—{{period.endTime}}</text><text class="muted small">电费 {{period.electricityPrice}} 元/度<text v-if="Number(period.servicePrice)>0"> · 历史服务费 {{period.servicePrice}} 元/度</text></text></view></view>
+      <view v-if="order.ratePeriods?.length" class="panel"><text class="section-title">本次费率（启动时保存）</text><view v-for="(period,index) in order.ratePeriods" :key="index" class="rate-period"><text class="block">{{period.startTime}}—{{period.endTime}}</text><text class="muted small">电费 {{period.electricityPrice}} 元/度<text v-if="Number(period.servicePrice)>0"> · 服务费 {{period.servicePrice}} 元/度</text></text></view></view>
 
       <view v-if="order.payment==='unpaid'&&order.status==='ended'" class="panel settlement-panel">
         <view class="section-row"><text class="section-title">{{sandboxLocked?'支付宝沙箱交易':'选择支付方式'}}</text><text class="tag">{{sandboxLocked?'测试交易':'模拟 · 不扣款'}}</text></view>

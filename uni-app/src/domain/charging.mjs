@@ -7,14 +7,14 @@ export const CHARGE_PLANS = Object.freeze([
   Object.freeze({id:'HOUR_2',label:'2h',minutes:120,description:'到时自动停止'}),
   Object.freeze({id:'HOUR_3',label:'3h',minutes:180,description:'到时自动停止'}),
   Object.freeze({id:'FULL',label:'充满自停',minutes:null,description:'持续低功率后停止（模拟）'}),
-  Object.freeze({id:'CUSTOM',label:'自定义',minutes:null,description:'15—720分钟'})
+  Object.freeze({id:'CUSTOM',label:'自定义',minutes:null,description:'1—720分钟'})
 ]);
 export function resolvePlan(id,customMinutes){
   const plan=CHARGE_PLANS.find(p=>p.id===id);
   if(!plan)throw new Error('请选择有效的充电方式');
   if(id!=='CUSTOM')return {...plan};
   const minutes=Number(customMinutes);
-  if(!Number.isInteger(minutes)||minutes<15||minutes>720)throw new Error('自定义时长须为15—720分钟的整数');
+  if(!Number.isInteger(minutes)||minutes<1||minutes>720)throw new Error('自定义时长须为1—720分钟的整数');
   return {...plan,minutes,label:`自定义 ${minutes}分钟`};
 }
 // Demonstration profile only: 180 min rated, 30 min taper, 5 min low power.
@@ -36,14 +36,14 @@ export function estimatePlanCost(rates,planId,customMinutes) {
 const makeSockets = (id, states) => states.map((status, i) => ({ code: `${id}-${String(i + 1).padStart(2, '0')}`, number: i + 1, status }));
 function legacyDemoState() {
   return { version: 1, stations: [
-    { id: 'baoan', name: '南阳师范学院校园充电站（模拟）', address: '河南省南阳市卧龙区卧龙路1638号 · 毕设演示点位', area: '南阳师范学院', latitude:32.975857, longitude:112.487679, coordinateType:'GCJ02', x: 52, y: 31, rates: { electricity: 60, service: 20 }, devices: [
+    { id: 'baoan', name: '南阳师范学院校园充电站（模拟）', address: '河南省南阳市卧龙区卧龙路1638号 · 毕设演示点位', area: '南阳师范学院', latitude:32.975857, longitude:112.487679, coordinateType:'GCJ02', x: 52, y: 31, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500006', online: true, sockets: makeSockets('14500006', ['idle', 'idle', 'charging', 'fault', 'idle', 'idle']) },
       { id: '14500008', online: false, sockets: makeSockets('14500008', ['idle', 'idle', 'idle', 'idle']) }
     ] },
-    { id: 'garden', name: '南阳理工学院校园充电站（模拟）', address: '河南省南阳市宛城区长江路80号 · 毕设演示点位', area: '南阳理工学院', latitude:32.967595, longitude:112.553209, coordinateType:'GCJ02', x: 28, y: 56, rates: { electricity: 60, service: 20 }, devices: [
+    { id: 'garden', name: '南阳理工学院校园充电站（模拟）', address: '河南省南阳市宛城区长江路80号 · 毕设演示点位', area: '南阳理工学院', latitude:32.967595, longitude:112.553209, coordinateType:'GCJ02', x: 28, y: 56, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500011', online: true, sockets: makeSockets('14500011', ['idle', 'charging', 'idle', 'fault']) }
     ] },
-    { id: 'campus', name: '校园备用充电站（模拟）', address: '南阳市校园场景 · 未设置真实位置的演示站点', area: '校园备用站', x: 73, y: 65, rates: { electricity: 60, service: 20 }, devices: [
+    { id: 'campus', name: '校园备用充电站（模拟）', address: '南阳市校园场景 · 未设置真实位置的演示站点', area: '校园备用站', x: 73, y: 65, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500021', online: true, sockets: makeSockets('14500021', ['idle', 'idle', 'idle', 'idle']) }
     ] }
   ], orders: [
@@ -52,7 +52,7 @@ function legacyDemoState() {
 }
 export function createDemoState(){
  const state=legacyDemoState(),legacy=new Map(state.stations.map(s=>[s.id,s]));
- state.stations=[...campusCatalog.stations.map(site=>({...site,scene:'校园'})),...scenarioCatalog].map(site=>({...site,coordinateNote:site.coordinateNote||site.note,rates:{electricity:60,service:20},devices:legacy.get(site.id)?.devices||[]}));
+ state.stations=[...campusCatalog.stations.map(site=>({...site,scene:'校园'})),...scenarioCatalog].map(site=>({...site,coordinateNote:site.coordinateNote||site.note,rates:{electricity:60,service:6},devices:legacy.get(site.id)?.devices||[]}));
  state.orders[0].stationName=state.stations[0].name;
  return normalizeDualSocketLayout(state,{preserveLegacyCodes:false});
 }
@@ -150,7 +150,8 @@ export function restoreState(value) {
         o.chargePlan={...plan};
       }
       if (!Number.isFinite(o.startedAt) || typeof o.stationName !== 'string' ||
-          ![o.minutes,o.energyWh,o.electricityCents,o.serviceCents,o.totalCents,o.rates.electricity,o.rates.service].every(n=>Number.isSafeInteger(n)&&n>=0) ||
+          ![o.minutes,o.energyWh,o.electricityCents,o.serviceCents,o.totalCents].every(n=>Number.isSafeInteger(n)&&n>=0) ||
+          ![o.rates.electricity,o.rates.service].every(n=>Number.isFinite(n)&&n>=0) ||
           o.totalCents !== o.electricityCents + o.serviceCents ||
           (o.status==='charging' && (o.payment!=='unpaid' || findSocket(value,o.socketCode).socket.status!=='charging')) ||
           (o.status==='ended' && !Number.isFinite(o.endedAt))) return createDemoState();

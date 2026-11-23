@@ -13,7 +13,7 @@ test('FULL runs through taper and stops at the simulated completion time even af
   refreshSession(state,order.id,1000+400*60000);
   assert.equal(order.status,'ended');assert.equal(order.endReason,'FULL_SIMULATED');
   assert.equal(order.minutes,215);assert.equal(order.endedAt,12901000);
-  assert.equal(order.energyWh,977);assert.equal(order.totalCents,59);assert.equal(order.serviceCents,0);
+  assert.equal(order.energyWh,977);assert.equal(order.totalCents,65);assert.equal(order.serviceCents,6);
   assert.equal(findSocket(state,order.socketCode).socket.status,'idle');
 });
 
@@ -24,7 +24,7 @@ test('FULL uses saved socket power and survives storage restoration without rese
   const restored=restoreState(JSON.parse(JSON.stringify(state)));
   findSocket(restored,'14500006-01').socket.powerWatts=1200;
   refreshSession(restored,order.id,1000+215*60000);
-  assert.equal(restored.orders[0].energyWh,1953);assert.equal(restored.orders[0].totalCents,117);
+  assert.equal(restored.orders[0].energyWh,1953);assert.equal(restored.orders[0].totalCents,129);
 });
 
 test('manual early FULL stop bills only elapsed energy and leaves history unchanged on later refresh',()=>{
@@ -32,7 +32,7 @@ test('manual early FULL stop bills only elapsed energy and leaves history unchan
   stopSession(state,order.id,1000+60*60000);
   assert.equal(order.endReason,'USER_STOPPED');assert.equal(order.energyWh,300);
   refreshSession(state,order.id,1000+900*60000);
-  assert.equal(order.totalCents,18);assert.equal(order.minutes,60);
+  assert.equal(order.totalCents,20);assert.equal(order.minutes,60);
 });
 
 test('local simulated payment records an explicit mock receipt and cannot change channels after payment',()=>{

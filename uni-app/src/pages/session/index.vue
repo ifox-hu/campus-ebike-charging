@@ -27,7 +27,7 @@
         <view v-if="order.status==='ended'" class="kv"><text>结束时间</text><text>{{isBackend?serverTime(order.endTimeText):date(order.endedAt)}}</text></view>
         <view class="kv"><text>订单编号</text><text class="small">{{order.orderNo||order.id}}</text></view>
         <view class="kv"><text>电费{{order.rates?'（'+yuan(order.rates.electricity)+' 元/度）':''}}</text><text>¥{{yuan(order.electricityCents)}}</text></view>
-        <view class="kv"><text>服务费{{order.rates?'（'+yuan(order.rates.service)+' 元/度）':''}}</text><text>¥{{yuan(order.serviceCents)}}</text></view>
+        <view class="kv"><text>服务费{{order.rates?'（'+(order.rates.service/100).toFixed(4)+' 元/度）':''}}</text><text>¥{{yuan(order.serviceCents)}}</text></view>
         <view class="kv total"><text>合计</text><text class="teal">¥{{yuan(order.totalCents)}}</text></view>
         <text v-if="isBackend" class="block muted small">费用由平台结算；历史订单不使用当前站点费率重新计算。</text><text v-if="order.meteringSource" class="block muted small">{{order.meteringSource==='SOFTWARE'?'平台软件模拟计量 · 额定 '+order.simulatedPowerWatts+'W':'设备模拟器计量'}}</text>
       </view>

@@ -7,8 +7,8 @@
 | 客户端 | 实现 | 说明 |
 | --- | --- | --- |
 | 管理端 | `frontend/src/services/amap.js` | 加载 `webapi.amap.com/maps?v=2.0`，建立地图、标记、缩放与定位 |
-| H5 | `uni-app/src/domain/amap.mjs` | 通过官方 `@amap/amap-jsapi-loader` 加载 2.0 SDK |
-| 微信小程序 | `uni-app/src/components/StationMap.vue` | 使用小程序原生 map 与 openLocation；不加载浏览器 JS SDK |
+| 参考用户端 H5 | `uni-app/src/domain/amap.mjs` | 通过官方 `@amap/amap-jsapi-loader` 加载 2.0 SDK |
+| 参考用户端微信小程序 | `uni-app/src/components/StationMap.vue` | 使用小程序原生 map 与 openLocation；不加载浏览器 JS SDK |
 
 ### 管理端
 
@@ -22,7 +22,7 @@ ADMIN_API_PROXY_TARGET=http://127.0.0.1:8081
 
 从 `frontend/` 启动 Vite。无 Key 时使用坐标示意；在线静态构建通过 `PAGES_AMAP_KEY` 与 `PAGES_AMAP_SECURITY_CODE` 配置地图。
 
-### H5
+### 参考用户端地图（uni-app）
 
 复制 `uni-app/.env.example` 为 `uni-app/.env.local`：
 
@@ -35,27 +35,26 @@ Web Key 用于加载浏览器 SDK；安全码由 Vite 的 `/_AMapService` 代理
 
 ## 业务后端
 
-需要 Java 17、Maven 3.9+ 与 MySQL 8。复制 `backend/.env.example` 为 `backend/.env.local`，填写自己的本地密码；`MYSQL_PASSWORD` 与 `DB_PASSWORD` 对应同一个应用数据库账户，须保持一致。
+当前联机组合为本仓库的 frontend、mobile-client，以及同级 ev-charging-platform/backend。需要 Java 17、Maven 3.9+ 与 MySQL 8。先备份已有数据库，核对同级仓库 docs/db 中已执行版本，按顺序补齐至 V16；空库依次执行 V1—V16。V13—V16包含运营商、站点归属、业务日志及历史归属字段。不要将参考工程的建表脚本用于此库。
 
-在 `backend/` 运行：
-
-```bash
-docker compose --env-file .env.local up -d mysql
-```
-
-Compose 使用独立项目名与数据卷，端口为 `127.0.0.1:13307`。`charging-service/db/` 初始化空库的 V1–V10 SQL，不会导入本机已有订单、用户或设备数据。已有库必须先备份，按已执行版本升级，不能重新执行空库初始化。
-
-在仓库根目录运行：
+复制 backend/.env.connected.example 为 backend/.env.connected.local，填写当前联机数据库、JWT 及中间件配置。然后在本仓库根目录运行：
 
 ```powershell
+./scripts/dev-charging.ps1 -CheckOnly
 ./scripts/dev-charging.ps1
+./scripts/dev-connected.ps1
+./scripts/dev-user.ps1 -Connected
 ```
 
-此脚本只向当前子进程加载允许的数据库与 JWT 配置，显式使用 graduation 演示配置；不停止已有端口占用服务。端口冲突时可使用 `-Port 18085`，并同步修改两个前端的 API 代理目标。
+后端使用 graduation-demo 配置，默认 API 端口8081，管理端5201，用户端5198。启动脚本遇到端口占用会退出，不会停止已有服务。后端不在默认目录时通过 -BackendPath 指定；配置文件可用 -EnvFile 指定。
 
-- 管理端：`frontend/.env.connected.local` 中设置 `ADMIN_API_PROXY_TARGET`。
-- 用户端：`uni-app/.env.connected.local` 中设置 `MOBILE_API_PROXY_TARGET`；`MOBILE_DEV_PORT` 可调整 H5 端口。
-- 默认业务 API：8081；管理端 connected：5201；用户端 connected：5198。
+- 管理端：frontend/.env.connected.local 设置 ADMIN_API_PROXY_TARGET。
+- 用户端：mobile-client/.env.connected.local 设置 MOBILE_API_PROXY_TARGET；MOBILE_DEV_PORT 可调整 H5 端口，无需复制不存在的 .env.example。
+- 调整后端 -Port 后，同步修改两端代理地址。
+
+### 参考工程
+
+backend/charging-service 与 uni-app 保留为参考工程。backend/docker-compose.yml 使用该工程自己的 V1—V10 脚本和 .env.example/.env.local，数据库结构与当前联机后端不同，不能混用。上方 uni-app 地图配置仅适用于该参考客户端；当前 mobile-client 的运行配置见其 README。
 
 ## 独立账号模式
 

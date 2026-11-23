@@ -22,22 +22,22 @@ test('start takes a rate snapshot, repeated start does not append an order', () 
   s.stations[0].rates.electricity = 900;
   assert.equal(s.orders[0].rates.electricity, 60);
 });
-test('elapsed time at 300W costs 27+9=36 cents and releases socket', () => {
+test('elapsed time at 300W costs 27+3=30 cents and releases socket', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);
   refreshSession(s, o.id, 1000 + 90 * 60000); stopSession(s, o.id, 1000 + 90 * 60000);
   assert.equal(o.energyWh, 450); assert.equal(o.electricityCents, 27);
-  assert.equal(o.serviceCents, 9); assert.equal(o.totalCents, 36);
+  assert.equal(o.serviceCents, 3); assert.equal(o.totalCents, 30);
   assert.equal(findSocket(s, o.socketCode).socket.status, 'idle');
   assert.equal(o.status, 'ended'); assert.equal(o.payment, 'unpaid');
-  stopSession(s, o.id); assert.equal(o.totalCents, 36);
-  refreshSession(s, o.id, 1000 + 120 * 60000); assert.equal(o.totalCents, 36);
+  stopSession(s, o.id); assert.equal(o.totalCents, 30);
+  refreshSession(s, o.id, 1000 + 120 * 60000); assert.equal(o.totalCents, 30);
 });
 test('payment requires an ended order and is idempotent', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);
   assert.throws(() => payOrder(s, o.id), /结束/);
   stopSession(s, o.id, 1000 + 90 * 60000);
   payOrder(s, o.id); payOrder(s, o.id);
-  assert.equal(o.payment, 'paid'); assert.equal(o.totalCents, 36);
+  assert.equal(o.payment, 'paid'); assert.equal(o.totalCents, 30);
 });
 test('automatic readings use elapsed time and repeated refresh does not add time', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);

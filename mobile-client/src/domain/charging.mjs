@@ -4,14 +4,14 @@ const DEFAULT_CHARGING_POWER_WATTS = 300;
 const makeSockets = (id, states) => states.map((status, i) => ({ code: `${id}-${String(i + 1).padStart(2, '0')}`, number: i + 1, status }));
 function legacyDemoState() {
   return { version: 1, stations: [
-    { id: 'baoan', name: '宝安测试电单车充电站', address: '深圳市宝安区新安街道 · 演示站点', area: '新安街道', x: 52, y: 31, rates: { electricity: 60, service: 0 }, devices: [
+    { id: 'baoan', name: '宝安测试电单车充电站', address: '深圳市宝安区新安街道 · 演示站点', area: '新安街道', x: 52, y: 31, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500006', online: true, sockets: makeSockets('14500006', ['idle', 'idle', 'charging', 'fault', 'idle', 'idle']) },
       { id: '14500008', online: false, sockets: makeSockets('14500008', ['idle', 'idle', 'idle', 'idle']) }
     ] },
-    { id: 'garden', name: '海滨花园便民充电站', address: '深圳市宝安区海滨片区 · 演示站点', area: '海滨片区', x: 28, y: 56, rates: { electricity: 60, service: 0 }, devices: [
+    { id: 'garden', name: '海滨花园便民充电站', address: '深圳市宝安区海滨片区 · 演示站点', area: '海滨片区', x: 28, y: 56, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500011', online: true, sockets: makeSockets('14500011', ['idle', 'charging', 'idle', 'fault']) }
     ] },
-    { id: 'campus', name: '校园东区集中充电站', address: '校园东区自行车停放区 · 演示站点', area: '校园东区', x: 73, y: 65, rates: { electricity: 60, service: 0 }, devices: [
+    { id: 'campus', name: '校园东区集中充电站', address: '校园东区自行车停放区 · 演示站点', area: '校园东区', x: 73, y: 65, rates: { electricity: 60, service: 6 }, devices: [
       { id: '14500021', online: true, sockets: makeSockets('14500021', ['idle', 'idle', 'idle', 'idle']) }
     ] }
   ], orders: [
@@ -20,7 +20,7 @@ function legacyDemoState() {
 }
 export function applyElectricityPolicy(state) {
   for (const station of state.stations) {
-    station.rates.service = 0;
+    if(station.rates.service==null)station.rates.service=station.rates.electricity/10;
     for (const device of station.devices) for (const socket of device.sockets) {
       if (!Number.isFinite(socket.powerWatts) || socket.powerWatts <= 0) socket.powerWatts = DEFAULT_CHARGING_POWER_WATTS;
     }
@@ -69,7 +69,7 @@ export function startSession(state, code, now = Date.now(), paymentMethod = 'wec
   if (!paymentMethods.some(method=>method.id===paymentMethod)) throw new Error('请选择微信支付或支付宝');
   const powerWatts=chargingPower(match.socket,match.device);
   if (!powerWatts) throw new Error('插座功率未配置，请联系管理员');
-  const order = { powerWatts, paymentMethod, billingPolicy:'electricity-only', id: `DEMO-${now}-${state.orders.length + 1}`, stationId: match.station.id, stationName: match.station.name, socketCode: code, startedAt: now, minutes: 0, energyWh: 0, rates: {electricity:match.station.rates.electricity, service:0}, electricityCents: 0, serviceCents: 0, totalCents: 0, status: 'charging', payment: 'unpaid' };
+  const order = { powerWatts, paymentMethod, billingPolicy:'electricity-and-service', id: `DEMO-${now}-${state.orders.length + 1}`, stationId: match.station.id, stationName: match.station.name, socketCode: code, startedAt: now, minutes: 0, energyWh: 0, rates: {...match.station.rates}, electricityCents: 0, serviceCents: 0, totalCents: 0, status: 'charging', payment: 'unpaid' };
   Object.assign(order,{chargeMode,durationMinutes:chargeMode==='FULL'?null:durationMinutes,scheduledEndsAt:now+(chargeMode==='FULL'?215:durationMinutes)*60000});
   if(chargeMode==='FULL')order.completionPolicy='SOFTWARE_TAPER_V1';
   state.orders.unshift(order); match.socket.status = 'charging'; return order;
@@ -135,7 +135,8 @@ export function restoreState(value) {
     for(const o of value.orders) if(!o.id || !findSocket(value,o.socketCode) || !['charging','ended'].includes(o.status) || !['unpaid','paid','free'].includes(o.payment) || !Number.isFinite(o.minutes) || o.minutes<0 || !Number.isFinite(o.totalCents) || !Number.isFinite(o.rates?.electricity) || !Number.isFinite(o.rates?.service)) return createDemoState();
     for (const o of value.orders) {
       if (!Number.isFinite(o.startedAt) || typeof o.stationName !== 'string' ||
-          ![o.minutes,o.energyWh,o.electricityCents,o.serviceCents,o.totalCents,o.rates.electricity,o.rates.service].every(n=>Number.isSafeInteger(n)&&n>=0) ||
+          ![o.minutes,o.energyWh,o.electricityCents,o.serviceCents,o.totalCents].every(n=>Number.isSafeInteger(n)&&n>=0) ||
+          ![o.rates.electricity,o.rates.service].every(n=>Number.isFinite(n)&&n>=0) ||
           o.totalCents !== o.electricityCents + o.serviceCents ||
           (o.status==='charging' && (o.payment!=='unpaid' || findSocket(value,o.socketCode).socket.status!=='charging')) ||
           (o.status==='ended' && !Number.isFinite(o.endedAt))) return createDemoState();

@@ -33,22 +33,22 @@ test('start takes a rate snapshot, repeated start does not append an order', () 
   s.stations[0].rates.electricity = 900;
   assert.equal(s.orders[0].rates.electricity, 60);
 });
-test('elapsed time at 300W costs only 27 cents and releases socket', () => {
+test('elapsed time at 300W costs 27 cents electricity plus 3 cents service and releases socket', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);
   refreshSession(s, o.id, 1000 + 90 * 60000); stopSession(s, o.id, 1000 + 90 * 60000);
   assert.equal(o.energyWh, 450); assert.equal(o.electricityCents, 27);
-  assert.equal(o.serviceCents, 0); assert.equal(o.totalCents, 27);
+  assert.equal(o.serviceCents, 3); assert.equal(o.totalCents, 30);
   assert.equal(findSocket(s, o.socketCode).socket.status, 'idle');
   assert.equal(o.status, 'ended'); assert.equal(o.payment, 'unpaid');
-  stopSession(s, o.id); assert.equal(o.totalCents, 27);
-  refreshSession(s, o.id, 1000 + 120 * 60000); assert.equal(o.totalCents, 27);
+  stopSession(s, o.id); assert.equal(o.totalCents, 30);
+  refreshSession(s, o.id, 1000 + 120 * 60000); assert.equal(o.totalCents, 30);
 });
 test('payment requires an ended order and is idempotent', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);
   assert.throws(() => payOrder(s, o.id), /结束/);
   stopSession(s, o.id, 1000 + 90 * 60000);
   payOrder(s, o.id); payOrder(s, o.id);
-  assert.equal(o.payment, 'paid'); assert.equal(o.totalCents, 27);
+  assert.equal(o.payment, 'paid'); assert.equal(o.totalCents, 30);
 });
 test('automatic readings use elapsed time and repeated refresh does not add time', () => {
   const s = createDemoState(); const o = startSession(s, '14500006-01', 1000);
@@ -107,15 +107,32 @@ test('configured socket power and selected payment channel are snapshotted',()=>
  findSocket(state,'14500006-01').socket.powerWatts=1000;state.stations[0].rates.service=99;
  refreshSession(state,order.id,1000+3600000);
  assert.equal(order.energyWh,500);assert.equal(order.electricityCents,30);
- assert.equal(order.serviceCents,0);assert.equal(order.totalCents,30);assert.equal(order.paymentMethod,'alipay');
+ assert.equal(order.serviceCents,3);assert.equal(order.totalCents,33);assert.equal(order.paymentMethod,'alipay');
  const restored=restoreState(JSON.parse(JSON.stringify(state)));
- assert.equal(restored.orders[0].powerWatts,500);assert.equal(restored.orders[0].totalCents,30);
+ assert.equal(restored.orders[0].powerWatts,500);assert.equal(restored.orders[0].totalCents,33);
 });
-test('restoring legacy bills preserves history while new orders charge electricity only',()=>{
+test('restoring bills preserves history and new orders snapshot the configured service price',()=>{
  const state=createDemoState();state.stations[0].rates.service=20;
  state.orders[0].rates.service=20;state.orders[0].serviceCents=9;state.orders[0].totalCents=36;
  const restored=restoreState(state);assert.equal(restored.orders[0].totalCents,36);
- assert.equal(restored.stations[0].rates.service,0);
+ assert.equal(restored.stations[0].rates.service,20);
  const order=startSession(restored,'14500006-01',1000);
- refreshSession(restored,order.id,3601000);assert.equal(order.totalCents,18);assert.equal(order.serviceCents,0);
+ refreshSession(restored,order.id,3601000);assert.equal(order.totalCents,24);assert.equal(order.serviceCents,6);
+});
+
+test('one-hour charging uses a ten-percent service price and freezes it at start',()=>{
+ const state=createDemoState();state.stations[0].rates={electricity:60,service:6};
+ const order=startSession(state,'14500006-01',1000,'wechat',60);
+ state.stations[0].rates.service=60;
+ refreshSession(state,order.id,3601000);
+ assert.equal(order.electricityCents,18);assert.equal(order.serviceCents,2);assert.equal(order.totalCents,20);
+});
+
+test('one-percent service rates survive reload without dropping the active order',()=>{
+ const state=createDemoState();state.stations[0].rates={electricity:60,service:.6};
+ const order=startSession(state,'14500006-01',1000,'wechat',720);
+ const restored=restoreState(JSON.parse(JSON.stringify(state)));
+ assert.equal(restored.orders[0].id,order.id);assert.equal(restored.orders[0].rates.service,.6);
+ const ended=refreshSession(restored,order.id,1000+720*60000);
+ assert.equal(ended.electricityCents,216);assert.equal(ended.serviceCents,2);assert.equal(ended.totalCents,218);
 });

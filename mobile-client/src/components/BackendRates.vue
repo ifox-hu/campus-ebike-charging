@@ -6,9 +6,9 @@
     <text v-else-if="!station.ratePeriods?.length" class="block muted small">暂无可用费率，请稍后查询</text>
     <view v-for="period in station.ratePeriods||[]" :key="period.id" class="rate-period">
       <text class="block">{{period.startTime}}—{{period.endTime}}</text>
-      <text class="muted small">电费 {{period.electricityPrice}} 元/度</text>
+      <text class="muted small">电费 {{period.electricityPrice}} 元/度 · 服务费 {{period.servicePrice}} 元/度</text>
     </view>
-    <text class="block muted small">仅收电费，最终费用以订单结算结果为准。</text>
+    <text class="block muted small">电费与服务费分别计算，最终费用以订单结算结果为准。</text>
   </view>
 </template>
 <script setup>

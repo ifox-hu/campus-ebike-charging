@@ -9,5 +9,5 @@ if (!(Get-NetTCPConnection -LocalPort 5201 -State Listen -ErrorAction SilentlyCo
  Start-Process $nodeExe -ArgumentList 'node_modules/vite/bin/vite.js --mode connected --host 127.0.0.1 --port 5201 --strictPort' -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput "$projectRoot/connected-start.log" -RedirectStandardError "$projectRoot/connected-start-error.log"
 }
 Write-Host 'Connected admin: http://127.0.0.1:5201/'
-Write-Host 'Default business backend: http://127.0.0.1:8081 (requires its database and ADMIN account)'
+Write-Host 'Business backend: http://127.0.0.1:8081 - start scripts/dev-charging.ps1 (ev-charging-platform/backend)'
 Write-Host 'Original local simulation: http://127.0.0.1:5195/'

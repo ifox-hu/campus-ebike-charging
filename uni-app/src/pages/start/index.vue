@@ -44,7 +44,7 @@
 <text class="small">{{plan.description}}</text>
 </button>
 </view>
-<view v-if="selectedPlan==='CUSTOM'" class="custom-duration"><text>自定义时长（分钟）</text><input v-model="customMinutes" type="number" placeholder="15—720" :disabled="starting" aria-label="自定义充电分钟数"/></view>
+<view v-if="selectedPlan==='CUSTOM'" class="custom-duration"><text>自定义时长（分钟）</text><input v-model="customMinutes" type="number" placeholder="1—720" :disabled="starting" aria-label="自定义充电分钟数"/></view>
 <text v-if="planError||quoteError" class="block field-error">{{planError||quoteError}}</text>
 <text v-if="quoteBusy" class="block muted small">正在获取服务端预计费用…</text>
 <text class="block muted small plan-hint">{{selectedPlan==='FULL'?'按插座功率持续降低判断结束（模拟），最长12小时；不检测电池剩余电量。':'达到所选时长后自动停止，也可提前结束。'}}费用按本次模拟计量结算。</text>
@@ -58,7 +58,7 @@
 <text>电费 / kWh</text>
 </view>
 <view>
-<text class="rate-value">{{yuan(station.rates.service)}}元</text>
+<text class="rate-value">{{(station.rates.service/100).toFixed(4)}}元</text>
 <text>服务费 / kWh</text>
 </view>
 </view>
