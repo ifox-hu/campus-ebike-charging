@@ -24,7 +24,7 @@ const periodLabel = computed(
       today: '今日',
       week: '近七天',
       month: '近一个月',
-      sixMonths: '近六个月',
+      threeMonths: '近三个月',
       all: '累计',
       custom: '期间',
     })[props.period],

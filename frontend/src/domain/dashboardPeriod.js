@@ -7,10 +7,10 @@ const validDate = (value) =>
   new Date(value).toISOString().slice(0, 10) === value;
 export function dashboardRange(period, end = today(), custom = {}) {
   if (period === 'all') return null;
-  if (period === 'sixMonths') {
+  if (period === 'threeMonths' || period === 'sixMonths') {
     if (!validDate(end)) throw Error('日期范围无效。');
     const start = new Date(`${end.slice(0, 7)}-01T00:00:00Z`);
-    start.setUTCMonth(start.getUTCMonth() - 5);
+    start.setUTCMonth(start.getUTCMonth() - (period === 'threeMonths' ? 2 : 5));
     return { start: start.toISOString().slice(0, 10), end, granularity: 'month' };
   }
   if (period === 'custom') {

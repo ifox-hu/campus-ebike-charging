@@ -26,8 +26,8 @@ const devicesView = computed(() => view.value.devices),
 import { money, today } from '../domain/service.js';
 import { userTrend, feeTrend, typeChart, siteChart } from '../domain/statistics.js';
 const emit = defineEmits(['open-device', 'navigate', 'message']);
-const dateRange = ref(dashboardRange('sixMonths')),
-  period = ref('sixMonths'),
+const dateRange = ref(dashboardRange('threeMonths')),
+  period = ref('threeMonths'),
   noticeTab = ref('report'),
   reversed = ref(false),
   selectedRow = ref('D2');
@@ -38,7 +38,7 @@ const periodLabel = computed(
       today: '今日',
       week: '近七天',
       month: '近一个月',
-      sixMonths: '近六个月',
+      threeMonths: '近三个月',
       all: '累计',
       custom: '期间',
     })[period.value],

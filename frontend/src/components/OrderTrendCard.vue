@@ -4,7 +4,7 @@ import ChartPanel from './ChartPanel.vue';
 import { dashboardRange } from '../domain/dashboardPeriod.js';
 import { orderTrend, recentDates } from '../domain/statistics.js';
 const props = defineProps({ source: { type: Object, required: true }, range: Object });
-const period = ref('sixMonths'),
+const period = ref('threeMonths'),
   start = ref(''),
   end = ref(''),
   customRange = ref(null),
@@ -13,8 +13,8 @@ const dates = computed(
   () =>
     props.range ||
     customRange.value ||
-    (period.value === 'sixMonths'
-      ? dashboardRange('sixMonths')
+    (period.value === 'threeMonths'
+      ? dashboardRange('threeMonths')
       : { start: recentDates(Number(period.value) || 7)[0], end: recentDates(1)[0] }),
 );
 const option = computed(() => orderTrend(props.source.orders, dates.value));
@@ -39,7 +39,7 @@ function apply() {
       <label
         >时间范围
         <select v-model="period" aria-label="订单趋势时间范围" @change="changePeriod">
-          <option value="sixMonths">近六个月（按月）</option>
+          <option value="threeMonths">近三个月（按月）</option>
           <option value="7">近7天</option>
           <option value="30">近30天</option>
           <option value="custom">自定义日期</option>

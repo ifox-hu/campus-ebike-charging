@@ -20,8 +20,8 @@ const props = defineProps({
 defineEmits(['navigate', 'device', 'order']);
 
 const operatorId = ref('');
-const dateRange = ref(dashboardRange('sixMonths'));
-const period = ref('sixMonths');
+const dateRange = ref(dashboardRange('threeMonths'));
+const period = ref('threeMonths');
 const chartRange = computed(() => dashboardRangeForSource(scopedSource.value, dateRange.value));
 const scopedSource = computed(() => scopeDashboardSource(props.source, operatorId.value));
 const operatorCount = computed(() => (operatorId.value ? 1 : props.operators.length));

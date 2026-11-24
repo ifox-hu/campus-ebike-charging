@@ -7,6 +7,22 @@ import * as history from '../src/domain/demoHistory.js';
 import { addOperatorOwnership } from '../src/domain/operatorDemo.js';
 import { scopeDashboardSource } from '../src/domain/dashboardView.js';
 
+test('近三个月包含本月并按月汇总，跨年和月末不溢出', () => {
+  assert.deepEqual(dashboardRange('threeMonths', '2026-11-24'), {
+    start: '2026-09-01',
+    end: '2026-11-24',
+    granularity: 'month',
+  });
+  const range = dashboardRange('threeMonths', '2026-01-31');
+  assert.deepEqual(range, {
+    start: '2025-11-01',
+    end: '2026-01-31',
+    granularity: 'month',
+  });
+  assert.deepEqual(orderTrend([], range).xAxis.data, ['2025-11', '2025-12', '2026-01']);
+  assert.throws(() => dashboardRange('threeMonths', '2026-02-30'));
+});
+
 test('近六个月从首月第一天到今天，跨年和月末不溢出', () => {
   assert.deepEqual(dashboardRange('sixMonths', '2026-11-23'), {
     start: '2026-06-01',
